@@ -157,7 +157,7 @@ class DiscardTests < ThinpTestCase
         n = 0
 
         while n < @blocks_per_dev
-          if (provisioned_sectors == 0)
+          if (provisioned_sectors <= 0)
             wipe_device(thin) # provison in case of no mappings
             provisioned_sectors = @volume_size
           end
