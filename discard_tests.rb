@@ -159,7 +159,7 @@ class DiscardTests < ThinpTestCase
           n = 0
 
           while n < @blocks_per_dev
-            if (used_data_blocks(pool) == @volume_size/2)
+            if (used_data_blocks(pool) < @volume_size / 2)
               wipe_device(thin) # provison in case of no mappings
             end
 
