@@ -69,9 +69,13 @@ class DiscardTests < ThinpTestCase
     end
   end
 
-  def assert_used_blocks(pool, count)
+  def used_data_blocks(pool)
     status = PoolStatus.new(pool)
-    assert_equal(status.used_data_blocks, count)
+    status.used_data_blocks
+  end
+
+  def assert_used_blocks(pool, count)
+    assert_equal(used_data_blocks(pool), count)
   end
 
   def test_discard_empty_device
@@ -150,28 +154,23 @@ class DiscardTests < ThinpTestCase
   end
 
   def test_discard_random_sectors
-    provisioned_sectors = 0
+      with_standard_pool(@size) do |pool|
+        with_new_thin(pool, @volume_size, 0) do |thin|
+          n = 0
 
-    with_standard_pool(@size) do |pool|
-      with_new_thin(pool, @volume_size, 0) do |thin|
-        n = 0
+          while n < @blocks_per_dev
+            if (used_data_blocks(pool) == @volume_size/2)
+              wipe_device(thin) # provison in case of no mappings
+            end
 
-        while n < @blocks_per_dev
-          if (provisioned_sectors <= 0)
-            wipe_device(thin) # provison in case of no mappings
-            provisioned_sectors = @volume_size
-          end
+            s = rand(@volume_size - 1)
+            s_len = rand(@volume_size)
+            s_len = 1 if (s_len == 0)
+            s_len = @volume_size - s if (s + s_len > @volume_size)
 
-          s = rand(@volume_size - 1)
-          s_len = rand(@volume_size)
-          if (s + s_len > @volume_size)
-            s_len = @volume_size - s
-          end
+            thin.discard(s, s_len)
 
-          thin.discard(s, s_len)
-
-          provisioned_sectors -= s_len
-          n += 1
+            n += 1
         end
       end
     end
