@@ -18,7 +18,7 @@ class DiscardTests < ThinpTestCase
   def setup
     super
     @data_block_size = 128
-    blocks_per_dev = div_up(@volume_size, @data_block_size)
+    @blocks_per_dev = div_up(@volume_size, @data_block_size)
   end
 
   def read_metadata
@@ -46,7 +46,7 @@ class DiscardTests < ThinpTestCase
 
   def assert_fully_mapped(md, thin_id)
     with_dev_md(md, thin_id) do |dev|
-      assert_equal(blocks_per_dev, dev.mapped_blocks)
+      assert_equal(@blocks_per_dev, dev.mapped_blocks)
     end
   end
 
@@ -91,9 +91,9 @@ class DiscardTests < ThinpTestCase
       with_new_thins(pool, @volume_size, 0, 1) do |thin, thin2|
         wipe_device(thin)
         wipe_device(thin2)
-        assert_used_blocks(pool, 2 * blocks_per_dev)
+        assert_used_blocks(pool, 2 * @blocks_per_dev)
         thin.discard(0, @volume_size)
-        assert_used_blocks(pool, blocks_per_dev)
+        assert_used_blocks(pool, @blocks_per_dev)
       end
     end
 
@@ -106,14 +106,14 @@ class DiscardTests < ThinpTestCase
     with_standard_pool(@size) do |pool|
       with_new_thin(pool, @volume_size, 0) do |thin|
         wipe_device(thin)
-        assert_used_blocks(pool, blocks_per_dev)
+        assert_used_blocks(pool, @blocks_per_dev)
         thin.discard(0, @data_block_size)
-        assert_used_blocks(pool, blocks_per_dev - 1)
+        assert_used_blocks(pool, @blocks_per_dev - 1)
       end
     end
 
     md = read_metadata
-    check_provisioned_blocks(md, 0, blocks_per_dev) do |b|
+    check_provisioned_blocks(md, 0, @blocks_per_dev) do |b|
       b == 0 ? false : true
     end
   end
@@ -138,7 +138,7 @@ class DiscardTests < ThinpTestCase
         wipe_device(thin)
 
         b = 0
-        while b < blocks_per_dev
+        while b < @blocks_per_dev
           thin.discard(b * @data_block_size, @data_block_size)
           b += 2
         end
@@ -146,6 +146,30 @@ class DiscardTests < ThinpTestCase
     end
 
     md = read_metadata
-    check_provisioned_blocks(md, 0, blocks_per_dev) {|b| b.odd?}
+    check_provisioned_blocks(md, 0, @blocks_per_dev) {|b| b.odd?}
+  end
+
+  def test_discard_random_sectors
+    with_standard_pool(@size) do |pool|
+      with_new_thin(pool, @volume_size, 0) do |thin|
+        n = 0
+        while n < @blocks_per_dev
+          md = read_metadata
+          if (assert_no_mappings(md, 0))
+            wipe_device(thin) # provison in case of no mappings
+          end
+
+          s = rand(@volume_size - 1)
+          s_len = rand(@volume_size)
+          if (s + s_len > @volume_size)
+            s_len = @volume_size - s
+          end
+
+          thin.discard(s, s_len)
+
+          n += 1
+        end
+      end
+    end
   end
 end
