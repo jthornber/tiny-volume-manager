@@ -150,13 +150,16 @@ class DiscardTests < ThinpTestCase
   end
 
   def test_discard_random_sectors
+    provisioned_sectors = 0
+
     with_standard_pool(@size) do |pool|
       with_new_thin(pool, @volume_size, 0) do |thin|
         n = 0
+
         while n < @blocks_per_dev
-          md = read_metadata
-          if (assert_no_mappings(md, 0))
+          if (provisioned_sectors == 0)
             wipe_device(thin) # provison in case of no mappings
+            provisioned_sectors = @volume_size
           end
 
           s = rand(@volume_size - 1)
@@ -167,6 +170,7 @@ class DiscardTests < ThinpTestCase
 
           thin.discard(s, s_len)
 
+          provisioned_sectors -= s_len
           n += 1
         end
       end
