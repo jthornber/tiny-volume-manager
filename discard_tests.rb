@@ -15,6 +15,12 @@ class DiscardTests < ThinpTestCase
   include Utils
   include XMLFormat
 
+  def setup
+    super
+    @data_block_size = 128
+    blocks_per_dev = div_up(@volume_size, @data_block_size)
+  end
+
   def read_metadata
     dump_metadata(@metadata_dev) do |xml_path|
       File.open(xml_path, 'r') do |io|
@@ -40,7 +46,7 @@ class DiscardTests < ThinpTestCase
 
   def assert_fully_mapped(md, thin_id)
     with_dev_md(md, thin_id) do |dev|
-      assert_equal(div_up(@volume_size, @data_block_size), dev.mapped_blocks)
+      assert_equal(blocks_per_dev, dev.mapped_blocks)
     end
   end
 
@@ -81,8 +87,6 @@ class DiscardTests < ThinpTestCase
   end
 
   def test_discard_fully_provisioned_device
-    blocks_per_dev = div_up(@volume_size, @data_block_size)
-
     with_standard_pool(@size) do |pool|
       with_new_thins(pool, @volume_size, 0, 1) do |thin, thin2|
         wipe_device(thin)
@@ -99,9 +103,6 @@ class DiscardTests < ThinpTestCase
   end
 
   def test_discard_single_block
-    @data_block_size = 128
-    blocks_per_dev = div_up(@volume_size, @data_block_size)
-
     with_standard_pool(@size) do |pool|
       with_new_thin(pool, @volume_size, 0) do |thin|
         wipe_device(thin)
@@ -112,13 +113,12 @@ class DiscardTests < ThinpTestCase
     end
 
     md = read_metadata
-    check_provisioned_blocks(md, 0, div_up(@volume_size, @data_block_size)) do |b|
+    check_provisioned_blocks(md, 0, blocks_per_dev) do |b|
       b == 0 ? false : true
     end
   end
 
   def test_discard_partial_blocks
-    @data_block_size = 128
     with_standard_pool(@size) do |pool|
       with_new_thin(pool, @volume_size, 0) do |thin|
         wipe_device(thin)
@@ -133,15 +133,12 @@ class DiscardTests < ThinpTestCase
   end
 
   def test_discard_alternate_blocks
-    @data_block_size = 128
-    nr_blocks = div_up(@volume_size, @data_block_size)
-
     with_standard_pool(@size) do |pool|
       with_new_thin(pool, @volume_size, 0) do |thin|
         wipe_device(thin)
 
         b = 0
-        while b < nr_blocks
+        while b < blocks_per_dev
           thin.discard(b * @data_block_size, @data_block_size)
           b += 2
         end
@@ -149,6 +146,6 @@ class DiscardTests < ThinpTestCase
     end
 
     md = read_metadata
-    check_provisioned_blocks(md, 0, nr_blocks) {|b| b.odd?}
+    check_provisioned_blocks(md, 0, blocks_per_dev) {|b| b.odd?}
   end
 end

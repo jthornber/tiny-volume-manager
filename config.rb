@@ -37,10 +37,10 @@ module Config
 
 
     'a4.ww.redhat.com' =>
-    { :metadata_dev => '/dev/tst_fc_enc/metadata',
+    { :metadata_dev => '/dev/tst/metadata',
       :metadata_size => 32768,
-      :data_dev => '/dev/tst_fc_enc/pool',
-      :data_size => 838877184,
+      :data_dev => '/dev/tst/pool',
+      :data_size => 419463168,
       :volume_size => 70377, # 2097152,
       :data_block_size => 524288,
       :low_water_mark => 5,
