@@ -2,14 +2,18 @@
 
 module Config
   CONFIGS = {
+    # ejt's machines
     'vm2' =>
     { :metadata_dev => '/dev/sdc',
       :data_dev => '/dev/sdd'
     },
+
     'ubuntu' =>
     { :metadata_dev => 'metadata_dev',
       :data_dev => 'data_dev'
     }
+
+    # others ...
   }
 
   def Config.get_config

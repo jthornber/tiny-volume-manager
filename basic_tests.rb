@@ -1,28 +1,15 @@
-require 'lib/log.rb'
-require 'lib/dm.rb'
-require 'test/unit'
-require 'test/unit/ui/console/testrunner'
 require 'config'
-
-$dry_run = true
-
-def run_(*cmd)
-  cmd_line = cmd.join(' ')
-
-  debug "executing: '#{cmd_line}'"
-  if !$dry_run
-    fork do
-      exec(cmd_line);
-    end
-    Process.wait
-  end
-end
+require 'lib/dm'
+require 'lib/log'
+require 'lib/utils'
+require 'test/unit'
 
 #----------------------------------------------------------------
 
 class BasicTests < Test::Unit::TestCase
+  include Utils
+
   def setup()
-    # fixme: get these from a config file
     config = Config.get_config
     @metadata_dev = config[:metadata_dev]
     @data_dev = config[:data_dev]
@@ -33,10 +20,6 @@ class BasicTests < Test::Unit::TestCase
   end
 
   def teardown()
-  end
-
-  def wipe_device(dev_or_path)
-    run_("dd if=/dev/zero of=#{dev_or_path} oflag=direct bs=16M")
   end
 
   def test_overwrite_a_linear_device

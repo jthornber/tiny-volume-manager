@@ -1,4 +1,5 @@
 require 'lib/log'
+require 'lib/process'
 
 #----------------------------------------------------------------
 
@@ -69,19 +70,19 @@ class DMDev
 
   def load(table)
     # fixme: better to use popen and pump the table in on stdin
-    run_("dmsetup load #{name} --table \"#{table}\"")
+    ProcessControl.run("dmsetup load #{name} --table \"#{table}\"")
   end
 
   def resume()
-    run_("dmsetup resume #{name}")
+    ProcessControl.run("dmsetup resume #{name}")
   end
 
   def remove()
-    run_("dmsetup remove #{name}")
+    ProcessControl.run("dmsetup remove #{name}")
   end
 
   def message(sector, *args)
-    run_("dmsetup message #{path} #{sector} #{args.join(' ')}")
+    ProcessControl.run("dmsetup message #{path} #{sector} #{args.join(' ')}")
   end
 
   def to_s()
@@ -104,7 +105,7 @@ private
   def create(table = nil)
     name = create_name()
 
-    run_("dmsetup create #{name} --notable")
+    ProcessControl.run("dmsetup create #{name} --notable")
     dev = DMDev.new(name, self)
     unless table.nil?
       dev.load table

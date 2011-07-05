@@ -1,0 +1,10 @@
+Test suite for device-mapper thin provisioning targets.  Uses Ruby
+1.8.x.
+
+To run:
+
+    ruby ./run_tests.rb
+
+for more info:
+
+    ruby ./run_tests.rb -help
