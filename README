@@ -3,8 +3,17 @@ Test suite for device-mapper thin provisioning targets.  Uses Ruby
 
 To run:
 
-    ruby ./run_tests.rb
+Edit config.rb, adding suitable entries for you test machine.
+Check things are ok with a dry run:
 
-for more info:
+     ruby ./run_tests.rb
 
-    ruby ./run_tests.rb -help
+Once you're happy you can set the env var THIN_TESTS and run it for
+real:
+
+     export THIN_TESTS=EXECUTE
+     ruby ./run_tests.rb
+   
+You can select subsets of the tests, for more info:
+
+    ruby ./run_tests.rb --help
