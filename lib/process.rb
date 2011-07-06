@@ -5,26 +5,27 @@ require 'open3'
 #----------------------------------------------------------------
 
 module ProcessControl
-  def ProcessControl.run_(default, *cmd)
+  def ProcessControl.really_run(*cmd)
     cmd_line = cmd.join(' ')
-    
     debug "executing: '#{cmd_line}'"
-    DryRun.run(default) do
-      stdout_output = Array.new
-      stderr_output = Array.new
 
-      stdin, stdout, stderr = Open3.popen3(cmd_line)
-      stdin.close_write
+    stdout_output = Array.new
+    stderr_output = Array.new
+
+    exit_status = 255
+    Open3.popen3(cmd_line) do |i, o, e, t|
+      pid = t.pid
+      i.close_write
 
       # kick off threads to gather output
       stdout_tid = Thread.new do
-        while line = stdout.gets
+        while line = o.gets
           stdout_output << line.chomp
         end
       end
 
       stderr_tid = Thread.new do
-        while line = stderr.gets
+        while line = e.gets
           stderr_output << line.chomp
         end
       end
@@ -32,21 +33,27 @@ module ProcessControl
       stdout_tid.join
       stderr_tid.join
 
-      if $?.exitstatus != 0
-        debug "command failed with '#{$?.exitstatus}'"
-        raise RuntimeError, "command failed"
-      end
-
-      if stdout_output.length > 0
-        debug "stdout:\n" + stdout_output.map {|l| "    " + l}.join("\n")
-      end
-
-      if stderr_output.length > 0
-        debug "stderr:\n" + stderr_output.map {|l| "    " + l}.join("\n")
-      end
-
-      stdout_output.join("\n");
+      exit_status = t.value
     end
+
+    if stdout_output.length > 0
+      debug "stdout:\n" + stdout_output.map {|l| "    " + l}.join("\n")
+    end
+
+    if stderr_output.length > 0
+      debug "stderr:\n" + stderr_output.map {|l| "    " + l}.join("\n")
+    end
+
+    if exit_status != 0
+      debug "command failed with '#{exit_status}'"
+      raise RuntimeError, "command failed"
+    end
+
+    stdout_output.join("\n");
+  end
+
+  def ProcessControl.run_(default, *cmd)
+    DryRun.run(default) {ProcessControl.really_run(*cmd)}
   end
 
   def ProcessControl.system(default, *cmd)

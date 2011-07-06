@@ -1,24 +1,24 @@
 Test suite for device-mapper thin provisioning targets.  Uses Ruby
-1.8.x.
+1.9.x.
 
 To run:
 
 Edit config.rb, adding suitable entries for you test machine.
 Check things are ok with a dry run:
 
-     ruby ./run_tests.rb
+     ruby1.9 ./run_tests.rb
 
 Once you're happy you can set the env var THIN_TESTS and run it for
 real:
 
      export THIN_TESTS=EXECUTE
-     ruby ./run_tests.rb
+     ruby1.9 ./run_tests.rb
    
 You can select subsets of the tests, for more info:
 
-    ruby ./run_tests.rb --help
+    ruby1.9 ./run_tests.rb --help
 
 Alternatively you can run the tests in a particular file:
 
-    ruby ./basic_tests.rb -v
-    ruby ./pool_resize_tests.rb -v
+    ruby1.9 ./basic_tests.rb -v
+    ruby1.9 ./pool_resize_tests.rb -v
