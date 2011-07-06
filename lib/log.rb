@@ -12,11 +12,9 @@
 require 'logger'
 
 module Log
-  $log = Logger.new(STDERR)
-
-  def Log.init(io_)
-    $log = Logger.new(io_)
-  end
+  file = File.open('test.log', 'w')
+  file.sync = true
+  $log = Logger.new(file)
 end
 
 def fatal(*args)

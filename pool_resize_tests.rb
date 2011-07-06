@@ -18,6 +18,8 @@ class PoolResizeTests < Test::Unit::TestCase
     @data_block_size = 128
     @low_water = 1024
     @dm = DMInterface.new
+
+    wipe_device(@metadata_dev)
   end
 
   def teardown

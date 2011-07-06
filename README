@@ -17,3 +17,8 @@ real:
 You can select subsets of the tests, for more info:
 
     ruby ./run_tests.rb --help
+
+Alternatively you can run the tests in a particular file:
+
+    ruby ./basic_tests.rb -v
+    ruby ./pool_resize_tests.rb -v
