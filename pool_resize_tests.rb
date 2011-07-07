@@ -83,7 +83,7 @@ class PoolResizeTests < Test::Unit::TestCase
         fork {wipe_device(thin)}
 
         2.upto(n) do |i|
-          # wait until vailable space has been used
+          # wait until available space has been used
           event_tracker.wait
 
           table = Table.new(ThinPool.new(i * target_step, @metadata_dev, @data_dev,
@@ -102,10 +102,6 @@ class PoolResizeTests < Test::Unit::TestCase
 
   def test_resize_io
     resize_io_many(8)
-  end
-
-  def _test_resize_io_once
-    resize_io_many(2)
   end
 end
 

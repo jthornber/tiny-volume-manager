@@ -85,6 +85,10 @@ class DMDev
     ProcessControl.run("dmsetup message #{path} #{sector} #{args.join(' ')}")
   end
 
+  def status
+    ProcessControl.run("dmsetup status #{@name}")
+  end
+
   def event_nr
     output = ProcessControl.run("dmsetup status -v #{@name}")
     m = output.match(/Event number:[ \t]*([0-9]+)/)
