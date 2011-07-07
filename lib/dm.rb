@@ -70,23 +70,53 @@ class DMDev
 
   def load(table)
     # fixme: better to use popen and pump the table in on stdin
-    ProcessControl.run("dmsetup load #{name} --table \"#{table}\"")
+    ProcessControl.run("dmsetup load #{@name} --table \"#{table}\"")
   end
 
   def resume()
-    ProcessControl.run("dmsetup resume #{name}")
+    ProcessControl.run("dmsetup resume #{@name}")
   end
 
   def remove()
-    ProcessControl.run("dmsetup remove #{name}")
+    ProcessControl.run("dmsetup remove #{@name}")
   end
 
   def message(sector, *args)
     ProcessControl.run("dmsetup message #{path} #{sector} #{args.join(' ')}")
   end
 
+  def event_nr
+    output = ProcessControl.run("dmsetup status -v #{@name}")
+    m = output.match(/Event number:[ \t]*([0-9]+)/)
+    if m.nil?
+      raise RuntimeError, "Couldn't find event number for dm device"
+    end
+
+    m[1].to_i
+  end
+
+  def event_tracker
+    DMEventTracker.new(event_nr, self)
+  end
+
   def to_s()
     path
+  end
+end
+
+class DMEventTracker
+  attr_reader :event_nr, :device
+
+  def initialize(n, d)
+    @event_nr = n
+    @device = d
+  end
+
+  # Wait for an event _since_ this one.  Updates event nr to reflect
+  # the new number.
+  def wait
+    ProcessControl.run("dmsetup wait #{@device.name} #{@event_nr}")
+    @event_nr = @device.event_nr
   end
 end
 

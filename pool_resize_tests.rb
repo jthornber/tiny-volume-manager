@@ -78,12 +78,16 @@ class PoolResizeTests < Test::Unit::TestCase
       pool.message(0, 'new-thin 0')
 
       @dm.with_dev(Table.new(Thin.new(2097152, pool, 0))) do |thin|
+        event_tracker = pool.event_tracker;
+
         fork {wipe_device(thin)}
 
         2.upto(n) do |i|
+          # wait until vailable space has been used
+          event_tracker.wait
+
           table = Table.new(ThinPool.new(i * target_step, @metadata_dev, @data_dev,
                                          @data_block_size, @low_water))
-          ProcessControl.sleep 10 # fixme: change this so it sleeps until the pool is exhausted
           pool.load(table)
           pool.resume
         end
