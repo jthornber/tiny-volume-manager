@@ -25,7 +25,7 @@ class PoolResizeTests < Test::Unit::TestCase
   def teardown
   end
 
-  def test_reload_same_table_no_io
+  def test_reload_no_io
     table = Table.new(ThinPool.new(20971520, @metadata_dev, @data_dev,
                                    @data_block_size, @low_water))
 
@@ -35,7 +35,7 @@ class PoolResizeTests < Test::Unit::TestCase
     end
   end
 
-  def test_reload_same_table_io
+  def test_reload_io
     table = Table.new(ThinPool.new(20971520, @metadata_dev, @data_dev,
                                    @data_block_size, @low_water))
 
@@ -51,15 +51,14 @@ class PoolResizeTests < Test::Unit::TestCase
     end
   end
 
-  def test_resize_table_no_io
+  def test_resize_no_io
     target_size = 20971520
     target_step = target_size / 10
-    table_small = Table.new(ThinPool.new(0, @metadata_dev, @data_dev,
+    table_small = Table.new(ThinPool.new(target_step, @metadata_dev, @data_dev,
                                          @data_block_size, @low_water))
 
     @dm.with_dev(table_small) do |pool|
-      # we grow the table 10 times
-      0.upto(9) do |n|
+      2.upto(10) do |n|
         table = Table.new(ThinPool.new(n * target_step, @metadata_dev, @data_dev,
                                        @data_block_size, @low_water))
 
@@ -69,29 +68,40 @@ class PoolResizeTests < Test::Unit::TestCase
     end
   end
 
-  def test_resize_table_io
+  def resize_io_many(n)
     target_size = 2097152
-    target_step = target_size / 8
-    table_small = Table.new(ThinPool.new(0, @metadata_dev, @data_dev,
+    target_step = target_size / n
+    table_small = Table.new(ThinPool.new(target_step, @metadata_dev, @data_dev,
                                          @data_block_size, @low_water))
 
     @dm.with_dev(table_small) do |pool|
       pool.message(0, 'new-thin 0')
+
       @dm.with_dev(Table.new(Thin.new(2097152, pool, 0))) do |thin|
         fork {wipe_device(thin)}
 
-        # we grow the table 10 times
-        0.upto(7) do |n|
-          table = Table.new(ThinPool.new(n * target_step, @metadata_dev, @data_dev,
+        2.upto(n) do |i|
+          table = Table.new(ThinPool.new(i * target_step, @metadata_dev, @data_dev,
                                          @data_block_size, @low_water))
-          ProcessControl.sleep 5
+          ProcessControl.sleep 10 # fixme: change this so it sleeps until the pool is exhausted
           pool.load(table)
           pool.resume
         end
 
         Process.wait
+        if $?.exitstatus > 0
+          raise RuntimeError, "wipe sub process failed"
+        end
       end
     end
+  end
+
+  def test_resize_io
+    resize_io_many(8)
+  end
+
+  def _test_resize_io_once
+    resize_io_many(2)
   end
 end
 
