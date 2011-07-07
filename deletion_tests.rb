@@ -47,6 +47,20 @@ class DeletionTests < Test::Unit::TestCase
     PoolStatus.new(m[1].to_i, m[2].to_i, m[3].to_i, m[4])
   end
 
+  def test_create_delete_cycle
+    size = 2097152
+
+    table = Table.new(ThinPool.new(size, @metadata_dev, @data_dev,
+                                   @data_block_size, @low_water))
+
+    @dm.with_dev(table) do |pool|
+      10.times do
+        pool.message(0, "new-thin 0")
+        pool.message(0, "del 0")
+      end
+    end
+  end
+
   def test_delete_thin
     size = 2097152
 
