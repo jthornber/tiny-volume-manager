@@ -22,3 +22,13 @@ Alternatively you can run the tests in a particular file:
 
     ruby1.9 ./basic_tests.rb -v
     ruby1.9 ./pool_resize_tests.rb -v
+
+
+
+You may find that udev interferes with your tests.  The typical
+symptom is test scripts being unable to remove devices (because udev
+has it open).
+
+One way to disable udev is:
+
+  mv /lib/udev/rules.d/80-udisks.rules /lib/udev/rules.d/80-udisks.rules.dieudevdie

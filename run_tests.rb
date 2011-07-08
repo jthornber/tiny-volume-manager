@@ -1,4 +1,3 @@
-require 'test/unit/ui/console/testrunner'
 require 'lib/log'
 require 'basic_tests'
 require 'pool_resize_tests'

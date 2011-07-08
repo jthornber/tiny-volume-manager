@@ -73,6 +73,10 @@ class DMDev
     ProcessControl.run("dmsetup load #{@name} --table \"#{table}\"")
   end
 
+  def suspend
+    ProcessControl.run("dmsetup suspend #{@name}")
+  end
+
   def resume()
     ProcessControl.run("dmsetup resume #{@name}")
   end

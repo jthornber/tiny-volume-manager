@@ -15,6 +15,7 @@ module Log
   file = File.open('test.log', 'w')
   file.sync = true
   $log = Logger.new(file)
+  $log.level = Logger::DEBUG
 end
 
 def fatal(*args)

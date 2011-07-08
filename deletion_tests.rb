@@ -83,6 +83,21 @@ class DeletionTests < Test::Unit::TestCase
       assert_equal(size, status.free_data_sectors)
     end
   end
+
+  def test_delete_unknown_devices
+    size = 2097152
+
+    table = Table.new(ThinPool.new(size, @metadata_dev, @data_dev,
+                                   @data_block_size, @low_water))
+
+    @dm.with_dev(table) do |pool|
+      0.upto(10) do |i|
+        assert_raises(RuntimeError) do
+          pool.message(0, "del #{i}")
+        end
+      end
+    end
+  end
 end
 
 #----------------------------------------------------------------
