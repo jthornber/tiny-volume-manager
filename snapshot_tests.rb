@@ -1,5 +1,6 @@
 require 'config'
 require 'lib/dm'
+require 'lib/fs'
 require 'lib/log'
 require 'lib/process'
 require 'lib/utils'
@@ -97,13 +98,12 @@ class CreationTests < Test::Unit::TestCase
                                    @data_block_size, @low_water))
 
     @dm.with_dev(table) do |pool|
-
-      # totally provision a thin device
       pool.message(0, 'new-thin 0')
+
       @dm.with_dev(Table.new(Thin.new(size, pool, 0))) do |thin|
-        ProcessControl.run("mkfs.ext4 #{thin.path}")
-        ProcessControl.run("mount #{thin.path} ./mnt1")
-        begin
+        thin_fs = FS::file_system(:ext4, thin)
+        thin_fs.format
+        thin_fs.with_mount("./mnt1") do
           ds = Dataset.read('compile-bench-datasets/dataset-unpatched')
           Dir.chdir('mnt1') { ds.apply(1000) }
 
@@ -112,21 +112,13 @@ class CreationTests < Test::Unit::TestCase
           thin.resume
 
           @dm.with_dev(Table.new(Thin.new(size, pool, 1))) do |snap|
-            #ProcessControl.run("xfs_admin -U generate #{snap.path}")
-            ProcessControl.run("mount #{snap.path} ./mnt2")
-            begin
+            snap_fs = FS::file_system(:ext4, snap)
+            snap_fs.with_mount("./mnt2") do
               ds = Dataset.read('compile-bench-datasets/dataset-unpatched-compiled')
               Dir.chdir('mnt2') { ds.apply(1000) }
-            ensure
-              ProcessControl.run("umount ./mnt2")
             end
-            ProcessControl.run("fsck.ext4 -n #{snap.path}")
           end
-
-        ensure
-          ProcessControl.run("umount ./mnt1")
         end
-        ProcessControl.run("fsck.ext4 -n #{thin.path}")
       end
     end
   end
