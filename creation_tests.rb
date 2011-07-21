@@ -87,7 +87,7 @@ class CreationTests < Test::Unit::TestCase
   def test_too_large_data_block_size_fails
     size = 20971520
     table = Table.new(ThinPool.new(size, @metadata_dev, @data_dev,
-                                   2**22, @low_water))
+                                   2**21, @low_water))
 
     assert_raises(RuntimeError) do
       @dm.with_dev(table) do |pool|
@@ -99,8 +99,28 @@ class CreationTests < Test::Unit::TestCase
   def test_largest_data_block_size_succeeds
     size = 20971520
     table = Table.new(ThinPool.new(size, @metadata_dev, @data_dev,
-                                   2**21, @low_water))
+                                   2**21 - 1, @low_water))
     @dm.with_dev(table) do |pool|
+    end
+  end
+
+  def test_too_large_a_dev_t_fails
+    size = 20971520
+    table = Table.new(ThinPool.new(size, @metadata_dev, @data_dev,
+                                   @data_block_size, @low_water))
+    assert_raises(RuntimeError) do
+      @dm.with_dev(table) do |pool|
+        pool.message("create_thin #{2**32}")
+      end
+    end
+  end
+
+  def test_too_large_a_dev_t_fails
+    size = 20971520
+    table = Table.new(ThinPool.new(size, @metadata_dev, @data_dev,
+                                   @data_block_size, @low_water))
+    @dm.with_dev(table) do |pool|
+      pool.message("create_thin #{2**32 - 1}")
     end
   end
 end
