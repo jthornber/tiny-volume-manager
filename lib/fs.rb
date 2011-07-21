@@ -30,16 +30,42 @@ module FS
     end
   end
 
+  class XFS
+    attr_accessor :dev
+
+    def initialize(dev)
+      @dev = dev
+    end
+
+    def format
+      ProcessControl.run("mkfs.xfs -f #{@dev}")
+    end
+
+    def with_mount(mount_point)
+      ProcessControl.run("mount -o nouuid #{@dev} #{mount_point}")
+      begin
+        yield
+      ensure
+        ProcessControl.run("umount #{mount_point}")
+        check
+      end
+    end
+
+    def check
+      ProcessControl.run("xfs_repair -n #{@dev}")
+    end
+  end
+
   def FS.file_system(type, dev)
     case type
     when :ext4
-      debug "creating ext filesystem"
       Ext4.new(dev)
+    when :xfs
+      XFS.new(dev)
     else
       raise RuntimeError, "unknown fs type '#{type}'"
     end
   end
 end
-
 
 #----------------------------------------------------------------
