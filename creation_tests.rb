@@ -110,7 +110,7 @@ class CreationTests < Test::Unit::TestCase
                                    @data_block_size, @low_water))
     assert_raises(RuntimeError) do
       @dm.with_dev(table) do |pool|
-        pool.message("create_thin #{2**24}")
+        pool.message(0, "create_thin #{2**24}")
       end
     end
   end
@@ -120,7 +120,7 @@ class CreationTests < Test::Unit::TestCase
     table = Table.new(ThinPool.new(size, @metadata_dev, @data_dev,
                                    @data_block_size, @low_water))
     @dm.with_dev(table) do |pool|
-      pool.message("create_thin #{2**24 - 1}")
+      pool.message(0, "create_thin #{2**24 - 1}")
     end
   end
 end
