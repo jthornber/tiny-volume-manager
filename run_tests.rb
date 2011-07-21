@@ -3,6 +3,7 @@ require 'basic_tests'
 require 'pool_resize_tests'
 require 'creation_tests'
 require 'deletion_tests'
+require 'snapshot-tests'
 
 if $dry_run
   info "Dry run mode.  Set the environment variable THIN_TESTS=EXECUTE" +
