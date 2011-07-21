@@ -32,7 +32,7 @@ class CreationTests < Test::Unit::TestCase
                                    @data_block_size, @low_water))
 
     @dm.with_dev(table) do |pool|
-      0.upto(1000) {|i| pool.message(0, "new-thin #{i}") }
+      0.upto(1000) {|i| pool.message(0, "create_thin #{i}") }
     end
   end
 
@@ -43,8 +43,8 @@ class CreationTests < Test::Unit::TestCase
                                    @data_block_size, @low_water))
 
     @dm.with_dev(table) do |pool|
-      pool.message(0, "new-thin 0")
-      1.upto(1000) {|i| pool.message(0, "new-snap #{i} 0") }
+      pool.message(0, "create_thin 0")
+      1.upto(1000) {|i| pool.message(0, "create_snap #{i} 0") }
     end
   end
 
@@ -55,8 +55,8 @@ class CreationTests < Test::Unit::TestCase
                                    @data_block_size, @low_water))
 
     @dm.with_dev(table) do |pool|
-      pool.message(0, "new-thin 0")
-      1.upto(1000) {|i| pool.message(0, "new-snap #{i} #{i - 1}") }
+      pool.message(0, "create_thin 0")
+      1.upto(1000) {|i| pool.message(0, "create_snap #{i} #{i - 1}") }
     end    
   end
 end

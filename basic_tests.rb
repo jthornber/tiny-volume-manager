@@ -38,7 +38,7 @@ class BasicTests < Test::Unit::TestCase
                                         @data_block_size, @low_water))
     @dm.with_dev(pool_table) do |pool|
 
-      pool.message(0, "new-thin 0")
+      pool.message(0, "create_thin 0")
       thin_table = Table.new(Thin.new(2097152, pool, 0))
       @dm.with_dev(thin_table) do |thin|
         info "Benchmarking an unprovisioned thin device"
@@ -48,7 +48,7 @@ class BasicTests < Test::Unit::TestCase
         wipe_device(thin)
       end
 
-      pool.message(0, "new-snap 1 0")
+      pool.message(0, "create_snap 1 0")
       @dm.with_dev(Table.new(Thin.new(2097152, pool, 1))) do |snap|
         info "Benchmarking a snapshot of a fully provisioned device"
         wipe_device(snap)

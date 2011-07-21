@@ -55,8 +55,8 @@ class DeletionTests < Test::Unit::TestCase
 
     @dm.with_dev(table) do |pool|
       10.times do
-        pool.message(0, "new-thin 0")
-        pool.message(0, "del 0")
+        pool.message(0, "create_thin 0")
+        pool.message(0, "delete 0")
       end
     end
   end
@@ -70,7 +70,7 @@ class DeletionTests < Test::Unit::TestCase
     @dm.with_dev(table) do |pool|
 
       # totally provision a thin device
-      pool.message(0, 'new-thin 0')
+      pool.message(0, 'create_thin 0')
       @dm.with_dev(Table.new(Thin.new(size, pool, 0))) do |thin|
         wipe_device(thin)
       end
@@ -78,7 +78,7 @@ class DeletionTests < Test::Unit::TestCase
       status = pool_status(pool)
       assert_equal(0, status.free_data_sectors)
 
-      pool.message(0, 'del 0')
+      pool.message(0, 'delete 0')
       status = pool_status(pool)
       assert_equal(size, status.free_data_sectors)
     end
@@ -93,7 +93,7 @@ class DeletionTests < Test::Unit::TestCase
     @dm.with_dev(table) do |pool|
       0.upto(10) do |i|
         assert_raises(RuntimeError) do
-          pool.message(0, "del #{i}")
+          pool.message(0, "delete #{i}")
         end
       end
     end

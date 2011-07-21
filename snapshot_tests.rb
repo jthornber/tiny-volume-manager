@@ -98,7 +98,7 @@ class SnapshotTests < Test::Unit::TestCase
                                    @data_block_size, @low_water))
 
     @dm.with_dev(table) do |pool|
-      pool.message(0, 'new-thin 0')
+      pool.message(0, 'create_thin 0')
 
       @dm.with_dev(Table.new(Thin.new(size, pool, 0))) do |thin|
         thin_fs = FS::file_system(fs_type, thin)
@@ -108,7 +108,7 @@ class SnapshotTests < Test::Unit::TestCase
           Dir.chdir('mnt1') { ds.apply(1000) }
 
           thin.suspend
-          pool.message(0, 'new-snap 1 0')
+          pool.message(0, 'create_snap 1 0')
           thin.resume
 
           @dm.with_dev(Table.new(Thin.new(size, pool, 1))) do |snap|
@@ -130,7 +130,7 @@ class SnapshotTests < Test::Unit::TestCase
                                    @data_block_size, @low_water))
 
     @dm.with_dev(table) do |pool|
-      pool.message(0, 'new-thin 0')
+      pool.message(0, 'create_thin 0')
 
       @dm.with_dev(Table.new(Thin.new(size, pool, 0))) do |thin|
         thin_fs = FS::file_system(fs_type, thin)
@@ -145,7 +145,7 @@ class SnapshotTests < Test::Unit::TestCase
         info "writing first dataset took #{t} seconds"
       end
 
-      pool.message(0, 'new-snap 1 0')
+      pool.message(0, 'create_snap 1 0')
 
       @dm.with_dev(Table.new(Thin.new(size, pool, 1))) do |snap|
         snap_fs = FS::file_system(fs_type, snap)
@@ -173,7 +173,7 @@ class SnapshotTests < Test::Unit::TestCase
                                    @data_block_size, @low_water, false))
 
     @dm.with_dev(table) do |pool|
-      pool.message(0, 'new-thin 0')
+      pool.message(0, 'create_thin 0')
 
       @dm.with_dev(Table.new(Thin.new(size, pool, 0))) do |thin|
         thin_fs = FS::file_system(fs_type, thin)

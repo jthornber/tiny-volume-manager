@@ -40,7 +40,7 @@ class PoolResizeTests < Test::Unit::TestCase
                                    @data_block_size, @low_water))
 
     @dm.with_dev(table) do |pool|
-      pool.message(0, 'new-thin 0')
+      pool.message(0, 'create_thin 0')
       @dm.with_dev(Table.new(Thin.new(2097152, pool, 0))) do |thin|
         fork {wipe_device(thin)}
         ProcessControl.sleep 10
@@ -75,7 +75,7 @@ class PoolResizeTests < Test::Unit::TestCase
                                          @data_block_size, @low_water))
 
     @dm.with_dev(table_small) do |pool|
-      pool.message(0, 'new-thin 0')
+      pool.message(0, 'create_thin 0')
 
       @dm.with_dev(Table.new(Thin.new(2097152, pool, 0))) do |thin|
         event_tracker = pool.event_tracker;
