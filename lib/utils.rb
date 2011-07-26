@@ -18,4 +18,13 @@ module Utils
       ProcessControl.run("dd if=/dev/zero of=#{dev_or_path} oflag=direct bs=#{remainder * 512} count=1 seek=#{offset * 512}")
     end
   end
+
+  def get_dev_code(path)
+    stat = File.stat(path)
+    if stat.blockdev?
+      "#{stat.rdev_major}:#{stat.rdev_minor}"
+    else
+      path
+    end
+  end
 end

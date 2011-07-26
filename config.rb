@@ -8,6 +8,11 @@ module Config
       :data_dev => '/dev/sdd'
     },
 
+    'vm-debian-32' =>
+    { :metadata_dev => '/dev/sdc',
+      :data_dev => '/dev/sdd'
+    },
+
     'ubuntu' =>
     { :metadata_dev => 'metadata_dev',
       :data_dev => 'data_dev'
