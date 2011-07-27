@@ -8,15 +8,10 @@ module Utils
       sectors = dev_size
     end
 
-    # We now want to calculate a reasonable block size and block count
     block_size = 2048 * 64       # 64 M
-    if dev_size < block_size
-        block_size = dev_size
-    end
-
     count = sectors / block_size
     if count > 0
-      ProcessControl.run("dd if=/dev/zero of=#{dev_or_path} oflag=direct bs=#{block_size} count=#{count}")
+      ProcessControl.run("dd if=/dev/zero of=#{dev_or_path} oflag=direct bs=#{block_size * 512} count=#{count}")
     end
 
     remainder = sectors % block_size
