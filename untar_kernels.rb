@@ -33,7 +33,7 @@ data_block_size = 128
 low_water = 1024
 dm = DMInterface.new
 
-wipe_device(metadata_dev)
+wipe_device(metadata_dev, 8)
 
 table = Table.new(ThinPool.new(SIZE, metadata_dev, data_dev,
                                data_block_size, low_water))

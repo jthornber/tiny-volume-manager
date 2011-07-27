@@ -32,7 +32,7 @@ class BasicTests < Test::Unit::TestCase
   def test_overwriting_various_thin_devices
     info "Creating pool with new metadata"
     info "Zeroing metadata"
-    wipe_device(@metadata_dev)
+    wipe_device(@metadata_dev, 8)
 
     pool_table = Table.new(ThinPool.new(20971520, @metadata_dev, @data_dev,
                                         @data_block_size, @low_water))

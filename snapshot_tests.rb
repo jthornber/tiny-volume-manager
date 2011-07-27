@@ -85,7 +85,7 @@ class SnapshotTests < Test::Unit::TestCase
     @low_water = 1024
     @dm = DMInterface.new
 
-    wipe_device(@metadata_dev)
+    wipe_device(@metadata_dev, 8)
   end
 
   def teardown
