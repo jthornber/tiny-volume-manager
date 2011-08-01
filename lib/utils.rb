@@ -22,6 +22,10 @@ module Utils
     end
   end
 
+  def dt_device(dev)
+    ProcessControl.run("dt of=#{dev} pattern=iot passes=1")
+  end
+
   def get_dev_code(path)
     stat = File.stat(path)
     if stat.blockdev?
