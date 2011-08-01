@@ -26,6 +26,7 @@ module FS
     end
 
     def check
+      ProcessControl.run("echo 1 > /proc/sys/vm/drop_caches");
       ProcessControl.run("fsck.ext4 -n #{@dev}")
     end
   end
@@ -52,6 +53,7 @@ module FS
     end
 
     def check
+      ProcessControl.run("echo 1 > /proc/sys/vm/drop_caches");
       ProcessControl.run("xfs_repair -n #{@dev}")
     end
   end
