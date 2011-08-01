@@ -27,7 +27,7 @@ class DeletionTests < Test::Unit::TestCase
 
   # fixme: use Struct?
   class PoolStatus
-    attr_reader :transaction_id, :free_data_sectors, :free_metadata_sectors, :held_root
+    attr_reader :transaction_id, :free_metadata_sectors, :free_data_sectors, :held_root
 
     def initialize(t, d, m, h)
       @transaction_id = t

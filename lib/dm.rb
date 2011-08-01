@@ -140,6 +140,10 @@ class DMInterface
     end
   end
 
+  def mk_dev(table = nil)
+    create(table)
+  end
+
 private
   def create(table = nil)
     name = create_name()
