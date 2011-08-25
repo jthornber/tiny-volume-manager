@@ -35,6 +35,10 @@ class BasicTests < Test::Unit::TestCase
     info "Zeroing metadata"
     wipe_device(@metadata_dev, 8)
 
+    # we keep tearing down the pool and setting it back up so that we
+    # can trigger a thin_repair check at each stage.
+
+    info "Benchmarking an unprovisioned thin device"
     pool_table = Table.new(ThinPool.new(20971520, @metadata_dev, @data_dev,
                                         @data_block_size, @low_water))
     @dm.with_dev(pool_table) do |pool|
@@ -42,19 +46,35 @@ class BasicTests < Test::Unit::TestCase
       pool.message(0, "create_thin 0")
       thin_table = Table.new(Thin.new(2097152, pool, 0))
       @dm.with_dev(thin_table) do |thin|
-        info "Benchmarking an unprovisioned thin device"
-        dt_device(thin)
-        
-        info "Benchmarking a fully provisioned thin device"
         dt_device(thin)
       end
+    end
 
+    info "Benchmarking a fully provisioned thin device"
+    pool_table = Table.new(ThinPool.new(20971520, @metadata_dev, @data_dev,
+                                        @data_block_size, @low_water))
+    @dm.with_dev(pool_table) do |pool|
+      thin_table = Table.new(Thin.new(2097152, pool, 0))
+      @dm.with_dev(thin_table) do |thin|
+        dt_device(thin)
+      end
+    end
+
+    info "Benchmarking a snapshot of a fully provisioned device"
+    pool_table = Table.new(ThinPool.new(20971520, @metadata_dev, @data_dev,
+                                        @data_block_size, @low_water))
+    @dm.with_dev(pool_table) do |pool|
       pool.message(0, "create_snap 1 0")
       @dm.with_dev(Table.new(Thin.new(2097152, pool, 1))) do |snap|
-        info "Benchmarking a snapshot of a fully provisioned device"
         dt_device(snap)
-      
-        info "Benchmarking a snapshot with no sharing"
+      end
+    end
+
+    info "Benchmarking a snapshot with no sharing"
+    pool_table = Table.new(ThinPool.new(20971520, @metadata_dev, @data_dev,
+                                        @data_block_size, @low_water))
+    @dm.with_dev(pool_table) do |pool|
+      @dm.with_dev(Table.new(Thin.new(2097152, pool, 1))) do |snap|
         dt_device(snap)
       end
     end
