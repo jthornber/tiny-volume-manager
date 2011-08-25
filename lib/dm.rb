@@ -21,12 +21,19 @@ class Linear < Target
 end
 
 class ThinPool < Target
+  attr_accessor :metadata_dev
   def initialize(sector_count, metadata_dev, data_dev, block_size, low_water, zero = true)
     if zero
       super('thin-pool', sector_count, metadata_dev, data_dev, block_size, low_water)
     else
       super('thin-pool', sector_count, metadata_dev, data_dev, block_size, low_water, 1, 'skip_block_zeroing')
     end
+
+    @metadata_dev = metadata_dev
+  end
+
+  def post_remove_check
+    ProcessControl.run("thin_repair #{@metadata_dev}")
   end
 end
 
@@ -58,7 +65,7 @@ end
 
 class DMDev
   attr_accessor :name
-  attr_reader :interface
+  attr_reader :interface, :active_table
   
   def initialize(name, interface)
     @name = name
@@ -72,6 +79,7 @@ class DMDev
   def load(table)
     # fixme: better to use popen and pump the table in on stdin
     ProcessControl.run("dmsetup load #{@name} --table \"#{table}\"")
+    @active_table = table
   end
 
   def suspend
@@ -108,6 +116,14 @@ class DMDev
     DMEventTracker.new(event_nr, self)
   end
 
+  def post_remove_check
+    @active_table.targets.each do |target|
+      if target.public_methods.member?('post_remove_check')
+        target.post_remove_check
+      end
+    end
+  end
+
   def to_s()
     path
   end
@@ -137,6 +153,7 @@ class DMInterface
       yield(dev)
     ensure
       dev.remove
+      dev.post_remove_check
     end
   end
 
