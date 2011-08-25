@@ -23,7 +23,7 @@ module Utils
   end
 
   def dt_device(dev)
-    ProcessControl.run("dt of=#{dev} pattern=iot passes=1")
+    ProcessControl.run("dt of=#{dev} pattern=iot passes=1 iotype=random bs=4M")
   end
 
   def get_dev_code(path)
