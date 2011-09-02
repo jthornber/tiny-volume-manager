@@ -91,7 +91,9 @@ class DMDev
   end
 
   def remove()
-    ProcessControl.run("dmsetup remove #{@name}")
+    Utils.retry_if_fails(1.0) do
+      ProcessControl.run("dmsetup remove #{@name}")
+    end
   end
 
   def message(sector, *args)

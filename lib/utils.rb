@@ -34,5 +34,14 @@ module Utils
       path
     end
   end
+
+  def Utils.retry_if_fails(duration)
+    begin
+      yield
+    rescue Exception
+      ProcessControl.sleep(duration)
+      yield
+    end
+  end
 end
 
