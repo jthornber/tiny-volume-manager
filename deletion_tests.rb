@@ -29,10 +29,10 @@ class DeletionTests < Test::Unit::TestCase
   class PoolStatus
     attr_reader :transaction_id, :free_metadata_sectors, :free_data_sectors, :held_root
 
-    def initialize(t, d, m, h)
+    def initialize(t, m, d, h)
       @transaction_id = t
-      @free_data_sectors = d
       @free_metadata_sectors = m
+      @free_data_sectors = d
       @held_root = h
     end
   end
