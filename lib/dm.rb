@@ -86,6 +86,15 @@ class DMDev
     ProcessControl.run("dmsetup suspend #{@name}")
   end
 
+  def pause(&block)
+    suspend
+    begin
+      yield
+    ensure
+      resume
+    end
+  end
+
   def resume()
     ProcessControl.run("dmsetup resume #{@name}")
   end

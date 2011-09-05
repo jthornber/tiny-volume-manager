@@ -40,12 +40,16 @@ class ThinpTestCase < Test::Unit::TestCase
     with_thin(pool, size, id, &block)
   end
 
-  def with_new_snap(pool, size, id, origin, @suspend_devs, &block)
-    @suspend_devs.each {|dev| dev.suspend}
-    pool.message(0, "create_snap #{id} #{origin}")
-    @suspend_devs.each {|dev| dev.resume}
-
-    with_thin(pool, size, id, &block)
+  def with_new_snap(pool, size, id, origin, thin = nil, &block)
+    if thin.nil?
+        pool.message(0, "create_snap #{id} #{origin}")
+        with_thin(pool, size, id, &block)
+    else
+      thin.pause do
+        pool.message(0, "create_snap #{id} #{origin}")
+        with_thin(pool, size, id, &block)
+      end
+    end
   end
 end
 
