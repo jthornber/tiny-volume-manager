@@ -14,6 +14,7 @@ class PoolResizeTests < ThinpTestCase
     super
     @size = 20971520
     @volume_size = 2097152
+    @low_water_mark = 0
   end
 
   def test_reload_no_io
