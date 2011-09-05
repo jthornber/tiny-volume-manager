@@ -11,19 +11,9 @@ class DeletionTests < ThinpTestCase
   include Utils
 
   def setup
-    config = Config.get_config
-    @metadata_dev = config[:metadata_dev]
-    @data_dev = config[:data_dev]
+    super
 
-    @data_block_size = 128
-    @low_water = 1024
-    @dm = DMInterface.new
     @size = 2097152
-
-    wipe_device(@metadata_dev, 8)
-  end
-
-  def teardown
   end
 
   # FIXME: move into lib
@@ -49,24 +39,8 @@ class DeletionTests < ThinpTestCase
     PoolStatus.new(m[1].to_i, m[2].to_i, m[3].to_i, m[4])
   end
 
-  def with_standard_pool
-    table = Table.new(ThinPool.new(@size, @metadata_dev, @data_dev,
-                                   @data_block_size, @low_water))
-
-    @dm.with_dev(table) do |pool|
-      yield(pool)
-    end
-  end
-
-  def with_new_thin(pool, id)
-    pool.message(0, "create_thin #{id}")
-      @dm.with_dev(Table.new(Thin.new(@size, pool, id))) do |thin|
-      yield(thin)
-    end
-  end
-
   def test_create_delete_cycle
-    with_standard_pool do |pool|
+    with_standard_pool(@size) do |pool|
       10.times do
         pool.message(0, "create_thin 0")
         pool.message(0, "delete 0")
@@ -75,9 +49,8 @@ class DeletionTests < ThinpTestCase
   end
 
   def test_delete_thin
-    with_standard_pool do |pool|
-      # totally provision a thin device
-      with_new_thin(pool, 0) do |thin|
+    with_standard_pool(@size) do |pool|
+      with_new_thin(pool, @size, 0) do |thin|
         wipe_device(thin)
       end
 
@@ -91,7 +64,7 @@ class DeletionTests < ThinpTestCase
   end
 
   def test_delete_unknown_devices
-    with_standard_pool do |pool|
+    with_standard_pool(@size) do |pool|
       0.upto(10) do |i|
         assert_raises(RuntimeError) do
           pool.message(0, "delete #{i}")
@@ -101,8 +74,8 @@ class DeletionTests < ThinpTestCase
   end
 
   def test_delete_active_device_fails
-    with_standard_pool do |pool|
-      with_new_thin(pool, 0) do |thin|
+    with_standard_pool(@size) do |pool|
+      with_new_thin(pool, @size, 0) do |thin|
         fork {dt_device(thin)}
         ProcessControl.sleep(5)
 
