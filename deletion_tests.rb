@@ -58,7 +58,7 @@ class DeletionTests < Test::Unit::TestCase
     end
   end
 
-  def with_new_thin(id)
+  def with_new_thin(pool, id)
     pool.message(0, "create_thin #{id}")
       @dm.with_dev(Table.new(Thin.new(@size, pool, id))) do |thin|
       yield(thin)
@@ -77,7 +77,7 @@ class DeletionTests < Test::Unit::TestCase
   def test_delete_thin
     with_standard_pool do |pool|
       # totally provision a thin device
-      with_new_thin(0) do |thin|
+      with_new_thin(pool, 0) do |thin|
         wipe_device(thin)
       end
 
@@ -102,7 +102,7 @@ class DeletionTests < Test::Unit::TestCase
 
   def test_delete_active_device_fails
     with_standard_pool do |pool|
-      with_new_thin(0) do |thin|
+      with_new_thin(pool, 0) do |thin|
         fork {dt_device(thin)}
         ProcessControl.sleep(5)
 
