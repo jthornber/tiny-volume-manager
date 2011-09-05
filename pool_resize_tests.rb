@@ -11,22 +11,13 @@ class PoolResizeTests < ThinpTestCase
   include Utils
 
   def setup
-    config = Config.get_config
-    @metadata_dev = config[:metadata_dev]
-    @data_dev = config[:data_dev]
-
-    @data_block_size = 128
-    @low_water = 1024
-    @dm = DMInterface.new
-
-    wipe_device(@metadata_dev, 8)
-  end
-
-  def teardown
+    super
+    @size = 20971520
+    @volume_size = 2097152
   end
 
   def test_reload_no_io
-    table = Table.new(ThinPool.new(20971520, @metadata_dev, @data_dev,
+    table = Table.new(ThinPool.new(@size, @metadata_dev, @data_dev,
                                    @data_block_size, @low_water))
 
     @dm.with_dev(table) do |pool|
@@ -40,10 +31,9 @@ class PoolResizeTests < ThinpTestCase
                                    @data_block_size, @low_water))
 
     @dm.with_dev(table) do |pool|
-      pool.message(0, 'create_thin 0')
-      @dm.with_dev(Table.new(Thin.new(2097152, pool, 0))) do |thin|
+      with_new_thin(pool, @volume_size, 0) do |thin|
         fork {wipe_device(thin)}
-        ProcessControl.sleep 10
+        ProcessControl.sleep 5
         pool.load(table)
         pool.resume
         Process.wait
@@ -52,16 +42,11 @@ class PoolResizeTests < ThinpTestCase
   end
 
   def test_resize_no_io
-    target_size = 20971520
-    target_step = target_size / 10
-    table_small = Table.new(ThinPool.new(target_step, @metadata_dev, @data_dev,
-                                         @data_block_size, @low_water))
-
-    @dm.with_dev(table_small) do |pool|
+    target_step = @size / 10
+    with_standard_pool(target_step) do |pool|
       2.upto(10) do |n|
         table = Table.new(ThinPool.new(n * target_step, @metadata_dev, @data_dev,
                                        @data_block_size, @low_water))
-
         pool.load(table)
         pool.resume
       end
@@ -69,15 +54,10 @@ class PoolResizeTests < ThinpTestCase
   end
 
   def resize_io_many(n)
-    target_size = 2097152
+    target_size = @size / 10
     target_step = target_size / n
-    table_small = Table.new(ThinPool.new(target_step, @metadata_dev, @data_dev,
-                                         @data_block_size, @low_water))
-
-    @dm.with_dev(table_small) do |pool|
-      pool.message(0, 'create_thin 0')
-
-      @dm.with_dev(Table.new(Thin.new(2097152, pool, 0))) do |thin|
+    with_standard_pool(@target_step) do |pool|
+      with_new_thin(pool, @volume_size, 0) do |thin|
         event_tracker = pool.event_tracker;
 
         fork {wipe_device(thin)}
