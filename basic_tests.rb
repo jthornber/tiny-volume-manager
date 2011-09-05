@@ -62,9 +62,9 @@ class BasicTests < ThinpTestCase
         thin_fs = FS::file_system(:ext4, thin)
         thin_fs.format
 
-        thin.suspend
-        pool.message(0, "create_snap 1 0")
-        thin.resume
+        thin.pause do
+          pool.message(0, "create_snap 1 0")
+        end
 
         dt_device(thin)
       end
