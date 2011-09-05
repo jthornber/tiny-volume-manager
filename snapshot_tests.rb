@@ -77,41 +77,21 @@ class SnapshotTests < ThinpTestCase
   include Utils
 
   def setup
-    config = Config.get_config
-    @metadata_dev = config[:metadata_dev]
-    @data_dev = config[:data_dev]
-
-    @data_block_size = 128
-    @low_water = 1024
-    @dm = DMInterface.new
-
-    wipe_device(@metadata_dev, 8)
-  end
-
-  def teardown
+    super
+    @size = 20971520
+    @volume_size = @size / 4
   end
 
   def do_create_snap(fs_type)
-    size = 20971520
-
-    table = Table.new(ThinPool.new(size, @metadata_dev, @data_dev,
-                                   @data_block_size, @low_water))
-
-    @dm.with_dev(table) do |pool|
-      pool.message(0, 'create_thin 0')
-
-      @dm.with_dev(Table.new(Thin.new(size, pool, 0))) do |thin|
+    with_standard_pool(@size) do |pool|
+      with_new_thin(pool, @volume_size, 0) do |thin|
         thin_fs = FS::file_system(fs_type, thin)
         thin_fs.format
         thin_fs.with_mount("./mnt1") do
           ds = Dataset.read('compile-bench-datasets/dataset-unpatched')
           Dir.chdir('mnt1') { ds.apply(1000) }
 
-          thin.suspend
-          pool.message(0, 'create_snap 1 0')
-          thin.resume
-
-          @dm.with_dev(Table.new(Thin.new(size, pool, 1))) do |snap|
+          with_new_snap(pool, @volume_size, 1, 0, thin) do |snap|
             snap_fs = FS::file_system(fs_type, snap)
             snap_fs.with_mount("./mnt2") do
               ds = Dataset.read('compile-bench-datasets/dataset-unpatched-compiled')
@@ -124,15 +104,8 @@ class SnapshotTests < ThinpTestCase
   end
 
   def do_break_sharing(fs_type)
-    size = 20971520
-
-    table = Table.new(ThinPool.new(size, @metadata_dev, @data_dev,
-                                   @data_block_size, @low_water))
-
-    @dm.with_dev(table) do |pool|
-      pool.message(0, 'create_thin 0')
-
-      @dm.with_dev(Table.new(Thin.new(size, pool, 0))) do |thin|
+    with_standard_pool(@size) do |pool|
+      with_new_thin(pool, @volume_size, 0) do |thin|
         thin_fs = FS::file_system(fs_type, thin)
         thin_fs.format
 
@@ -145,9 +118,7 @@ class SnapshotTests < ThinpTestCase
         info "writing first dataset took #{t} seconds"
       end
 
-      pool.message(0, 'create_snap 1 0')
-
-      @dm.with_dev(Table.new(Thin.new(size, pool, 1))) do |snap|
+      with_new_snap(pool, @volume_size, 1, 0) do |snap|
         snap_fs = FS::file_system(fs_type, snap)
         t = time_block do
           snap_fs.with_mount("./mnt2") do
@@ -167,20 +138,11 @@ class SnapshotTests < ThinpTestCase
   end
 
   def do_overwrite(fs_type)
-    size = 20971520
-
-    table = Table.new(ThinPool.new(size, @metadata_dev, @data_dev,
-                                   @data_block_size, @low_water, false))
-
-    @dm.with_dev(table) do |pool|
-      pool.message(0, 'create_thin 0')
-
-      @dm.with_dev(Table.new(Thin.new(size, pool, 0))) do |thin|
+    with_standard_pool(@size) do |pool|
+      with_new_thin(pool, @volume_size, 0) do |thin|
         thin_fs = FS::file_system(fs_type, thin)
 
-        t_format = time_block do
-          thin_fs.format
-        end
+        t_format = time_block {thin_fs.format}
         info "formatting took #{t_format} seconds"
 
         ds = Dataset.read('compile-bench-datasets/dataset-unpatched')
