@@ -3,11 +3,11 @@ require 'lib/dm'
 require 'lib/log'
 require 'lib/process'
 require 'lib/utils'
-require 'test/unit'
+require 'lib/thinp-test'
 
 #----------------------------------------------------------------
 
-class PoolResizeTests < Test::Unit::TestCase
+class PoolResizeTests < ThinpTestCase
   include Utils
 
   def setup

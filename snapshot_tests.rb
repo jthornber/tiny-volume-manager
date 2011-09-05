@@ -4,7 +4,7 @@ require 'lib/fs'
 require 'lib/log'
 require 'lib/process'
 require 'lib/utils'
-require 'test/unit'
+require 'lib/thinp-test'
 
 # these added for the dataset stuff
 require 'fileutils'
@@ -73,7 +73,7 @@ class Dataset
   end
 end
 
-class SnapshotTests < Test::Unit::TestCase
+class SnapshotTests < ThinpTestCase
   include Utils
 
   def setup

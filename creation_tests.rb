@@ -3,11 +3,11 @@ require 'lib/dm'
 require 'lib/log'
 require 'lib/process'
 require 'lib/utils'
-require 'test/unit'
+require 'lib/thin-test'
 
 #----------------------------------------------------------------
 
-class CreationTests < Test::Unit::TestCase
+class CreationTests < ThinpTestCase
   include Utils
 
   def setup
