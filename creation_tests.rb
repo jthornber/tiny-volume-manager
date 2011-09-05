@@ -3,7 +3,7 @@ require 'lib/dm'
 require 'lib/log'
 require 'lib/process'
 require 'lib/utils'
-require 'lib/thin-test'
+require 'lib/thinp-test'
 
 #----------------------------------------------------------------
 
