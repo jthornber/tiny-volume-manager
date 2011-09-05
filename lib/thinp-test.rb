@@ -1,3 +1,5 @@
+require 'lib/bufio'
+require 'lib/log'
 require 'test/unit'
 
 #----------------------------------------------------------------
@@ -15,9 +17,13 @@ class ThinpTestCase < Test::Unit::TestCase
     @dm = DMInterface.new
 
     wipe_device(@metadata_dev, 8)
+
+    @bufio = BufioParameters.new
+    @bufio.set_param('peak_allocated', 0)
   end
 
   def teardown
+    info("Peak bufio allocation was #{@bufio.get_param('peak_allocated')}")
   end
 
   def with_standard_pool(size)
