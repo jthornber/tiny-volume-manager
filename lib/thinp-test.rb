@@ -18,7 +18,7 @@ class ThinpTestCase < Test::Unit::TestCase
 
     wipe_device(@metadata_dev, 8)
 
-    @bufio = BufioParameters.new
+    @bufio = BufIOParams.new
     @bufio.set_param('peak_allocated', 0)
   end
 

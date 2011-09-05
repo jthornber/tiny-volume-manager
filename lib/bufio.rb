@@ -7,6 +7,7 @@ class BufIOParams
   end
 
   def get_param(name)
+    line = ''
     File.open(param_file(name), 'r') do |file|
       line = file.gets
     end
