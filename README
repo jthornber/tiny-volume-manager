@@ -1,7 +1,17 @@
+Prerequisites
+=============
+
 Test suite for device-mapper thin provisioning targets.  Uses Ruby
 1.8.x.
 
-To run:
+You need a program called 'thin_repair' in your path.  This hasn't
+been released yet, so just sym link it to /bin/true.
+
+You also need dt in your path.
+
+
+Running
+=======
 
 Edit config.rb, adding suitable entries for you test machine.
 Check things are ok with a dry run:
@@ -23,6 +33,9 @@ Alternatively you can run the tests in a particular file:
     ruby ./basic_tests.rb -v
     ruby ./pool_resize_tests.rb -v
 
+
+Udev
+====
 
 You may find that udev interferes with your tests.  The typical
 symptom is test scripts being unable to remove devices (because udev
