@@ -53,8 +53,8 @@ class ThinpTestCase < Test::Unit::TestCase
     else
       thin.pause do
         pool.message(0, "create_snap #{id} #{origin}")
-        with_thin(pool, size, id, &block)
       end
+      with_thin(pool, size, id, &block)
     end
   end
 
