@@ -55,8 +55,7 @@ class PoolResizeTests < ThinpTestCase
   end
 
   def resize_io_many(n)
-    target_size = @size / 10
-    target_step = target_size / n
+    target_step = @volume_size / n
     with_standard_pool(target_step) do |pool|
       with_new_thin(pool, @volume_size, 0) do |thin|
         event_tracker = pool.event_tracker;
