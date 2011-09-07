@@ -21,8 +21,8 @@ class ThinpTestCase < Test::Unit::TestCase
     @data_block_size = config[:data_block_size]
     @data_block_size = 128 if @data_block_size.nil?
 
-    @low_water = config[:low_water]
-    @low_water = 1024 if @low_water.nil?
+    @low_water_mark = config[:low_water_mark]
+    @low_water_mark = 1024 if @low_water_mark.nil?
 
     @dm = DMInterface.new
 
@@ -38,7 +38,7 @@ class ThinpTestCase < Test::Unit::TestCase
 
   def with_standard_pool(size)
     table = Table.new(ThinPool.new(size, @metadata_dev, @data_dev,
-                                   @data_block_size, @low_water))
+                                   @data_block_size, @low_water_mark))
 
     @dm.with_dev(table) do |pool|
       yield(pool)
