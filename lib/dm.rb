@@ -177,12 +177,15 @@ private
     name = create_name()
 
     ProcessControl.run("dmsetup create #{name} --notable")
-    dev = DMDev.new(name, self)
-    unless table.nil?
-      dev.load table
-      dev.resume
+    begin
+      dev = DMDev.new(name, self)
+      unless table.nil?
+        dev.load table
+        dev.resume
+      end
+    ensure
+      ProcessControl.run("dmsetup remove #{name}")
     end
-
     dev
   end
 
