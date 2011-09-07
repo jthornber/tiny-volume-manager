@@ -12,8 +12,6 @@ class BasicTests < ThinpTestCase
 
   def setup
     super
-    @size = 20971520
-    @volume_size = 2097152
   end
 
   def test_overwrite_a_linear_device

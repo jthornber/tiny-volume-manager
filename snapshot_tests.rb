@@ -78,8 +78,7 @@ class SnapshotTests < ThinpTestCase
 
   def setup
     super
-    @size = 20971520
-    @volume_size = @size / 4
+    @volume_size = @size / 4 if @volume_size.nil?
   end
 
   def do_create_snap(fs_type)

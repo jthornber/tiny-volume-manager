@@ -21,9 +21,19 @@ module Config
     'ubuntu' =>
     { :metadata_dev => 'metadata_dev',
       :data_dev => 'data_dev'
-    }
+    },
 
     # others ...
+    's6500.ww.redhat.com' =>
+    { :metadata_dev => '/dev/loop1',
+      :metadata_size => 32768,
+      :data_dev => '/dev/loop0',
+      :data_size => 6696048,
+      :volume_size => 1097152,
+      :data_block_size => 128,
+      :low_water_mark => 1024
+    }
+
   }
 
   def Config.get_config
@@ -35,5 +45,4 @@ module Config
     end
   end
 end
-
 

@@ -12,8 +12,6 @@ class DeletionTests < ThinpTestCase
 
   def setup
     super
-
-    @size = 2097152
   end
 
   # FIXME: move into lib

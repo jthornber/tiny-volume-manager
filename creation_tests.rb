@@ -12,7 +12,6 @@ class CreationTests < ThinpTestCase
 
   def setup
     super
-    @size = 20971520
   end
 
   def test_create_lots_of_empty_thins
@@ -37,25 +36,25 @@ class CreationTests < ThinpTestCase
 
   def test_non_power_of_2_data_block_size_fails
     table = Table.new(ThinPool.new(@size, @metadata_dev, @data_dev,
-                                   @data_block_size + 57, @low_water))
+                                   @data_block_size + 57, @low_water_mark))
     assert_bad_table(table)
   end
 
   def test_too_small_data_block_size_fails
     table = Table.new(ThinPool.new(@size, @metadata_dev, @data_dev,
-                                   64, @low_water))
+                                   64, @low_water_mark))
     assert_bad_table(table)
   end
 
   def test_too_large_data_block_size_fails
     table = Table.new(ThinPool.new(@size, @metadata_dev, @data_dev,
-                                   2**21 + 1, @low_water))
+                                   2**21 + 1, @low_water_mark))
     assert_bad_table(table)
   end
 
   def test_largest_data_block_size_succeeds
     table = Table.new(ThinPool.new(@size, @metadata_dev, @data_dev,
-                                   2**21, @low_water))
+                                   2**21, @low_water_mark))
     @dm.with_dev(table) do |pool|
     end
   end
