@@ -183,8 +183,9 @@ private
         dev.load table
         dev.resume
       end
-    ensure
+    rescue Exception
       ProcessControl.run("dmsetup remove #{name}")
+      raise
     end
     dev
   end
