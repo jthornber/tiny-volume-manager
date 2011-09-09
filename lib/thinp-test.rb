@@ -4,10 +4,14 @@ require 'test/unit'
 
 #----------------------------------------------------------------
 
+$checked_prerequisites = false
+
 class ThinpTestCase < Test::Unit::TestCase
   undef_method :default_test
 
   def setup
+    check_prereqs()
+
     config = Config.get_config
     @metadata_dev = config[:metadata_dev]
     @data_dev = config[:data_dev]
@@ -73,6 +77,23 @@ class ThinpTestCase < Test::Unit::TestCase
       @dm.with_dev(table) do |pool|
       end
     end
+  end
+
+  private
+  def check_prereqs
+    return if $checked_prerequisites
+
+    # Can we find thin_repair?
+    begin
+      raise "wrong ruby version" unless RUBY_VERSION =~ /^1.8/
+      ProcessControl.run('which thin_repair')
+      ProcessControl.run('which dt')
+    ensure
+      STDERR.puts "Missing prerequisites, please check the README"
+      exit(1)
+    end
+
+    $checked_prerequisites = true
   end
 end
 
