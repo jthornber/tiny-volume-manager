@@ -31,7 +31,18 @@ module Config
       :data_size => 6696048,
       :volume_size => 1097152,
       :data_block_size => 128,
-      :low_water_mark => 1024
+      :low_water_mark => 1
+    },
+
+
+    'a4.ww.redhat.com' =>
+    { :metadata_dev => '/dev/tst_fc_enc/metadata',
+      :metadata_size => 32768,
+      :data_dev => '/dev/tst_fc_enc/pool',
+      :data_size => 838877184,
+      :volume_size => 2097152,
+      :data_block_size => 524288,
+      :low_water_mark => 5
     }
 
   }
@@ -45,4 +56,3 @@ module Config
     end
   end
 end
-
