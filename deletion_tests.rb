@@ -53,7 +53,7 @@ class DeletionTests < ThinpTestCase
       end
 
       status = pool_status(pool)
-      assert_equal(0, status.free_data_sectors)
+      assert_equal(@size - @tiny_size, status.free_data_sectors)
 
       pool.message(0, 'delete 0')
       status = pool_status(pool)
