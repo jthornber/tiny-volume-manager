@@ -88,7 +88,7 @@ class ThinpTestCase < Test::Unit::TestCase
       raise "wrong ruby version" unless RUBY_VERSION =~ /^1.8/
       ProcessControl.run('which thin_repair')
       ProcessControl.run('which dt')
-    ensure
+    rescue
       STDERR.puts "Missing prerequisites, please check the README"
       exit(1)
     end
