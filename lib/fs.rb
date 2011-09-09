@@ -16,6 +16,7 @@ module FS
     end
 
     def with_mount(mount_point)
+      Pathname.new(mount_point).mkpath
       ProcessControl.run("mount #{@dev} #{mount_point}")
       begin
         yield
