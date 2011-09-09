@@ -17,7 +17,7 @@ class ThinpTestCase < Test::Unit::TestCase
     @data_dev = config[:data_dev]
 
     @size = config[:data_size]
-    @size = 2097152 if @size.nil?
+    @size = 20971520 if @size.nil?
 
     @volume_size = config[:volume_size]
     @volume_size = 2097152 if @volume_size.nil?
