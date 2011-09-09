@@ -22,6 +22,10 @@ def open_log(path)
   $log = Logger.new(File.open(path, 'w'))
 end
 
+def set_log(l)
+  $log = Logger.new(l)
+end
+
 def fatal(*args)
   $log.fatal(*args)
 end

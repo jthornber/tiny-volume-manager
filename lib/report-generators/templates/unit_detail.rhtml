@@ -1,0 +1,25 @@
+<table width="95%" cellspacing="2" cellpadding="5" border="0" class="stripes">
+<tr><th>Test</th><th>Result</th></tr>
+<tr>
+  <td>
+  <%= name %>
+  </td>
+  <% if pass? %>
+  <td class="pass">pass</td>
+  <% else %>
+  <td class="fail">fail</td>
+  <% end %>
+</tr>
+</table>
+
+<table width="95%" cellspacing="2" cellpadding="5" border="0" class="stripes">
+<tr><th>Output</th></tr>
+<tr>
+  <td>
+  <pre>
+<%= log.string %>
+  </pre>
+  </td>
+</tr>
+</table>
+
