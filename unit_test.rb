@@ -4,6 +4,7 @@ require 'lib/report-generators/report_templates'
 require 'lib/report-generators/reports'
 require 'pathname'
 require 'stringio'
+require 'test/unit/collector/objectspace'
 require 'test/unit/ui/testrunnermediator'
 require 'test/unit/ui/testrunnerutilities'
 require 'test/unit/testsuite'
@@ -186,6 +187,65 @@ module Test
         end
       end
     end
+
+    # class ThinRunner
+    #   def self.run(force_standalone=false, default_dir=nil, argv=ARGV, &block)
+    #     r = new(force_standalone || standalone?, &block)
+    #     r.base = default_dir
+    #     r.process_args(argv)
+    #     r.run
+    #   end
+      
+    #   COLLECTORS = {
+    #     :objectspace => proc do |r|
+    #       c = Collector::ObjectSpace.new
+    #       c.filter = r.filters
+    #       c.collect($0.sub(/\.rb\Z/, ''))
+    #     end,
+    #   }
+
+    #   attr_reader :suite
+    #   attr_accessor :filters, :to_run, :base
+    #   attr_writer :runner, :collector
+
+    #   def initialize()
+    #     Unit.run = true
+    #     @runner = Test::Unit::UI::ThinTestRunner
+    #     @collector = COLLECTORS[:objectspace]
+    #     @filters = []
+    #     @to_run = []
+    #     yield(self) if(block_given?)
+    #   end
+
+    #   def process_args(args = ARGV)
+    #     begin
+    #       options.order!(args) {|arg| @to_run << arg}
+    #     rescue OptionParser::ParseError => e
+    #       puts e
+    #       puts options
+    #       $! = nil
+    #       abort
+    #     else
+    #       @filters << proc{false} unless(@filters.empty?)
+    #     end
+    #     not @to_run.empty?
+    #   end
+
+
+    #   def keyword_display(array)
+    #     list = array.collect {|e, *| e.to_s}
+    #     Array === array or list.sort!
+    #     list.collect {|e| e.sub(/^(.)([A-Za-z]+)(?=\w*$)/, '\\1[\\2]')}.join(", ")
+    #   end
+
+    #   def run
+    #     @suite = @collector[self]
+    #     result = @runner[self] or return false
+    #     Dir.chdir(@workdir) if @workdir
+    #     result.run(@suite, @output_level).passed?
+    #   end
+    # end
+
   end
 end
 
@@ -193,10 +253,59 @@ end
 
 include ReportTemplates
 
-suite = Test::Unit::TestSuite.new
-[BasicTests, CreationTests, DeletionTests, PoolResizeTests, SnapshotTests].each do |tests|
-  suite << tests.suite
+def options
+  @options ||= OptionParser.new do |o|
+    o.banner = "Thin Provisioning unit test runner."
+    o.banner << "\nUsage: #{$0} [options] [-- untouched arguments]"
+
+    o.on
+
+    o.on('-n', '--name=NAME', String,
+         "Runs tests matching NAME.",
+         "(patterns may be used).") do |n|
+      n = (%r{\A/(.*)/\Z} =~ n ? Regexp.new($1) : n)
+      case n
+      when Regexp
+        $filters << proc{|t| n =~ t.method_name ? true : nil}
+      else
+        $filters << proc{|t| n == t.method_name ? true : nil}
+      end
+    end
+
+    o.on('-t', '--testcase=TESTCASE', String,
+         "Runs tests in TestCases matching TESTCASE.",
+         "(patterns may be used).") do |n|
+      n = (%r{\A/(.*)/\Z} =~ n ? Regexp.new($1) : n)
+      case n
+      when Regexp
+        $filters << proc{|t| n =~ t.class.name ? true : nil}
+      else
+        $filters << proc{|t| n == t.class.name ? true : nil}
+      end
+    end
+  end
 end
+
+$filters = []
+
+def process_args(args = ARGV)
+  begin
+    options.order!(args) {|arg|}
+  rescue OptionParser::ParseError => e
+    puts e
+    puts options
+    $! = nil
+    abort
+  else
+    $filters << proc{false} unless($filters.empty?)
+  end
+end
+
+process_args
+
+c = Test::Unit::Collector::ObjectSpace.new
+c.filter = $filters
+suite = c.collect($0.sub(/\.rb\Z/, ''))
 
 runner = Test::Unit::UI::ThinTestRunner.new(suite, Test::Unit::UI::VERBOSE)
 runner.start
