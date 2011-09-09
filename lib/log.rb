@@ -18,6 +18,10 @@ module Log
   $log.level = Logger::DEBUG
 end
 
+def open_log(path)
+  $log = Logger.new(File.open(path, 'w'))
+end
+
 def fatal(*args)
   $log.fatal(*args)
 end
