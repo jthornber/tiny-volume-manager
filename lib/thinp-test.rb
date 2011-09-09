@@ -22,6 +22,8 @@ class ThinpTestCase < Test::Unit::TestCase
     @volume_size = config[:volume_size]
     @volume_size = 2097152 if @volume_size.nil?
 
+    @tiny_size = 8 * 1024       # 4 m
+
     @data_block_size = config[:data_block_size]
     @data_block_size = 128 if @data_block_size.nil?
 

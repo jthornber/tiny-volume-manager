@@ -48,7 +48,7 @@ class DeletionTests < ThinpTestCase
 
   def test_delete_thin
     with_standard_pool(@size) do |pool|
-      with_new_thin(pool, @size, 0) do |thin|
+      with_new_thin(pool, @tiny_size, 0) do |thin|
         wipe_device(thin)
       end
 
