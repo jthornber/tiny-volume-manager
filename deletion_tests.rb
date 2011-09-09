@@ -74,13 +74,9 @@ class DeletionTests < ThinpTestCase
   def test_delete_active_device_fails
     with_standard_pool(@size) do |pool|
       with_new_thin(pool, @size, 0) do |thin|
-        ProcessControl.sleep(5)
-
         assert_raises(RuntimeError) do
           pool.message(0, 'delete 0')
         end
-
-        Process.wait
       end
     end
   end
