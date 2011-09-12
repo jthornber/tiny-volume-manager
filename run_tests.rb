@@ -53,7 +53,7 @@ module Test
       class ThinTestRunner
         extend Test::Unit::UI::TestRunnerUtilities
 
-        attr_reader :tests
+        attr_reader :suites
 
         # Creates a new TestRunner for running the passed
         # suite. If quiet_mode is true, the output while
@@ -70,7 +70,7 @@ module Test
 
           @total_passed = 0
           @total_failed = 0
-          @tests = Array.new
+          @suites = Hash.new {|hash, key| hash[key] = Array.new}
         end
 
         # Begins the test run.
@@ -112,7 +112,7 @@ module Test
 
         def add_fault(fault)
           error(fault.long_display)
-          @tests[-1].add_fault(fault)
+          @current_test.add_fault(fault)
 
           @faults << fault
           output_single(fault.single_character_display, PROGRESS_ONLY)
@@ -135,6 +135,15 @@ module Test
           output(@result)
         end
 
+        def decompose_name(name)
+          m = name.match(/test_(.*)[(](.*)[)]/)
+          if m
+            [m[2], m[1]]
+          else
+            ['anonymous', name]
+          end
+        end
+
         def result_file(name)
           "./reports/#{mangle(name)}.result"
         end
@@ -144,9 +153,11 @@ module Test
         end
 
         def test_started(name)
-          to = TestOutcome.new(name)
-          set_log(to.log)
-          @tests << to
+          suite, n = decompose_name(name)
+          t = TestOutcome.new(n)
+          set_log(t.log)
+          @current_test = t
+          @suites[suite] << t
           output_single(name + ": ", VERBOSE)
         end
 
@@ -156,16 +167,24 @@ module Test
           @already_outputted = false
         end
 
+        def total_tests
+          sum = 0
+          @suites.values.each {|s| sum += s.size}
+          sum
+        end
+
         def total_passed
           sum = 0
-          @tests.each do |t|
-            sum = sum + 1 if t.pass?
+          @suites.values.each do |s|
+            s.each do |t|
+              sum = sum + 1 if t.pass?
+            end
           end
           sum
         end
 
         def total_failed
-          @tests.size - total_passed
+          total_tests - total_passed
         end
 
         def nl(level=NORMAL)
@@ -250,9 +269,11 @@ suite = c.collect($0.sub(/\.rb\Z/, ''))
 
 runner = Test::Unit::UI::ThinTestRunner.new(suite, Test::Unit::UI::VERBOSE)
 runner.start
-runner.tests.each do |t|
-  STDERR.puts "generating report for #{t.name}"
-  generate_report(:unit_detail, t.get_binding, Pathname.new("reports/#{mangle(t.name)}.html"))
+runner.suites.each do |s, ts|
+  ts.each do |t|
+    STDERR.puts "generating report for #{s}__#{t.name}"
+    generate_report(:unit_detail, t.get_binding, Pathname.new("reports/#{mangle(s + "__" + t.name)}.html"))
+  end
 end
 generate_report(:unit_test, runner.get_binding)
 

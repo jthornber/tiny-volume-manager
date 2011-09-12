@@ -4,11 +4,12 @@
 </table>
 
 <table width="95%" cellspacing="2" cellpadding="5" border="0" class="stripes">
-<tr><th>Test</th><th>Result</th></tr>
-<% @tests.each do |t| %>
+<% @suites.each do |k, s| %>
+<tr><th><%= k %></th><th>Result</th></tr>
+<% s.each do |t| %>
 <tr>
   <td>
-  <a href="<%= mangle(t.name) %>.html"><%= t.name %></a>
+  <a href="<%= k %>__<%= mangle(t.name) %>.html"><%= t.name %></a>
   </td>
   <% if t.pass? %>
   <td class="pass">pass</td>
@@ -16,5 +17,6 @@
   <td class="fail">fail</td>
   <% end %>
 </tr>
+<% end %>
 <% end %>
 </table>
