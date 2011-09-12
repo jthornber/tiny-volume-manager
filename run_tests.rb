@@ -187,65 +187,6 @@ module Test
         end
       end
     end
-
-    # class ThinRunner
-    #   def self.run(force_standalone=false, default_dir=nil, argv=ARGV, &block)
-    #     r = new(force_standalone || standalone?, &block)
-    #     r.base = default_dir
-    #     r.process_args(argv)
-    #     r.run
-    #   end
-      
-    #   COLLECTORS = {
-    #     :objectspace => proc do |r|
-    #       c = Collector::ObjectSpace.new
-    #       c.filter = r.filters
-    #       c.collect($0.sub(/\.rb\Z/, ''))
-    #     end,
-    #   }
-
-    #   attr_reader :suite
-    #   attr_accessor :filters, :to_run, :base
-    #   attr_writer :runner, :collector
-
-    #   def initialize()
-    #     Unit.run = true
-    #     @runner = Test::Unit::UI::ThinTestRunner
-    #     @collector = COLLECTORS[:objectspace]
-    #     @filters = []
-    #     @to_run = []
-    #     yield(self) if(block_given?)
-    #   end
-
-    #   def process_args(args = ARGV)
-    #     begin
-    #       options.order!(args) {|arg| @to_run << arg}
-    #     rescue OptionParser::ParseError => e
-    #       puts e
-    #       puts options
-    #       $! = nil
-    #       abort
-    #     else
-    #       @filters << proc{false} unless(@filters.empty?)
-    #     end
-    #     not @to_run.empty?
-    #   end
-
-
-    #   def keyword_display(array)
-    #     list = array.collect {|e, *| e.to_s}
-    #     Array === array or list.sort!
-    #     list.collect {|e| e.sub(/^(.)([A-Za-z]+)(?=\w*$)/, '\\1[\\2]')}.join(", ")
-    #   end
-
-    #   def run
-    #     @suite = @collector[self]
-    #     result = @runner[self] or return false
-    #     Dir.chdir(@workdir) if @workdir
-    #     result.run(@suite, @output_level).passed?
-    #   end
-    # end
-
   end
 end
 
@@ -314,5 +255,15 @@ runner.tests.each do |t|
   generate_report(:unit_detail, t.get_binding, Pathname.new("reports/#{mangle(t.name)}.html"))
 end
 generate_report(:unit_test, runner.get_binding)
+
+# Generate the index page
+
+reports = ReportRegister.new
+
+def safe_mtime(r)
+  r.path.file? ? r.path.mtime.to_s : "not generated"
+end
+
+generate_report(:index, binding)
 
 #----------------------------------------------------------------

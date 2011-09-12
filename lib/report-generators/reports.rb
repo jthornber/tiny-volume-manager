@@ -44,6 +44,12 @@ module Reports
                  "unit test detail",
                  Pathname.new("reports/unit_detail.html"), # FIXME replace this with a lambda
                  Pathname.new("unit_detail.rhtml"))
+
+      add_report(:index,
+                 "Index",
+                 "Reports index",
+                 Pathname.new("reports/index.html"),
+                 Pathname.new("index.rhtml"))
     end
 
     def get_report(sym)
