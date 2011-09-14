@@ -53,7 +53,6 @@ class DeletionTests < ThinpTestCase
       end
 
       0.upto(999) do |i|
-        STDERR.puts "there'd be #{i} thin devices, sitting on the wall"
         pool.message(0, "delete #{i}")
       end
     end
@@ -65,13 +64,9 @@ class DeletionTests < ThinpTestCase
         pool.message(0, "create_thin #{i}")
       end
 
-      0.upto(10) do |iteration|
-        STDERR.puts "iteration #{iteration}"
-
-        0.upto(999) do |i|
-          pool.message(0, "delete #{i}")
-          pool.message(0, "create_thin #{i}")
-        end
+      0.upto(999) do |i|
+        pool.message(0, "delete #{i}")
+        pool.message(0, "create_thin #{i}")
       end
     end
   end
