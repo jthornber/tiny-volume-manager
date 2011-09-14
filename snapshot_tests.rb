@@ -185,6 +185,26 @@ class SnapshotTests < ThinpTestCase
   def test_break_sharing_ext4
     do_break_sharing(:ext4)
   end
+
+  def test_many_snapshots_of_same_volume
+    with_standard_pool(@size) do |pool|
+      with_new_thin(pool, @volume_size, 0) do |thin|
+        dt_device(thin)
+
+        thin.pause do
+          1.upto(1000) do |id|
+            pool.message(0, "create_snap #{id} 0")
+          end
+        end
+
+        dt_device(thin)
+      end
+
+      with_thin(pool, @volume_size, 1) do |thin|
+        dt_device(thin)
+      end
+    end
+  end
 end
 
 #----------------------------------------------------------------
