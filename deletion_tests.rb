@@ -39,9 +39,39 @@ class DeletionTests < ThinpTestCase
 
   def test_create_delete_cycle
     with_standard_pool(@size) do |pool|
-      10.times do
+      1000.times do
         pool.message(0, "create_thin 0")
         pool.message(0, "delete 0")
+      end
+    end
+  end
+
+  def test_create_many_thins_then_delete_them
+    with_standard_pool(@size) do |pool|
+      0.upto(999) do |i|
+        pool.message(0, "create_thin #{i}")
+      end
+
+      0.upto(999) do |i|
+        STDERR.puts "there'd be #{i} thin devices, sitting on the wall"
+        pool.message(0, "delete #{i}")
+      end
+    end
+  end
+
+  def test_rolling_create_delete
+    with_standard_pool(@size) do |pool|
+      0.upto(999) do |i|
+        pool.message(0, "create_thin #{i}")
+      end
+
+      0.upto(10) do |iteration|
+        STDERR.puts "iteration #{iteration}"
+
+        0.upto(999) do |i|
+          pool.message(0, "delete #{i}")
+          pool.message(0, "create_thin #{i}")
+        end
       end
     end
   end
