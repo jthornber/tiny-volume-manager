@@ -64,7 +64,7 @@ class ThinpTestCase < Test::Unit::TestCase
 
   def with_thins(pool, size, *ids, &block)
     tables = ids.map {|id| Table.new(Thin.new(size, pool, id))}
-    @dm.with_devs(tables, &block)
+    @dm.with_devs(*tables, &block)
   end
 
   def with_new_snap(pool, size, id, origin, thin = nil, &block)

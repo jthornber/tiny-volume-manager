@@ -208,7 +208,7 @@ class SnapshotTests < ThinpTestCase
 
   def in_parallel(ary, &block)
     threads = Array.new
-    arg.each do |entry|
+    ary.each do |entry|
       threads << Thread.new(entry) do |e|
         block.call(e)
       end
