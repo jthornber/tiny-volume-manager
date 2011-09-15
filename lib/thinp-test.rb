@@ -79,6 +79,17 @@ class ThinpTestCase < Test::Unit::TestCase
     end
   end
 
+  def in_parallel(ary, &block)
+    threads = Array.new
+    ary.each do |entry|
+      threads << Thread.new(entry) do |e|
+        block.call(e)
+      end
+    end
+
+    threads.each {|t| t.join}
+  end
+
   def assert_bad_table(table)
     assert_raises(RuntimeError) do
       @dm.with_dev(table) do |pool|
