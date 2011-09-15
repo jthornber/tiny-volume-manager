@@ -13,27 +13,29 @@ module ProcessControl
     stderr_output = Array.new
 
     exit_status = 255
-    pid, i, o, e = Open4.popen4(cmd_line)
+    Open4.popen4(cmd_line) do |pid, i, o, e|
 
-    i.close_write
+      i.close_write
 
-    # kick off threads to gather output
-    stdout_tid = Thread.new do
-      while line = o.gets
-        stdout_output << line.chomp
+      # kick off threads to gather output
+      stdout_tid = Thread.new do
+        while line = o.gets
+          stdout_output << line.chomp
+        end
       end
+
+      stderr_tid = Thread.new do
+        while line = e.gets
+          stderr_output << line.chomp
+        end
+      end
+
+      stdout_tid.join
+      stderr_tid.join
+
+      _, exit_status = Process.waitpid2(pid)
     end
 
-    stderr_tid = Thread.new do
-      while line = e.gets
-        stderr_output << line.chomp
-      end
-    end
-
-    stdout_tid.join
-    stderr_tid.join
-
-    _, exit_status = Process.waitpid2(pid)
 
     if stdout_output.length > 0
       debug "stdout:\n" + stdout_output.map {|l| "    " + l}.join("\n")
