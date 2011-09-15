@@ -168,6 +168,26 @@ class DMInterface
     end
   end
 
+  def with_devs(*tables)
+    devs = Array.new
+
+    begin
+      tables.each do |table|
+        devs << create(table)
+      end
+
+      yield(devs)
+    ensure
+      devs.each do |dev|
+        begin
+          dev.remove
+          dev.post_remove_check
+        rescue
+        end
+      end
+    end
+  end
+
   def mk_dev(table = nil)
     create(table)
   end
