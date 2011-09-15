@@ -206,17 +206,6 @@ class SnapshotTests < ThinpTestCase
     end
   end
 
-  def in_parallel(ary, &block)
-    threads = Array.new
-    ary.each do |entry|
-      threads << Thread.new(entry) do |e|
-        block.call(e)
-      end
-    end
-
-    threads.each {|t| t.join}
-  end
-
   def test_parallel_io_to_shared_thins
     with_standard_pool(@size) do |pool|
       with_new_thin(pool, @volume_size, 0) do |thin|
