@@ -13,7 +13,7 @@ module ProcessControl
     stderr_output = Array.new
 
     exit_status = 255
-    Open4.popen4(cmd_line) do |pid, i, o, e|
+    exit_status = Open4.popen4(cmd_line) do |pid, i, o, e|
 
       i.close_write
 
@@ -32,8 +32,6 @@ module ProcessControl
 
       stdout_tid.join
       stderr_tid.join
-
-      _, exit_status = Process.waitpid2(pid)
     end
 
 
