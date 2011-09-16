@@ -205,6 +205,22 @@ class SnapshotTests < ThinpTestCase
       end
     end
   end
+
+  def test_parallel_io_to_shared_thins
+    with_standard_pool(@size) do |pool|
+      with_new_thin(pool, @volume_size, 0) do |thin|
+        wipe_device(thin)
+      end
+
+      1.upto(5) do |id|
+        pool.message(0, "create_snap #{id} 0")
+      end
+
+      with_thins(pool, @volume_size, 0, 1, 2, 3, 4, 5) do |thins|
+        in_parallel(thins) {|thin| dt_device(thin)}
+      end
+    end
+  end
 end
 
 #----------------------------------------------------------------
