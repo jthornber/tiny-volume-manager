@@ -2,7 +2,6 @@ require 'lib/tvm'
 
 #----------------------------------------------------------------
 
-# This is just checking
 class TinyVolumeManagerTests < Test::Unit::TestCase
   def segment_total(segs)
     total = 0
