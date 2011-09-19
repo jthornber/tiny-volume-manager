@@ -1,0 +1,35 @@
+* Interface Scenarios [0/4]
+  
+We need many more tests, particularly ones that check the correctness
+of the interface.
+
+  - [ ] is the low_water_mark being acted upon correctly?
+    - is it given in blocks or sectors?
+    - does it send the event at the correct level?  (tests with a variety of levels, including 0)
+    - does it only send 1 event?
+    - does a reload (not resize) trigger a subsequent event (it should)?
+  
+  - [ ] is the free data space reported correctly?
+    - If there is no free space does provisioning a new block ... err ... block?
+  
+  - [ ] is the free metadata reported correctly?
+
+  - [ ] check we have tests for transaction id (I think I already did these)
+    - getting old transaction id wrong results in failure of the ioctl.
+    - status reports new one
+
+* Multiple pool scenarios [/]
+
+Very similar to the current bunch of tests, except we want things
+happening in parallel on separate pools.  Be nice to reuse existing
+code.  Have to get the TinyVolumeManager up and running first.
+
+* Infrastructure
+
+  - [ ] Implement a little TinyVolumeManager class, that creates
+    linear volumes that we can use as metadata or data devices.  Keep
+    this very simple - linear volumes only.
+
+
+
+
