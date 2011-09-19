@@ -11,7 +11,10 @@ require 'test/unit/testsuite'
 
 require 'pp'
 
-# test suites
+# library test suites
+require 'tvm_tests'
+
+# thinp test suites
 require 'basic_tests'
 require 'pool_resize_tests'
 require 'creation_tests'
