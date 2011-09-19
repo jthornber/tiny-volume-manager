@@ -4,9 +4,7 @@ require 'lib/tvm'
 
 class TinyVolumeManagerTests < Test::Unit::TestCase
   def segment_total(segs)
-    total = 0
-    segs.each {|s| total = total + s.length}
-    total
+    segs.inject(0) {|sum, s| sum + s.length}
   end
 
   def test_alloc_too_big_fails
