@@ -72,6 +72,16 @@ class CreationTests < ThinpTestCase
       pool.message(0, "create_thin #{2**24 - 1}")
     end
   end
+
+  def test_two_pools_pointing_to_the_same_metadata_fails
+    assert_raises(RuntimeError) do
+      with_standard_pool(@size) do |pool1|
+        with_standard_pool(@size) do |pool2|
+          # shouldn't get here
+        end
+      end
+    end
+  end
 end
 
 #----------------------------------------------------------------
