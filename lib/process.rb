@@ -4,7 +4,38 @@ require 'lib/log'
 #----------------------------------------------------------------
 
 module ProcessControl
-  def ProcessControl.really_run(*cmd)
+  class LogConsumer
+    attr_reader :stdout_lines, :stderr_lines
+
+    def initialize
+      @stdout_lines = Array.new
+      @stderr_lines = Array.new
+    end
+
+    def self.log_array(nm, a)
+      if a.length > 0
+        debug "#{nm}:\n" + a.map {|l| "    " + l}.join("\n")
+      end
+    end
+
+    def stdout(line)
+      @stdout_lines << line
+    end
+
+    def stdout_end
+      LogConsumer.log_array('stdout', @stdout_lines)
+    end
+
+    def stderr(line)
+      @stderr_lines << line
+    end
+
+    def stderr_end
+      LogConsumer.log_array('stderr', @stderr_lines)
+    end
+  end
+
+  def ProcessControl.really_run(consumer, *cmd)
     cmd_line = cmd.join(' ')
     debug "executing: '#{cmd_line}'"
 
@@ -31,21 +62,20 @@ module ProcessControl
     cld_out[1].close
     cld_err[1].close
 
-    stdout_output = Array.new
-    stderr_output = Array.new
-
     # kick off threads to gather output
     stdout_tid = Thread.new(cld_out[0]) do |p|
       while line = p.gets
-        stdout_output << line.chomp
+        consumer.stdout(line.chomp)
       end
+      consumer.stdout_end
       p.close
     end
 
     stderr_tid = Thread.new(cld_err[0]) do |p|
       while line = p.gets
-        stderr_output << line.chomp
+        consumer.stderr(line.chomp)
       end
+      consumer.stderr_end
       p.close
     end
 
@@ -54,24 +84,20 @@ module ProcessControl
 
     pid, exit_status = Process.wait2(pid)
 
-    if stdout_output.length > 0
-      debug "stdout:\n" + stdout_output.map {|l| "    " + l}.join("\n")
-    end
-
-    if stderr_output.length > 0
-      debug "stderr:\n" + stderr_output.map {|l| "    " + l}.join("\n")
-    end
-
     if exit_status != 0
       debug "command failed with '#{exit_status}'"
       raise RuntimeError, "command failed"
     end
 
-    stdout_output.join("\n");
+    exit_status
   end
 
   def ProcessControl.run_(default, *cmd)
-    DryRun.run(default) {ProcessControl.really_run(*cmd)}
+    DryRun.run(default) do
+      c = LogConsumer.new
+      ProcessControl.really_run(c, *cmd)
+      c.stdout_lines.join("\n")
+    end
   end
 
   def ProcessControl.system(default, *cmd)
