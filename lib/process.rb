@@ -1,6 +1,5 @@
 require 'lib/dry_run'
 require 'lib/log'
-require 'lib/open4'
 
 #----------------------------------------------------------------
 
@@ -9,31 +8,51 @@ module ProcessControl
     cmd_line = cmd.join(' ')
     debug "executing: '#{cmd_line}'"
 
+    cld_in = IO.pipe
+    cld_out = IO.pipe
+    cld_err = IO.pipe
+
+    pid = fork do
+      cld_in[1].close
+      cld_out[0].close
+      cld_err[0].close
+
+      STDIN.reopen(cld_in[0])
+      STDOUT.reopen(cld_out[1])
+      STDERR.reopen(cld_err[1])
+
+      exec(cmd_line)
+    end
+
+    # we're not sending any input yet
+    cld_in[0].close
+    cld_in[1].close
+
+    cld_out[1].close
+    cld_err[1].close
+
     stdout_output = Array.new
     stderr_output = Array.new
 
-    exit_status = 255
-    exit_status = Open4.popen4(cmd_line) do |pid, i, o, e|
-
-      i.close_write
-
-      # kick off threads to gather output
-      stdout_tid = Thread.new do
-        while line = o.gets
-          stdout_output << line.chomp
-        end
+    # kick off threads to gather output
+    stdout_tid = Thread.new(cld_out[0]) do |p|
+      while line = p.gets
+        stdout_output << line.chomp
       end
-
-      stderr_tid = Thread.new do
-        while line = e.gets
-          stderr_output << line.chomp
-        end
-      end
-
-      stdout_tid.join
-      stderr_tid.join
+      p.close
     end
 
+    stderr_tid = Thread.new(cld_err[0]) do |p|
+      while line = p.gets
+        stderr_output << line.chomp
+      end
+      p.close
+    end
+
+    stdout_tid.join
+    stderr_tid.join
+
+    pid, exit_status = Process.wait2(pid)
 
     if stdout_output.length > 0
       debug "stdout:\n" + stdout_output.map {|l| "    " + l}.join("\n")
