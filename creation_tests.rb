@@ -82,6 +82,20 @@ class CreationTests < ThinpTestCase
       end
     end
   end
+
+  def test_huge_block_size
+    size = @size
+    data_block_size = 524288
+    volume_size = 524288
+    lwm = 5
+    table = Table.new(ThinPool.new(size, @metadata_dev, @data_dev,
+                                   data_block_size, lwm))
+    @dm.with_dev(table) do |pool|
+      with_new_thin(pool, volume_size, 0) do |thin|
+        dt_device(thin)
+      end
+    end
+  end
 end
 
 #----------------------------------------------------------------
