@@ -10,10 +10,6 @@ require 'lib/thinp-test'
 class CreationTests < ThinpTestCase
   include Utils
 
-  def setup
-    super
-  end
-
   def test_create_lots_of_empty_thins
     with_standard_pool(@size) do |pool|
       0.upto(1000) {|i| pool.message(0, "create_thin #{i}") }
@@ -70,16 +66,6 @@ class CreationTests < ThinpTestCase
   def test_largest_dev_t_succeeds
     with_standard_pool(@size) do |pool|
       pool.message(0, "create_thin #{2**24 - 1}")
-    end
-  end
-
-  def test_two_pools_pointing_to_the_same_metadata_fails
-    assert_raises(RuntimeError) do
-      with_standard_pool(@size) do |pool1|
-        with_standard_pool(@size) do |pool2|
-          # shouldn't get here
-        end
-      end
     end
   end
 

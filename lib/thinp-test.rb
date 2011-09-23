@@ -51,6 +51,14 @@ class ThinpTestCase < Test::Unit::TestCase
     end
   end
 
+  def with_dev(table, &block)
+    @dm.with_dev(table, &block)
+  end
+
+  def with_devs(*tables, &block)
+    @dm.with_devs(*tables, &block)
+  end
+
   def with_thin(pool, size, id)
     @dm.with_dev(Table.new(Thin.new(size, pool, id))) do |thin|
       yield(thin)

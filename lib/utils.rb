@@ -1,11 +1,15 @@
 require 'lib/process'
 
 module Utils
-  def wipe_device(dev_or_path, sectors = nil)
-    dev_size = ProcessControl.system("102400", "blockdev --getsize #{dev_or_path}").chomp.to_i
+  def dev_size(dev_or_path)
+    ProcessControl.system("102400", "blockdev --getsize #{dev_or_path}").chomp.to_i
+  end
 
-    if sectors.nil? || dev_size < sectors
-      sectors = dev_size
+  def wipe_device(dev_or_path, sectors = nil)
+    size = dev_size(dev_or_path)
+
+    if sectors.nil? || size < sectors
+      sectors = size
     end
 
     block_size = 2048 * 64       # 64 M

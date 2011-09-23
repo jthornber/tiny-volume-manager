@@ -176,7 +176,7 @@ class DMInterface
         devs << create(table)
       end
 
-      yield(devs)
+      yield(*devs)
     ensure
       devs.each do |dev|
         begin

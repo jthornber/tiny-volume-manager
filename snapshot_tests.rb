@@ -216,8 +216,8 @@ class SnapshotTests < ThinpTestCase
         pool.message(0, "create_snap #{id} 0")
       end
 
-      with_thins(pool, @volume_size, 0, 1, 2, 3, 4, 5) do |thins|
-        in_parallel(thins) {|thin| dt_device(thin)}
+      with_thins(pool, @volume_size, 0, 1, 2, 3, 4, 5) do |*thins|
+        in_parallel(*thins) {|thin| dt_device(thin)}
       end
     end
   end
