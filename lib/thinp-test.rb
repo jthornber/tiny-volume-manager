@@ -87,7 +87,7 @@ class ThinpTestCase < Test::Unit::TestCase
     end
   end
 
-  def in_parallel(ary, &block)
+  def in_parallel(*ary, &block)
     threads = Array.new
     ary.each do |entry|
       threads << Thread.new(entry) do |e|
