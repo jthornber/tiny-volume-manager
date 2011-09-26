@@ -81,6 +81,19 @@ class PoolResizeTests < ThinpTestCase
   def test_resize_io
     resize_io_many(8)
   end
+
+  def test_reload_an_empty_table
+    with_standard_pool(@size) do |pool|
+      with_new_thin(pool, @volume_size, 0) do |thin|
+        fork {wipe_device(thin)}
+
+        sleep 5
+        empty = Table.new
+        pool.load(empty)
+        pool.resume
+      end
+    end
+  end
 end
 
 #----------------------------------------------------------------
