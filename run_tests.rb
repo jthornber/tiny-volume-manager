@@ -13,6 +13,7 @@ require 'pp'
 
 # library test suites
 require 'tvm_tests'
+require 'process_tests'
 
 # thinp test suites
 require 'basic_tests'
@@ -20,6 +21,7 @@ require 'pool_resize_tests'
 require 'creation_tests'
 require 'deletion_tests'
 require 'snapshot_tests'
+require 'multiple_pool_tests'
 
 #----------------------------------------------------------------
 
