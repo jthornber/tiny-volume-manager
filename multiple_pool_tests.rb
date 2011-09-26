@@ -24,24 +24,25 @@ class MultiplePoolTests < ThinpTestCase
     # carve up the data device into two metadata volumes and two data
     # volumes.
     tvm = TinyVolumeManager.new
-    tvm.add_allocation_volume('data pv', 0, dev_size(@data_volume))
+    tvm.add_allocation_volume(@data_dev, 0, dev_size(@data_dev))
 
     md_size = tvm.free_space / 16
     1.upto(2) do |i|
       tvm.add_volume(VolumeDescription.new("md_#{i}", md_size))
     end
 
-    data_size = tvm.free_space / 4
+    block_size = 128
+    data_size = (tvm.free_space / 8) / block_size * block_size
     1.upto(2) do |i|
       tvm.add_volume(VolumeDescription.new("data_#{i}", data_size))
     end
 
     # Activate.  We need a component that automates this from a
     # description of the system.
-    with_devs(tvm.get_table('md_1'),
-              tvm.get_table('md_2'),
-              tvm.get_table('data_1'),
-              tvm.get_table('data_2')) do |md_1, md_2, data_1, data_2|
+    with_devs(tvm.table('md_1'),
+              tvm.table('md_2'),
+              tvm.table('data_1'),
+              tvm.table('data_2')) do |md_1, md_2, data_1, data_2|
 
       # zero the metadata so we get a fresh pool
       wipe_device(md_1, 8)
