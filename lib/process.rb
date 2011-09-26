@@ -85,8 +85,8 @@ module ProcessControl
     pid, exit_status = Process.wait2(pid)
 
     if exit_status != 0
-      debug "command failed with '#{exit_status}'"
-      raise RuntimeError, "command failed"
+      debug "command failed with '#{exit_status}': #{cmd_line}"
+      raise RuntimeError, "command failed: #{cmd_line}"
     end
 
     exit_status
