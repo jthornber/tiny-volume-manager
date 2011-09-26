@@ -59,4 +59,40 @@ class MultiplePoolTests < ThinpTestCase
       end
     end
   end
+
+  # creates a pool on dev, and creates as big a thin as possible on
+  # that
+  def with_pool_volume(dev)
+    tvm = TinyVolumeManager.new
+    tvm.add_allocation_volume(dev, 0, dev_size(dev))
+
+    md_size = tvm.free_space / 16
+    tvm.add_volume(VolumeDescription.new('md', md_size))
+    block_size = 128
+    data_size = tvm.free_space
+    tvm.add_volume(VolumeDescription.new('data', data_size))
+
+    with_devs(tvm.table('md'),
+              tvm.table('data')) do |md, data|
+
+      # zero the metadata so we get a fresh pool
+      wipe_device(md, 8)
+
+      with_devs(Table.new(ThinPool.new(data_size, md, data, 128, 0))) do |pool|
+        with_new_thin(pool, data_size, 0) do |thin|
+          yield(thin)
+        end
+      end
+    end
+  end
+
+  def test_stacked_pools
+    with_pool_volume(@data_dev) do |layer1|
+      with_pool_volume(layer1) do |layer2|
+        with_pool_volume(layer2) do |layer3|
+          dt_device(layer3)
+        end
+      end
+    end
+  end
 end
