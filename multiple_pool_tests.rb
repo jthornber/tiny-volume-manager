@@ -9,6 +9,7 @@ require 'lib/thinp-test'
 
 class MultiplePoolTests < ThinpTestCase
   include Utils
+  include TinyVolumeManager
 
   def test_two_pools_pointing_to_the_same_metadata_fails
     assert_raises(RuntimeError) do
@@ -23,7 +24,7 @@ class MultiplePoolTests < ThinpTestCase
   def test_two_pools_can_create_thins
     # carve up the data device into two metadata volumes and two data
     # volumes.
-    tvm = TinyVolumeManager.new
+    tvm = VM.new
     tvm.add_allocation_volume(@data_dev, 0, dev_size(@data_dev))
 
     md_size = tvm.free_space / 16
@@ -63,7 +64,7 @@ class MultiplePoolTests < ThinpTestCase
   # creates a pool on dev, and creates as big a thin as possible on
   # that
   def with_pool_volume(dev, max_size = nil)
-    tvm = TinyVolumeManager.new
+    tvm = VM.new
     ds = dev_size(dev)
     ds = [ds, max_size].min unless max_size.nil?
     tvm.add_allocation_volume(dev, 0, ds)
