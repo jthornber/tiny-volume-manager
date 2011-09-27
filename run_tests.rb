@@ -14,6 +14,7 @@ require 'pp'
 # library test suites
 require 'tvm_tests'
 require 'process_tests'
+require 'prelude_tests'
 
 # thinp test suites
 require 'basic_tests'
