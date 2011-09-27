@@ -15,15 +15,10 @@ module FS
       ProcessControl.run("mkfs.ext4 #{@dev}")
     end
 
-    def with_mount(mount_point)
+    def with_mount(mount_point, &block)
       Pathname.new(mount_point).mkpath
       ProcessControl.run("mount #{@dev} #{mount_point}")
-      begin
-        yield
-      ensure
-        ProcessControl.run("umount #{mount_point}")
-        check
-      end
+      bracket_(lambda {ProcessControl.run("umount #{mount_point}"); check}, &block)
     end
 
     def check
@@ -43,14 +38,10 @@ module FS
       ProcessControl.run("mkfs.xfs -f #{@dev}")
     end
 
-    def with_mount(mount_point)
+    def with_mount(mount_point, &block)
       ProcessControl.run("mount -o nouuid #{@dev} #{mount_point}")
-      begin
-        yield
-      ensure
-        ProcessControl.run("umount #{mount_point}")
-        check
-      end
+      bracket_(lambda {ProcessControl.run("umount #{mount_point}"); check},
+               &block)
     end
 
     def check

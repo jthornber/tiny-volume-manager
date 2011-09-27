@@ -88,11 +88,7 @@ class DMDev
 
   def pause(&block)
     suspend
-    begin
-      yield
-    ensure
-      resume
-    end
+    bracket_(method(:resume), &block)
   end
 
   def resume()
@@ -157,27 +153,14 @@ class DMEventTracker
 end
 
 class DMInterface
-  def with_dev(table = nil)
-    dev = create(table)
-
-    begin
-      yield(dev)
-    ensure
-      dev.remove
-      dev.post_remove_check
-    end
+  def with_dev(table = nil, &block)
+    bracket(create(table),
+            lambda {|dev| dev.remove; dev.post_remove_check},
+            &block)
   end
 
-  def with_devs(*tables)
-    devs = Array.new
-
-    begin
-      tables.each do |table|
-        devs << create(table)
-      end
-
-      yield(*devs)
-    ensure
+  def with_devs(*tables, &block)
+    release = lambda do |devs|
       devs.each do |dev|
         begin
           dev.remove
@@ -185,6 +168,14 @@ class DMInterface
         rescue
         end
       end
+    end
+
+    bracket(Array.new, release) do |devs|
+      tables.each do |table|
+        devs << create(table)
+      end
+
+      block.call(*devs)
     end
   end
 
@@ -194,20 +185,16 @@ class DMInterface
 
 private
   def create(table = nil)
-    name = create_name()
-
+    name = create_name
     ProcessControl.run("dmsetup create #{name} --notable")
-    begin
+    bracket_(lambda {|name| ProcessControl.run("dmsetup remove #{name}")}) do
       dev = DMDev.new(name, self)
       unless table.nil?
         dev.load table
         dev.resume
       end
-    rescue Exception
-      ProcessControl.run("dmsetup remove #{name}")
-      raise
+      dev
     end
-    dev
   end
 
   def create_name()
