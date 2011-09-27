@@ -40,6 +40,27 @@ class PreludeTests < Test::Unit::TestCase
     assert_equal 0, @count
   end
 
+  def test_bracket__normal_path
+    tidied = false
+    v = bracket_(lambda {tidied = true}) do
+      5
+    end
+
+    assert_equal 5, v
+    assert tidied
+  end
+
+  def test_bracket__fail
+    tidied = false
+    assert_raises(RuntimeError, 'bang!') do
+      v = bracket_(lambda {tidied = true}) do
+        raise RuntimeError, 'bang!'
+      end
+    end
+
+    assert tidied
+  end
+
   def test_protect_normal_path
     tidied = false
     v = protect(5, lambda {|n| tidied = true}) do |n|
@@ -54,6 +75,27 @@ class PreludeTests < Test::Unit::TestCase
     tidied = false
     assert_raises(RuntimeError, 'bang!') do
       v = protect(5, lambda {|n| tidied = true}) do |n|
+        raise RuntimeError, 'bang!'
+      end
+    end
+
+    assert tidied
+  end
+
+  def test_protect__normal_path
+    tidied = false
+    v = protect_(lambda {tidied = true}) do
+      5
+    end
+
+    assert_equal 5, v
+    assert !tidied
+  end
+
+  def test_protect__fail_path
+    tidied = false
+    assert_raises(RuntimeError, 'bang!') do
+      v = protect_(lambda {tidied = true}) do
         raise RuntimeError, 'bang!'
       end
     end
