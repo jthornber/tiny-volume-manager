@@ -187,7 +187,7 @@ private
   def create(table = nil)
     name = create_name
     ProcessControl.run("dmsetup create #{name} --notable")
-    bracket_(lambda {|name| ProcessControl.run("dmsetup remove #{name}")}) do
+    protect_(lambda {ProcessControl.run("dmsetup remove #{name}")}) do
       dev = DMDev.new(name, self)
       unless table.nil?
         dev.load table
