@@ -3,12 +3,14 @@ require 'lib/tvm'
 #----------------------------------------------------------------
 
 class TinyVolumeManagerTests < Test::Unit::TestCase
+  include TinyVolumeManager
+
   def segment_total(segs)
     segs.inject(0) {|sum, s| sum + s.length}
   end
 
   def test_alloc_too_big_fails
-    tvm = TinyVolumeManager.new
+    tvm = TinyVolumeManager::VM.new
     tvm.add_allocation_volume('little_disk', 0, 1000)
     assert_raises(RuntimeError) do
       tvm.add_volume(VolumeDescription.new('vol1', 1001))
@@ -16,7 +18,7 @@ class TinyVolumeManagerTests < Test::Unit::TestCase
   end
 
   def test_alloc_all_space_succeeds
-    tvm = TinyVolumeManager.new
+    tvm = TinyVolumeManager::VM.new
     tvm.add_allocation_volume('little_disk', 0, 1000)
     tvm.add_volume(VolumeDescription.new('vol1', 1000))
 
@@ -24,7 +26,7 @@ class TinyVolumeManagerTests < Test::Unit::TestCase
   end
 
   def test_alloc_many_volumes
-    tvm = TinyVolumeManager.new
+    tvm = VM.new
     tvm.add_allocation_volume('little_disk', 0, 1000)
 
     1.upto(10) do |i|
@@ -50,7 +52,7 @@ class TinyVolumeManagerTests < Test::Unit::TestCase
       s -= l
     end
 
-    tvm = TinyVolumeManager.new
+    tvm = VM.new
     tvm.add_allocation_volume("disk", 0, space)
     10000.times do
       v = rand(descs.size)
@@ -63,7 +65,7 @@ class TinyVolumeManagerTests < Test::Unit::TestCase
   end
 
   def test_remove_frees_space
-    tvm = TinyVolumeManager.new
+    tvm = VM.new
     tvm.add_allocation_volume('little_disk', 0, 1000)
 
     1.upto(10) do |i|
