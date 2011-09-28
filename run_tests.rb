@@ -244,9 +244,38 @@ def options
       n = (%r{\A/(.*)/\Z} =~ n ? Regexp.new($1) : n)
       case n
       when Regexp
-        $filters << proc{|t| n =~ t.class.name ? true : nil}
+        $filters << proc {|t| n =~ t.class.name ? true : nil}
       else
-        $filters << proc{|t| n == t.class.name ? true : nil}
+        $filters << proc {|t| n == t.class.name ? true : nil}
+      end
+    end
+
+    o.on('-T', '--tags=TAGS', String,
+         "Runs tests tagged with the tag.") do |n|
+      n = (%r{\A/(.*)/\Z} =~ n ? Regexp.new($1) : n)
+      case n
+      when Regexp
+        $filters << lambda do |t|
+          begin
+            tags = t.class.get_tags(t.method_name.to_sym)
+            tags.any? do |tag|
+              n =~ tag.to_s
+            end ? true : nil
+          rescue
+            nil
+          end
+        end
+      else
+        $filters << lambda do |t|
+          begin
+            tags = t.class.get_tags(t.method_name.to_sym)
+            tags.any? do |tag|
+              n == tag.to_s
+            end ? true : nil
+          rescue
+            nil
+          end
+        end
       end
     end
   end
@@ -263,7 +292,7 @@ def process_args(args = ARGV)
     $! = nil
     abort
   else
-    $filters << proc{false} unless($filters.empty?)
+    $filters << proc {false} unless($filters.empty?)
   end
 end
 

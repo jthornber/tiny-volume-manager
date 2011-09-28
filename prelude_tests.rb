@@ -1,8 +1,13 @@
 require 'lib/prelude'
+require 'lib/tags'
 
 #----------------------------------------------------------------
 
 class PreludeTests < Test::Unit::TestCase
+  include Tags
+
+  tag :quick, :infrastructure
+
   def test_bracket_normal_path
     tidied = false
     v = bracket(5, lambda {|n| tidied = true}) do |n|
