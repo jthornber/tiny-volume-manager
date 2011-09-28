@@ -18,18 +18,29 @@ of the interface.
     - getting old transaction id wrong results in failure of the ioctl.
     - status reports new one
 
-* Multiple pool scenarios [/]
+* Multiple pool scenarios
 
 Very similar to the current bunch of tests, except we want things
 happening in parallel on separate pools.  Be nice to reuse existing
 code.  Have to get the TinyVolumeManager up and running first.
 
+Created a couple of useful ones
+
 * Infrastructure
 
-  - [ ] Implement a little TinyVolumeManager class, that creates
+  - [X] Implement a little TinyVolumeManager class, that creates
     linear volumes that we can use as metadata or data devices.  Keep
     this very simple - linear volumes only.
 
+  - Aggregate results from several tests runs
 
+  - [X] add tags support
+
+  - move thinp tests into a subdirectory, ready for the raid suite
+
+  - capture key details about the machine (mem, disks, cpu, kernel
+    version, loaded modules, uptime, name, architecture)
+
+  - automate sending the results to a central collator
 
 

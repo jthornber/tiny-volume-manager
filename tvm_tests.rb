@@ -1,9 +1,13 @@
 require 'lib/tvm'
+require 'lib/tags'
 
 #----------------------------------------------------------------
 
 class TinyVolumeManagerTests < Test::Unit::TestCase
+  include Tags
   include TinyVolumeManager
+
+  tag :infrastructure, :quick
 
   def segment_total(segs)
     segs.inject(0) {|sum, s| sum + s.length}

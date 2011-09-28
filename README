@@ -24,22 +24,32 @@ real:
      export THIN_TESTS=EXECUTE
      ruby ./run_tests.rb
    
-You can select subsets of the tests, for more info:
+You can select subsets of the tests via the test suite class, methods
+or tags, for more info:
 
     ruby ./run_tests.rb --help
 
-Alternatively you can run the tests in a particular file:
+Examples,
 
-    ruby ./basic_tests.rb -v
-    ruby ./pool_resize_tests.rb -v
+Run all tests that have been tagged as quick:
+    ruby ./run_tests.rb -T quick
 
+Run all tests that have been tagged with some sort of target:
+    ruby ./run_tests.rb -T /_target$/
+
+Run all tests that have 'resize' in their name:
+    ruby ./run_tests.rb -n /resize/
+
+Run all tests in the MultiplePoolTests suite:
+    ruby ./run_tests.rb -t MultiplePoolTests
 
 Udev
 ====
 
 You may find that udev interferes with your tests.  The typical
 symptom is test scripts being unable to remove devices (because udev
-has it open).
+has it open).  The test suite do retry removal after a pause, which
+avoids most cases of this.
 
 One way to disable udev is:
 

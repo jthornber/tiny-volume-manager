@@ -227,8 +227,7 @@ def options
     o.on
 
     o.on('-n', '--name=NAME', String,
-         "Runs tests matching NAME.",
-         "(patterns may be used).") do |n|
+         "Runs tests matching NAME (patterns may be used).") do |n|
       n = (%r{\A/(.*)/\Z} =~ n ? Regexp.new($1) : n)
       case n
       when Regexp
@@ -239,8 +238,7 @@ def options
     end
 
     o.on('-t', '--testcase=TESTCASE', String,
-         "Runs tests in TestCases matching TESTCASE.",
-         "(patterns may be used).") do |n|
+         "Runs tests in TestCases matching TESTCASE (patterns may be used).") do |n|
       n = (%r{\A/(.*)/\Z} =~ n ? Regexp.new($1) : n)
       case n
       when Regexp
@@ -250,8 +248,8 @@ def options
       end
     end
 
-    o.on('-T', '--tags=TAGS', String,
-         "Runs tests tagged with the tag.") do |n|
+    o.on('-T', '--tags=TAG', String,
+         "Runs tests tagged with TAG (patterns may be used).") do |n|
       n = (%r{\A/(.*)/\Z} =~ n ? Regexp.new($1) : n)
       case n
       when Regexp

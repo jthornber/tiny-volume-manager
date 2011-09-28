@@ -4,16 +4,20 @@ require 'lib/log'
 require 'lib/process'
 require 'lib/status'
 require 'lib/utils'
+require 'lib/tags'
 require 'lib/thinp-test'
 
 #----------------------------------------------------------------
 
 class DeletionTests < ThinpTestCase
+  include Tags
   include Utils
 
   def setup
     super
   end
+
+  tag :thinp_target
 
   def test_create_delete_cycle
     with_standard_pool(@size) do |pool|
@@ -63,6 +67,8 @@ class DeletionTests < ThinpTestCase
       assert_equal(@size, status.free_data_sectors)
     end
   end
+
+  tag :thinp_target, :quick
 
   def test_delete_unknown_devices
     with_standard_pool(@size) do |pool|

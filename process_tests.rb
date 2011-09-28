@@ -1,14 +1,18 @@
 require 'lib/process'
+require 'lib/tags'
 require 'test/unit'
 
 #----------------------------------------------------------------
 
 class ProcessTests < Test::Unit::TestCase
   include ProcessControl
+  include Tags
 
   def setup
     ENV['THIN_TESTS'] = 'EXECUTE'
   end
+
+  tag :infrastructure, :quick
 
   def test_true_succeeds
     ProcessControl.run('true')

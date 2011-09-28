@@ -3,12 +3,16 @@ require 'lib/dm'
 require 'lib/log'
 require 'lib/process'
 require 'lib/utils'
+require 'lib/tags'
 require 'lib/thinp-test'
 
 #----------------------------------------------------------------
 
 class CreationTests < ThinpTestCase
+  include Tags
   include Utils
+
+  tag :thinp_target
 
   def test_create_lots_of_empty_thins
     with_standard_pool(@size) do |pool|
@@ -29,6 +33,22 @@ class CreationTests < ThinpTestCase
       1.upto(1000) {|i| pool.message(0, "create_snap #{i} #{i - 1}") }
     end
   end
+
+  def test_huge_block_size
+    size = @size
+    data_block_size = 524288
+    volume_size = 524288
+    lwm = 5
+    table = Table.new(ThinPool.new(size, @metadata_dev, @data_dev,
+                                   data_block_size, lwm))
+    @dm.with_dev(table) do |pool|
+      with_new_thin(pool, volume_size, 0) do |thin|
+        dt_device(thin)
+      end
+    end
+  end
+
+  tag :thinp_target, :quick
 
   def test_non_power_of_2_data_block_size_fails
     table = Table.new(ThinPool.new(@size, @metadata_dev, @data_dev,
@@ -66,20 +86,6 @@ class CreationTests < ThinpTestCase
   def test_largest_dev_t_succeeds
     with_standard_pool(@size) do |pool|
       pool.message(0, "create_thin #{2**24 - 1}")
-    end
-  end
-
-  def test_huge_block_size
-    size = @size
-    data_block_size = 524288
-    volume_size = 524288
-    lwm = 5
-    table = Table.new(ThinPool.new(size, @metadata_dev, @data_dev,
-                                   data_block_size, lwm))
-    @dm.with_dev(table) do |pool|
-      with_new_thin(pool, volume_size, 0) do |thin|
-        dt_device(thin)
-      end
     end
   end
 end

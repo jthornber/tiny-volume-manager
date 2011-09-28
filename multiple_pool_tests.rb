@@ -3,13 +3,17 @@ require 'lib/dm'
 require 'lib/log'
 require 'lib/process'
 require 'lib/utils'
+require 'lib/tags'
 require 'lib/thinp-test'
 
 #----------------------------------------------------------------
 
 class MultiplePoolTests < ThinpTestCase
-  include Utils
+  include Tags
   include TinyVolumeManager
+  include Utils
+
+  tag :thinp_target, :quick
 
   def test_two_pools_pointing_to_the_same_metadata_fails
     assert_raises(RuntimeError) do
@@ -20,6 +24,8 @@ class MultiplePoolTests < ThinpTestCase
       end
     end
   end
+
+  tag :thinp_target, :slow
 
   def test_two_pools_can_create_thins
     # carve up the data device into two metadata volumes and two data

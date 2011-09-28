@@ -4,6 +4,7 @@ require 'lib/fs'
 require 'lib/log'
 require 'lib/process'
 require 'lib/utils'
+require 'lib/tags'
 require 'lib/thinp-test'
 
 # these added for the dataset stuff
@@ -74,6 +75,7 @@ class Dataset
 end
 
 class SnapshotTests < ThinpTestCase
+  include Tags
   include Utils
 
   def setup
@@ -162,6 +164,8 @@ class SnapshotTests < ThinpTestCase
     end
   end
 
+  tag :thinp_target
+
   def test_thin_overwrite_ext4
     do_overwrite(:ext4)
   end
@@ -205,6 +209,8 @@ class SnapshotTests < ThinpTestCase
       end
     end
   end
+
+  tag :thinp_target, :slow
 
   def test_parallel_io_to_shared_thins
     with_standard_pool(@size) do |pool|

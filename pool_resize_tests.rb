@@ -3,17 +3,21 @@ require 'lib/dm'
 require 'lib/log'
 require 'lib/process'
 require 'lib/utils'
+require 'lib/tags'
 require 'lib/thinp-test'
 
 #----------------------------------------------------------------
 
 class PoolResizeTests < ThinpTestCase
+  include Tags
   include Utils
 
   def setup
     super
     @low_water_mark = 0 if @low_water_mark.nil?
   end
+
+  tag :thinp_target
 
   def test_reload_no_io
     table = Table.new(ThinPool.new(@size, @metadata_dev, @data_dev,
