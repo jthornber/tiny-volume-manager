@@ -74,6 +74,31 @@ class BasicTests < ThinpTestCase
       end
     end
   end
+
+  def test_dd_benchmark
+    with_standard_pool(@size) do |pool|
+
+      info "wipe an unprovisioned thin device"
+      with_new_thin(pool, @volume_size, 0) do |thin|
+        wipe_device(thin)
+      end
+
+      info "dt a fully provisioned thin device"
+      with_thin(pool, @volume_size, 0) do |thin|
+        wipe_device(thin)
+      end
+
+      info "dt a snapshot of a fully provisioned device"
+      with_new_snap(pool, @volume_size, 1, 0) do |snap|
+        wipe_device(snap)
+      end
+
+      info "dt a snapshot with no sharing"
+      with_thin(pool, @volume_size, 1) do |snap|
+        wipe_device(snap)
+      end
+    end
+  end
 end
 
 #----------------------------------------------------------------
