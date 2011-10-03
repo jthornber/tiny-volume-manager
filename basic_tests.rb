@@ -83,17 +83,17 @@ class BasicTests < ThinpTestCase
         wipe_device(thin)
       end
 
-      info "dt a fully provisioned thin device"
+      info "wipe a fully provisioned thin device"
       with_thin(pool, @volume_size, 0) do |thin|
         wipe_device(thin)
       end
 
-      info "dt a snapshot of a fully provisioned device"
+      info "wipe a snapshot of a fully provisioned device"
       with_new_snap(pool, @volume_size, 1, 0) do |snap|
         wipe_device(snap)
       end
 
-      info "dt a snapshot with no sharing"
+      info "wipe a snapshot with no sharing"
       with_thin(pool, @volume_size, 1) do |snap|
         wipe_device(snap)
       end
