@@ -3,7 +3,7 @@ class BufIOParams
   end
 
   def param_file(name)
-    "/sys/module/dm_bufio/parameters/#{name}"
+    "/sys/module/dm_persistent_data/parameters/#{name}"
   end
 
   def get_param(name)
