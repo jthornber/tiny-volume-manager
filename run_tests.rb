@@ -33,23 +33,22 @@ def mangle(txt)
 end
 
 class TestOutcome
-  attr_accessor :suite, :name, :faults, :log, :log_path, :time
+  attr_accessor :suite, :name, :log_path, :time
 
-  def initialize(s, n)
+  def initialize(s, n, t = nil)
     @suite = s
     @name = n
-    @faults = Array.new
     @log_path = "reports/#{mangle(s)}_#{mangle(n)}.log"
-    @log = File.open(@log_path, 'w')
-    @time = Time.now
+    @time = t || Time.now
+    @pass = true
   end
 
   def add_fault(f)
-    @faults << f
+    @pass = false
   end
 
   def pass?
-    @faults.size == 0
+    @pass
   end
 
   def get_binding
@@ -163,10 +162,16 @@ module Test
           "./reports/#{mangle(name)}.result"
         end
 
+        def yaml_file(name)
+          s, n = decompose_name(name)
+          "./reports/#{mangle(s)}_#{mangle(n)}.yaml"
+        end
+
         def test_started(name)
           suite, n = decompose_name(name)
           t = TestOutcome.new(suite, n)
-          set_log(t.log)
+          @current_log = File.open(t.log_path, 'w')
+          set_log(@current_log)
           @current_test = t
           @suites[suite] << t
           output_single(name + ": ", VERBOSE)
@@ -178,8 +183,10 @@ module Test
           @already_outputted = false
 
           set_log(STDERR)
-          @current_test.log.close
-          #STDERR.puts @current_test.to_yaml
+          @current_log.close
+          File.open(yaml_file(name), 'w') do |file|
+            file.puts @current_test.to_yaml
+          end
         end
 
         def total_tests
@@ -311,13 +318,24 @@ suite = c.collect($0.sub(/\.rb\Z/, ''))
 
 runner = Test::Unit::UI::ThinTestRunner.new(suite, Test::Unit::UI::VERBOSE)
 runner.start
-runner.suites.each do |s, ts|
-  ts.each do |t|
-    STDERR.puts "generating report for #{s}__#{t.name}"
-    generate_report(:unit_detail, t.get_binding, Pathname.new("reports/#{mangle(s + "__" + t.name)}.html"))
-  end
+
+#----------------------------------------------------------------
+# report generation
+
+all_tests = Array.new
+
+Dir::glob('reports/*.yaml') do |yaml_file|
+  t = YAML::load_file(yaml_file)
+  STDERR.puts "generating report for #{t.suite}__#{t.name}"
+  generate_report(:unit_detail, binding, Pathname.new("reports/#{mangle(t.suite + "__" + t.name)}.html"))
+
+  all_tests << t
 end
-generate_report(:unit_test, runner.get_binding)
+
+suites = all_tests.group_by {|t| t.suite}
+total_passed = all_tests.inject(0) {|tot, t| tot + (t.pass? ? 1 : 0)}
+total_failed = all_tests.length - total_passed
+generate_report(:unit_test, binding)
 
 # Generate the index page
 

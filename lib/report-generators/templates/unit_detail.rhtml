@@ -2,9 +2,9 @@
 <tr><th>Test</th><th>Result</th></tr>
 <tr>
   <td>
-  <%= name %>
+  <%= t.name %>
   </td>
-  <% if pass? %>
+  <% if t.pass? %>
   <td class="pass">pass</td>
   <% else %>
   <td class="fail">fail</td>
@@ -16,7 +16,7 @@
 <tr><th>Output</th></tr>
 <tr>
   <td>
-  <pre><% File.open(log_path) do |file| %><% file.each_line do |line| %><%= line %><% end %><% end %></pre>
+  <pre><% File.open(t.log_path) do |file| %><% file.each_line do |line| %><%= line %><% end %><% end %></pre>
   </td>
 </tr>
 </table>
