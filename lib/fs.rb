@@ -4,35 +4,22 @@ require 'lib/process'
 #----------------------------------------------------------------
 
 module FS
-  class AnyFS
+  class BaseFS
     attr_accessor :dev, :mount_point
 
-    def initialize(type, dev)
+    def initialize(dev)
       @dev = dev
       @mount_point = nil
-
-      case type
-      when :ext4
-        @fsck = "fsck.ext4 -fn"
-        @mkfs = "mkfs.ext4"
-        @mount_opts = ''
-      when :xfs
-        @fsck = "xfs_repair -n"
-        @mkfs = "mkfs.xfs -f"
-        @mount_opts = '-o nouuid'
-      else
-        raise RuntimeError, "unknown fs type '#{type}'"
-      end
     end
 
     def format
-      ProcessControl.run("#{@mkfs} #{@dev}")
+      ProcessControl.run(mkfs_cmd)
     end
 
     def mount(mount_point)
       @mount_point = mount_point
       Pathname.new(mount_point).mkpath
-      ProcessControl.run("mount #{@mount_opts} #{@dev} #{mount_point}")
+      ProcessControl.run(mount_cmd(mount_point))
     end
 
     def umount
@@ -48,12 +35,33 @@ module FS
 
     def check
       ProcessControl.run("echo 1 > /proc/sys/vm/drop_caches");
-      ProcessControl.run("#{@fsck} #{@dev}")
+      ProcessControl.run(check_cmd)
     end
   end
 
+  class Ext4 < BaseFS
+    def mount_cmd(mount_point) "mount #{dev} #{mount_point}"; end
+    def check_cmd "fsck.ext4 -fn #{dev}"; end
+    def mkfs_cmd "mkfs.ext4 #{dev}"; end
+  end
+
+  class XFS < BaseFS
+    def mount_cmd(mount_point) "mount -o nouuid #{dev} #{mount_point}"; end
+    def check_cmd "xfs_repair -n #{dev}"; end
+    def mkfs_cmd "mkfs.xfs -f #{dev}"; end
+  end
+
+  FS_CLASSES = {
+    :ext4 => Ext4,
+    :xfs => XFS
+  }
+
   def FS.file_system(type, dev)
-    AnyFS.new(type, dev)
+    unless FS_CLASSES.member?
+      raise RuntimError, "unknown filesystem type '#{type}'"
+    end
+
+    FS_CLASSES[type].new(dev)
   end
 end
 
