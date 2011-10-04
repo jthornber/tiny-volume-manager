@@ -16,13 +16,7 @@
 <tr><th>Output</th></tr>
 <tr>
   <td>
-  <pre>
-<% File.open(log_path) do |file| %>
-  <% file.each_line do |line| %>
-    <%= line %>
-  <% end %>
-<% end %>
-  </pre>
+  <pre><% File.open(log_path) do |file| %><% file.each_line do |line| %><%= line %><% end %><% end %></pre>
   </td>
 </tr>
 </table>
