@@ -16,32 +16,32 @@ Running
 Edit config.rb, adding suitable entries for you test machine.
 Check things are ok with a dry run:
 
-     ruby ./run_tests.rb
+     ./run_tests
 
 Once you're happy you can set the env var THIN_TESTS and run it for
 real:
 
      export THIN_TESTS=EXECUTE
-     ruby ./run_tests.rb
+     ./run_tests
    
 You can select subsets of the tests via the test suite class, methods
 or tags, for more info:
 
-    ruby ./run_tests.rb --help
+    ./run_tests --help
 
 Examples,
 
 Run all tests that have been tagged as quick:
-    ruby ./run_tests.rb -T quick
+    ./run_tests -T quick
 
 Run all tests that have been tagged with some sort of target:
-    ruby ./run_tests.rb -T /_target$/
+    ./run_tests -T /_target$/
 
 Run all tests that have 'resize' in their name:
-    ruby ./run_tests.rb -n /resize/
+    ./run_tests -n /resize/
 
 Run all tests in the MultiplePoolTests suite:
-    ruby ./run_tests.rb -t MultiplePoolTests
+    ./run_tests -t MultiplePoolTests
 
 Udev
 ====

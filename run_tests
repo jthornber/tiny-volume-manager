@@ -1,3 +1,5 @@
+#!/usr/bin/env ruby
+
 require 'erb'
 require 'lib/log'
 require 'lib/report-generators/report_templates'
