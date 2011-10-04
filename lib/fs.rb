@@ -40,15 +40,15 @@ module FS
   end
 
   class Ext4 < BaseFS
-    def mount_cmd(mount_point) "mount #{dev} #{mount_point}"; end
-    def check_cmd "fsck.ext4 -fn #{dev}"; end
-    def mkfs_cmd "mkfs.ext4 #{dev}"; end
+    def mount_cmd(mount_point); "mount #{dev} #{mount_point}"; end
+    def check_cmd; "fsck.ext4 -fn #{dev}"; end
+    def mkfs_cmd; "mkfs.ext4 #{dev}"; end
   end
 
   class XFS < BaseFS
-    def mount_cmd(mount_point) "mount -o nouuid #{dev} #{mount_point}"; end
-    def check_cmd "xfs_repair -n #{dev}"; end
-    def mkfs_cmd "mkfs.xfs -f #{dev}"; end
+    def mount_cmd(mount_point); "mount -o nouuid #{dev} #{mount_point}"; end
+    def check_cmd; "xfs_repair -n #{dev}"; end
+    def mkfs_cmd; "mkfs.xfs -f #{dev}"; end
   end
 
   FS_CLASSES = {
@@ -57,7 +57,7 @@ module FS
   }
 
   def FS.file_system(type, dev)
-    unless FS_CLASSES.member?
+    unless FS_CLASSES.member?(type)
       raise RuntimError, "unknown filesystem type '#{type}'"
     end
 
