@@ -5,7 +5,7 @@
 
 <table width="95%" cellspacing="2" cellpadding="5" border="0" class="stripes">
 <% @suites.each do |k, s| %>
-<tr><th><%= k %></th><th>Result</th></tr>
+<tr><th><%= k %></th><th>Result</th><th>Execution Time</th></tr>
 <% s.each do |t| %>
 <tr>
   <td>
@@ -16,6 +16,7 @@
   <% else %>
   <td class="fail">fail</td>
   <% end %>
+  <td><%= t.time %></td>
 </tr>
 <% end %>
 <% end %>

@@ -8,6 +8,7 @@ require 'test/unit/collector/objectspace'
 require 'test/unit/ui/testrunnermediator'
 require 'test/unit/ui/testrunnerutilities'
 require 'test/unit/testsuite'
+require 'yaml'
 
 require 'pp'
 
@@ -32,12 +33,15 @@ def mangle(txt)
 end
 
 class TestOutcome
-  attr_accessor :name, :failures, :log
+  attr_accessor :suite, :name, :faults, :log, :log_path, :time
 
-  def initialize(n)
+  def initialize(s, n)
+    @suite = s
     @name = n
     @faults = Array.new
-    @log = StringIO.new
+    @log_path = "reports/#{mangle(s)}_#{mangle(n)}.log"
+    @log = File.open(@log_path, 'w')
+    @time = Time.now
   end
 
   def add_fault(f)
@@ -161,7 +165,7 @@ module Test
 
         def test_started(name)
           suite, n = decompose_name(name)
-          t = TestOutcome.new(n)
+          t = TestOutcome.new(suite, n)
           set_log(t.log)
           @current_test = t
           @suites[suite] << t
@@ -172,6 +176,10 @@ module Test
           output_single(".", PROGRESS_ONLY) unless @already_outputted
           nl(VERBOSE)
           @already_outputted = false
+
+          set_log(STDERR)
+          @current_test.log.close
+          #STDERR.puts @current_test.to_yaml
         end
 
         def total_tests

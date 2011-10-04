@@ -17,7 +17,11 @@
 <tr>
   <td>
   <pre>
-<%= log.string %>
+<% File.open(log_path) do |file| %>
+  <% file.each_line do |line| %>
+    <%= line %>
+  <% end %>
+<% end %>
   </pre>
   </td>
 </tr>
