@@ -13,10 +13,6 @@ class MassFsTests < ThinpTestCase
   include Tags
   include Utils
 
-  def setup
-    super
-  end
-
   tag :thinp_target, :slow
 
   #
@@ -39,12 +35,10 @@ class MassFsTests < ThinpTestCase
         in_parallel(*thin_fs_list) { |thin_fs| thin_fs.check }
 
         dir = Dir.getwd
-        mount_points = ids.map {|id| "#{dir}/mnt#{i}"}
+        mount_points = ids.map {|id| "#{dir}/mnt#{id}"}
         with_mounts(thin_fs_list, mount_points) do
           in_parallel(*mount_points) do |mp|
-            Dir.chdir(mp) do
-              ProcessControl.run("rsync -lr /usr/bin . > /dev/null"); 
-            end
+            ProcessControl.run("rsync -lr /usr/bin #{mp} > /dev/null")
           end
         end
       end
