@@ -23,6 +23,7 @@ require 'creation_tests'
 require 'deletion_tests'
 require 'snapshot_tests'
 require 'multiple_pool_tests'
+require 'mass_fs_tests'
 
 #----------------------------------------------------------------
 
