@@ -16,14 +16,16 @@ class ThinpTestCase < Test::Unit::TestCase
     @metadata_dev = config[:metadata_dev]
     @data_dev = config[:data_dev]
 
+    @data_block_size = config[:data_block_size]
+    @data_block_size = 128 if @data_block_size.nil?
+
     @size = config[:data_size]
     @size = 20971520 if @size.nil?
+    @size /= @data_block_size
+    @size *= @data_block_size
 
     @volume_size = config[:volume_size]
     @volume_size = 2097152 if @volume_size.nil?
-
-    @data_block_size = config[:data_block_size]
-    @data_block_size = 128 if @data_block_size.nil?
 
     @tiny_size = @data_block_size
 

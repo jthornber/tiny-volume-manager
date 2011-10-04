@@ -20,7 +20,7 @@ class MassFsTests < ThinpTestCase
   #
   def _mass_create_apply_remove(fs_type, max = nil)
     max = 2 if max.nil?
-    ids = (0..max).entries
+    ids = (1..max).entries
     thin_fs_list = Array.new
 
     with_standard_pool(@size) do |pool|
@@ -38,7 +38,7 @@ class MassFsTests < ThinpTestCase
         mount_points = ids.map {|id| "#{dir}/mnt#{id}"}
         with_mounts(thin_fs_list, mount_points) do
           in_parallel(*mount_points) do |mp|
-            ProcessControl.run("rsync -lr /usr/bin #{mp} > /dev/null")
+            ProcessControl.run("rsync -lr /usr/bin #{mp} > /dev/null; sync")
           end
         end
       end
@@ -49,49 +49,49 @@ class MassFsTests < ThinpTestCase
   end
 
   def test_mass_create_apply_remove_ext4
-    _mass_create_apply_remove(:ext4)
+    _mass_create_apply_remove(:ext4, 16)
   end
 
   def test_mass_create_apply_remove_xfs
-    _mass_create_apply_remove(:xfs)
+    _mass_create_apply_remove(:xfs, 16)
   end
+
 
   #
   # configuration changes under load
   #
-  # def _config_load_one(pool, id, fs_type)
-  #   pool.message(0, "create_thin #{id}")
+  def _config_load_one(pool, id, fs_type)
+    pool.message(0, "create_thin #{id}")
 
-  #   with_thin(pool, @volume_size, id) do |thin|
-  #     thin_fs = FS::file_system(fs_type, thin)
-  #     thin_fs.format
-  #     thin_fs.check
-  #     thin_fs.with_mount("mnt#{id}") do
-  #       dt_device("mnt#{id}/tstfile")
-  #     end
-  #   end
+    with_thin(pool, @volume_size, id) do |thin|
+      fs = FS::file_system(fs_type, thin)
+      fs.format
+      fs.check
+      fs.with_mount("mnt#{id}") do
+        dt_device("mnt#{id}/tstfile")
+      end
+    end
 
-  #   pool.message(0, "delete #{id}")
-  # end
+    pool.message(0, "delete #{id}")
+  end
 
-  # def _mass_create_apply_remove_with_config_load(fs_type, max = nil)
-  #   max = 2 if max.nil?
-  #   ids = Array.new
-  #   0.upto(max) { |i| ids << i }
+  def _mass_create_apply_remove_with_config_load(fs_type, max = nil)
+    max = 2 if max.nil?
+    ids = (1..max).entries
 
-  #   with_standard_pool(@size) do |pool|
-  #     in_parallel(*ids) { |id| _config_load_one(pool, id, fs_type) }
-  #     assert_equal(@size, PoolStatus.new(pool).free_data_sectors)
-  #   end
-  # end
+    with_standard_pool(@size) do |pool|
+      in_parallel(*ids) { |id| _config_load_one(pool, id, fs_type) }
+      assert_equal(@size, PoolStatus.new(pool).free_data_sectors)
+    end
+  end
 
-  # def test_mass_create_apply_remove_with_config_load_ext4
-  #   _mass_create_apply_remove_with_config_load(:ext4)
-  # end
+  def test_mass_create_apply_remove_with_config_load_ext4
+    _mass_create_apply_remove_with_config_load(:ext4)
+  end
 
-  # def test_mass_create_apply_remove_with_config_load_xfs
-  #   _mass_create_apply_remove_with_config_load(:xfs)
-  # end
+  def test_mass_create_apply_remove_with_config_load_xfs
+    _mass_create_apply_remove_with_config_load(:xfs)
+  end
 end
 
 #----------------------------------------------------------------
