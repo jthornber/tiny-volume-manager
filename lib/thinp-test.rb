@@ -75,6 +75,14 @@ class ThinpTestCase < Test::Unit::TestCase
     @dm.with_devs(*tables, &block)
   end
 
+  def with_new_thins(pool, size, *ids, &block)
+    ids.each do |id|
+      pool.message(0, "create_thin #{id}")
+    end
+
+    with_thins(pool, size, *ids, &block)
+  end
+
   def with_new_snap(pool, size, id, origin, thin = nil, &block)
     if thin.nil?
         pool.message(0, "create_snap #{id} #{origin}")
