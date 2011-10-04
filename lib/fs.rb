@@ -15,9 +15,11 @@ module FS
       when :ext4
         @fsck = "fsck.ext4 -fn"
         @mkfs = "mkfs.ext4"
+        @mount_opts = ''
       when :xfs
         @fsck = "xfs_repair -n"
         @mkfs = "mkfs.xfs -f"
+        @mount_opts = '-o nouuid'
       else
         raise RuntimeError, "unknown fs type '#{type}'"
       end
@@ -30,7 +32,7 @@ module FS
     def mount(mount_point)
       @mount_point = mount_point
       Pathname.new(mount_point).mkpath
-      ProcessControl.run("mount #{@dev} #{mount_point}")
+      ProcessControl.run("mount #{@mount_opts} #{@dev} #{mount_point}")
     end
 
     def umount
