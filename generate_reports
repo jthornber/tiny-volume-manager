@@ -1,0 +1,40 @@
+#!/usr/bin/env ruby
+
+require 'erb'
+require 'lib/log'
+require 'lib/report-generators/report_templates'
+require 'lib/report-generators/reports'
+require 'lib/test-outcome'
+require 'pathname'
+require 'yaml'
+
+#----------------------------------------------------------------
+
+include ReportTemplates
+
+all_tests = Array.new
+
+Dir::glob('reports/*.yaml') do |yaml_file|
+  t = YAML::load_file(yaml_file)
+  STDERR.puts "generating report for #{t.suite}__#{t.name}"
+  generate_report(:unit_detail, binding, Pathname.new("reports/#{mangle(t.suite + "__" + t.name)}.html"))
+
+  all_tests << t
+end
+
+suites = all_tests.group_by {|t| t.suite}
+total_passed = all_tests.inject(0) {|tot, t| tot + (t.pass? ? 1 : 0)}
+total_failed = all_tests.length - total_passed
+generate_report(:unit_test, binding)
+
+# Generate the index page
+reports = ReportRegister.new
+
+def safe_mtime(r)
+  r.path.file? ? r.path.mtime.to_s : "not generated"
+end
+
+generate_report(:index, binding)
+
+#----------------------------------------------------------------
+
