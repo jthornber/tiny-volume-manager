@@ -5,10 +5,11 @@ require 'lib/process'
 
 module FS
   class AnyFS
-    attr_accessor :dev
+    attr_accessor :dev, :mount_point
 
     def initialize(type, dev)
       @dev = dev
+      @mount_point = nil
 
       case type
       when :ext4
@@ -26,14 +27,21 @@ module FS
       ProcessControl.run("#{@mkfs} #{@dev}")
     end
 
-    def with_mount(mount_point, &block)
+    def mount(mount_point)
+      @mount_point = mount_point
       Pathname.new(mount_point).mkpath
       ProcessControl.run("mount #{@dev} #{mount_point}")
-      # bracket_(lambda {ProcessControl.run("umount #{mount_point}"); check}, &block)
     end
 
-    def without_mount
-      ProcessControl.run("umount #{@dev}")
+    def umount
+      ProcessControl.run("umount #{@mount_point}")
+      @mount_point = nil
+      check
+    end
+
+    def with_mount(mount_point, &block)
+      mount(mount_point)
+      bracket_(lambda {umount}, &block)
     end
 
     def check

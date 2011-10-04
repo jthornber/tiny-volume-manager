@@ -105,6 +105,27 @@ class ThinpTestCase < Test::Unit::TestCase
     end
   end
 
+  def with_mounts(fs, mount_points)
+    if fs.length != mount_points.length
+      raise RuntimeError, "number of filesystems differs from number of mount points"
+    end
+
+    mounted = Array.new
+
+    teardown = lambda do
+      mounted.each {|fs| fs.umount}
+    end
+
+    bracket_(teardown) do
+      0.upto(fs.length - 1) do |i|
+        fs[i].mount(mount_points[i])
+        mounted << fs[i]
+      end
+
+      yield
+    end
+  end
+
   private
   def check_prereqs
     return if $checked_prerequisites
