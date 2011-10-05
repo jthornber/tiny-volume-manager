@@ -39,10 +39,10 @@ class MassFsTests < ThinpTestCase
           mount_point = "#{dir}/mnt_#{thin.name}"
         end
       end
-    end
 
-    ids.each { |i| pool.message(0, "delete #{i}") }
-    assert_equal(@size, PoolStatus.new(pool).free_data_sectors)
+      ids.each { |i| pool.message(0, "delete #{i}") }
+      assert_equal(@size, PoolStatus.new(pool).free_data_sectors)
+    end
   end
 
   def test_mass_create_apply_remove_ext4
