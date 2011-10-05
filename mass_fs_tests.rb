@@ -15,13 +15,20 @@ class MassFsTests < ThinpTestCase
 
   tag :thinp_target, :slow
 
+  def report_time(desc, &block)
+    elapsed = time_block(&block)
+    info "Elapsed #{elapsed}: #{desc}"
+  end
+
   # format, fsck, mount, copy, umount, fsck
   def fs_cycle(dev, fs_type, mount_point)
     fs = FS::file_system(fs_type, dev)
-    fs.format
-    fs.check
+    report_time('formatting') {fs.format}
+    report_time('fsck') {fs.check}
     with_mount(fs, mount_point) do |mp|
-      ProcessControl.run("rsync -lr /usr/bin #{mp} > /dev/null; sync")
+      report_time('rsync') do
+        ProcessControl.run("rsync -lr /usr/bin #{mp} > /dev/null; sync")
+      end
     end
   end
 
