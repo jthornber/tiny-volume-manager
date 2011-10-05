@@ -36,7 +36,7 @@ class MassFsTests < ThinpTestCase
     with_standard_pool(@size) do |pool|
       with_new_thins(pool, @volume_size, *ids) do |*thins|
         in_parallel(*thins) do |thin|
-          mount_point = "#{dir}/mnt_#{dev.name}"
+          mount_point = "#{dir}/mnt_#{thin.name}"
         end
       end
     end
