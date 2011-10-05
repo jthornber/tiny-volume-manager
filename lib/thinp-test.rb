@@ -136,6 +136,12 @@ class ThinpTestCase < Test::Unit::TestCase
     end
   end
 
+  def time_block
+    start_time = Time.now
+    yield
+    return Time.now - start_time
+  end
+
   private
   def check_prereqs
     return if $checked_prerequisites

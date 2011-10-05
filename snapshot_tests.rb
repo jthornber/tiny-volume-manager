@@ -132,12 +132,6 @@ class SnapshotTests < ThinpTestCase
     end
   end
 
-  def time_block
-    start_time = Time.now 
-    yield 
-    return Time.now - start_time 
-  end
-
   def do_overwrite(fs_type)
     with_standard_pool(@size) do |pool|
       with_new_thin(pool, @volume_size, 0) do |thin|
