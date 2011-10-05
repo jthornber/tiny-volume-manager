@@ -15,37 +15,34 @@ class MassFsTests < ThinpTestCase
 
   tag :thinp_target, :slow
 
+  # format, fsck, mount, copy, umount, fsck
+  def fs_cycle(dev, fs_type, mount_point)
+    fs = FS::file_system(fs_type, dev)
+    fs.format
+    fs.check
+    with_mount(fs, mount_point) do |mp|
+      ProcessControl.run("rsync -lr /usr/bin #{mp} > /dev/null; sync")
+    end
+  end
+
   #
   # bulk configuration followed by load
   #
   def _mass_create_apply_remove(fs_type, max = nil)
     max = 2 if max.nil?
     ids = (1..max).entries
-    thin_fs_list = Array.new
+    dir = Dir.getwd
 
     with_standard_pool(@size) do |pool|
       with_new_thins(pool, @volume_size, *ids) do |*thins|
         in_parallel(*thins) do |thin|
-          fs = FS::file_system(fs_type, thin)
-          fs.format
-
-          thin_fs_list << fs
-        end
-
-        in_parallel(*thin_fs_list) { |thin_fs| thin_fs.check }
-
-        dir = Dir.getwd
-        mount_points = ids.map {|id| "#{dir}/mnt#{id}"}
-        with_mounts(thin_fs_list, mount_points) do
-          in_parallel(*mount_points) do |mp|
-            ProcessControl.run("rsync -lr /usr/bin #{mp} > /dev/null; sync")
-          end
+          mount_point = "#{dir}/mnt_#{dev.name}"
         end
       end
-
-      ids.each { |i| pool.message(0, "delete #{i}") }
-      assert_equal(@size, PoolStatus.new(pool).free_data_sectors)
     end
+
+    ids.each { |i| pool.message(0, "delete #{i}") }
+    assert_equal(@size, PoolStatus.new(pool).free_data_sectors)
   end
 
   def test_mass_create_apply_remove_ext4
@@ -55,7 +52,6 @@ class MassFsTests < ThinpTestCase
   def test_mass_create_apply_remove_xfs
     _mass_create_apply_remove(:xfs, 16)
   end
-
 
   #
   # configuration changes under load
