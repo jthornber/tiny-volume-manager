@@ -6,14 +6,14 @@ require 'lib/status'
 require 'lib/utils'
 require 'lib/tags'
 require 'lib/thinp-test'
+require 'lib/tvm'
 
 #----------------------------------------------------------------
 
 class MassFsTests < ThinpTestCase
   include Tags
+  include TinyVolumeManager
   include Utils
-
-  tag :thinp_target, :slow
 
   def report_time(desc, &block)
     elapsed = time_block(&block)
@@ -54,6 +54,38 @@ class MassFsTests < ThinpTestCase
       assert_equal(@size, PoolStatus.new(pool).free_data_sectors)
     end
   end
+
+  def _mass_linear_create_apply_remove(fs_type, max)
+    tvm = VM.new
+    tvm.add_allocation_volume(@data_dev, 0, dev_size(@data_dev))
+
+    size = tvm.free_space / max
+    names = Array.new
+    1.upto(max) do |i|
+      name = "linear-#{i}"
+      tvm.add_volume(VolumeDescription.new(name, size))
+      names << name
+    end
+
+    with_devs(names.map {|n| tvm.table(n)}) do |devs|
+      in_parallel(*devs) do |dev|
+        mount_point = "#{dir}/mnt_#{thin.name}"
+        fs_cycle(dev, fs_type, mount_point)
+      end
+    end
+  end
+
+  tag :linear_target, :slow
+
+  def test_mass_linear_create_apply_remove_ext4
+    _mass_linear_create_apply_remove(:ext4, 4)
+  end
+
+  def test_mass_linear_create_apply_remove_xfs
+    _mass_linear_create_apply_remove(:xfs, 4)
+  end
+
+  tag :thinp_target, :slow
 
   def test_mass_create_apply_remove_ext4
     _mass_create_apply_remove(:ext4, 4)
