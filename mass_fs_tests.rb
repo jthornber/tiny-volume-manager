@@ -44,6 +44,7 @@ class MassFsTests < ThinpTestCase
       with_new_thins(pool, @volume_size, *ids) do |*thins|
         in_parallel(*thins) do |thin|
           mount_point = "#{dir}/mnt_#{thin.name}"
+          fs_cycle(thin, fs_type, mount_point)
         end
       end
 
