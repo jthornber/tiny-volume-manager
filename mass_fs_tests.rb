@@ -25,9 +25,11 @@ class MassFsTests < ThinpTestCase
     fs = FS::file_system(fs_type, dev)
     report_time('formatting') {fs.format}
     report_time('fsck') {fs.check}
-    with_mount(fs, mount_point) do |mp|
-      report_time('rsync') do
-        ProcessControl.run("rsync -lr /usr/bin #{mp} > /dev/null; sync")
+    report_time('mount + rsync + umount + fsck') do
+      fs.with_mount(mount_point) do
+        report_time('rsync') do
+          ProcessControl.run("rsync -lr /usr/bin #{mount_point} > /dev/null; sync")
+        end
       end
     end
   end
@@ -54,7 +56,7 @@ class MassFsTests < ThinpTestCase
   end
 
   def test_mass_create_apply_remove_ext4
-    _mass_create_apply_remove(:ext4, 16)
+    _mass_create_apply_remove(:ext4, 4)
   end
 
   def test_mass_create_apply_remove_xfs
