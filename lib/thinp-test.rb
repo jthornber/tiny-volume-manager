@@ -45,7 +45,12 @@ class ThinpTestCase < Test::Unit::TestCase
   end
 
   def with_standard_pool(size, opts)
-    zero = opts[:zero] || true
+    if opts.nil?
+       zero = true
+    else
+       zero = opts[:zero]
+    end
+
     table = Table.new(ThinPool.new(size, @metadata_dev, @data_dev,
                                    @data_block_size, @low_water_mark, zero))
 
