@@ -42,7 +42,7 @@ class MassFsTests < ThinpTestCase
     dir = Dir.getwd
     size = dev_size(@data_dev) / max
 
-    with_standard_pool(@size) do |pool|
+    with_standard_pool(@size, :zero => false) do |pool|
       with_new_thins(pool, size, *ids) do |*thins|
         in_parallel(*thins) do |thin|
           mount_point = "#{dir}/mnt_#{thin.name}"

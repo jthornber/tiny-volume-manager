@@ -44,9 +44,10 @@ class ThinpTestCase < Test::Unit::TestCase
     info("Peak bufio allocation was #{@bufio.get_param('peak_allocated_bytes')}")
   end
 
-  def with_standard_pool(size)
+  def with_standard_pool(size, opts)
+    zero = opts[:zero] || true
     table = Table.new(ThinPool.new(size, @metadata_dev, @data_dev,
-                                   @data_block_size, @low_water_mark))
+                                   @data_block_size, @low_water_mark, zero))
 
     @dm.with_dev(table) do |pool|
       yield(pool)
