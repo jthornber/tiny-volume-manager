@@ -24,14 +24,16 @@ class MassFsTests < ThinpTestCase
   def fs_cycle(dev, fs_type, mount_point)
     fs = FS::file_system(fs_type, dev)
     report_time('formatting') {fs.format}
-    # report_time('fsck') {fs.check}
-    # report_time('mount + rsync + umount + fsck') do
-    #   fs.with_mount(mount_point) do
-    #     report_time('rsync') do
-    #       ProcessControl.run("rsync -lr /usr/bin #{mount_point} > /dev/null; sync")
-    #     end
-    #   end
-    # end
+    report_time('fsck') {fs.check}
+    report_time('mount + rsync + umount + fsck') do
+      fs.with_mount(mount_point) do
+        report_time('rsync') do
+          ProcessControl.run("rsync -lr /usr/bin #{mount_point} > /dev/null; sync")
+        end
+      end
+    end
+
+    report_time('fsck') {fs.check}
   end
 
   #
@@ -39,14 +41,12 @@ class MassFsTests < ThinpTestCase
   #
   def _mass_create_apply_remove(fs_type, max)
     ids = (1..max).entries
-    dir = Dir.getwd
     size = dev_size(@data_dev) / max
 
     with_standard_pool(@size, :zero => false) do |pool|
       with_new_thins(pool, size, *ids) do |*thins|
         in_parallel(*thins) do |thin|
-          mount_point = "#{dir}/mnt_#{thin.name}"
-          fs_cycle(thin, fs_type, mount_point)
+          fs_cycle(thin, fs_type, "mnt_#{thin.name}")
         end
       end
 
@@ -56,8 +56,6 @@ class MassFsTests < ThinpTestCase
   end
 
   def _mass_linear_create_apply_remove(fs_type, max)
-    dir = Dir.getwd
-
     tvm = VM.new
     tvm.add_allocation_volume(@data_dev, 0, dev_size(@data_dev))
 
@@ -71,8 +69,7 @@ class MassFsTests < ThinpTestCase
 
     with_devs(*(names.map {|n| tvm.table(n)})) do |*devs|
       in_parallel(*devs) do |dev|
-        mount_point = "#{dir}/mnt_#{dev.name}"
-        fs_cycle(dev, fs_type, mount_point)
+        fs_cycle(dev, fs_type, "mnt_#{dev.name}")
       end
     end
   end
