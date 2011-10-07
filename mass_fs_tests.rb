@@ -101,19 +101,14 @@ class MassFsTests < ThinpTestCase
     pool.message(0, "create_thin #{id}")
 
     with_thin(pool, @volume_size, id) do |thin|
-      fs = FS::file_system(fs_type, thin)
-      fs.format
-      fs.check
-      fs.with_mount("mnt#{id}") do
-        dt_device("mnt#{id}/tstfile")
-      end
+      fs_cycle(thin, fs_type, "mnt_#{thin.name}")
     end
 
     pool.message(0, "delete #{id}")
   end
 
   def _mass_create_apply_remove_with_config_load(fs_type, max = nil)
-    max = 2 if max.nil?
+    max = 128 if max.nil?
     ids = (1..max).entries
 
     with_standard_pool(@size) do |pool|

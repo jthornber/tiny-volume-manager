@@ -41,7 +41,7 @@ module Config
       :data_dev => '/dev/tst_fc_enc/pool',
       :data_size => 838877184,
       :volume_size => 2097152,
-      :data_block_size => 512, # 524288,
+      :data_block_size => 524288,
       :low_water_mark => 5
     }
 
