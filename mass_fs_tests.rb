@@ -99,11 +99,7 @@ class MassFsTests < ThinpTestCase
   #
   def _config_load_one(pool, id, fs_type)
     pool.message(0, "create_thin #{id}")
-
-    with_thin(pool, @volume_size, id) do |thin|
-      fs_cycle(thin, fs_type, "mnt_#{thin.name}")
-    end
-
+    with_thin(pool, @volume_size, id) { |thin| fs_cycle(thin, fs_type, "mnt_#{thin.name}") }
     pool.message(0, "delete #{id}")
   end
 
