@@ -25,7 +25,7 @@ class MassFsTests < ThinpTestCase
     fs = FS::file_system(fs_type, dev)
     report_time('formatting') {fs.format}
     report_time('fsck') {fs.check}
-    report_time('mount + rsync + umount + fsck') do
+    report_time('mount + rsync + umount') do
       fs.with_mount(mount_point) do
         report_time('rsync') do
           ProcessControl.run("rsync -lr /usr/bin #{mount_point} > /dev/null; sync")
@@ -33,7 +33,7 @@ class MassFsTests < ThinpTestCase
       end
     end
 
-    report_time('fsck') {fs.check}
+    report_time('fsck after rsync+umount') {fs.check}
   end
 
   #
@@ -45,12 +45,10 @@ class MassFsTests < ThinpTestCase
 
     with_standard_pool(@size, :zero => false) do |pool|
       with_new_thins(pool, size, *ids) do |*thins|
-        in_parallel(*thins) do |thin|
-          fs_cycle(thin, fs_type, "mnt_#{thin.name}")
-        end
+        in_parallel(*thins) {|thin| fs_cycle(thin, fs_type, "mnt_#{thin.name}") }
       end
 
-      ids.each { |i| pool.message(0, "delete #{i}") }
+      ids.each { |id| pool.message(0, "delete #{id}") }
       assert_equal(@size, PoolStatus.new(pool).free_data_sectors)
     end
   end
@@ -68,9 +66,7 @@ class MassFsTests < ThinpTestCase
     end
 
     with_devs(*(names.map {|n| tvm.table(n)})) do |*devs|
-      in_parallel(*devs) do |dev|
-        fs_cycle(dev, fs_type, "mnt_#{dev.name}")
-      end
+      in_parallel(*devs) {|dev| fs_cycle(dev, fs_type, "mnt_#{dev.name}")}
     end
   end
 
@@ -108,7 +104,7 @@ class MassFsTests < ThinpTestCase
     ids = (1..max).entries
 
     with_standard_pool(@size, :zero => false) do |pool|
-      in_parallel(*ids) { |id| _config_load_one(pool, id, fs_type) }
+      in_parallel(*ids) {|id| _config_load_one(pool, id, fs_type)}
       assert_equal(@size, PoolStatus.new(pool).free_data_sectors)
     end
   end
