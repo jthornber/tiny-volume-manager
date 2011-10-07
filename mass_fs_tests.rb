@@ -15,11 +15,6 @@ class MassFsTests < ThinpTestCase
   include TinyVolumeManager
   include Utils
 
-  def report_time(desc, &block)
-    elapsed = time_block(&block)
-    info "Elapsed #{elapsed}: #{desc}"
-  end
-
   # format, fsck, mount, copy, umount, fsck
   def fs_cycle(dev, fs_type, mount_point)
     fs = FS::file_system(fs_type, dev)

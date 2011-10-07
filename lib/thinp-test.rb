@@ -143,6 +143,11 @@ class ThinpTestCase < Test::Unit::TestCase
     return Time.now - start_time
   end
 
+  def report_time(desc, &block)
+    elapsed = time_block(&block)
+    info "Elapsed #{elapsed}: #{desc}"
+  end
+
   private
   def check_prereqs
     return if $checked_prerequisites
