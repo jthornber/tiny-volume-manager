@@ -111,18 +111,18 @@ class MassFsTests < ThinpTestCase
     max = 128 if max.nil?
     ids = (1..max).entries
 
-    with_standard_pool(@size) do |pool|
+    with_standard_pool(@size, :zero => false) do |pool|
       in_parallel(*ids) { |id| _config_load_one(pool, id, fs_type) }
       assert_equal(@size, PoolStatus.new(pool).free_data_sectors)
     end
   end
 
   def test_mass_create_apply_remove_with_config_load_ext4
-    _mass_create_apply_remove_with_config_load(:ext4)
+    _mass_create_apply_remove_with_config_load(:ext4, 128)
   end
 
   def test_mass_create_apply_remove_with_config_load_xfs
-    _mass_create_apply_remove_with_config_load(:xfs)
+    _mass_create_apply_remove_with_config_load(:xfs, 128)
   end
 end
 
