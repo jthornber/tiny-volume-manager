@@ -34,15 +34,11 @@ class MultiplePoolTests < ThinpTestCase
     tvm.add_allocation_volume(@data_dev, 0, dev_size(@data_dev))
 
     md_size = tvm.free_space / 16
-    1.upto(2) do |i|
-      tvm.add_volume(VolumeDescription.new("md_#{i}", md_size))
-    end
+    1.upto(2) {|id| tvm.add_volume(VolumeDescription.new("md_#{id}", md_size))}
 
     block_size = 128
     data_size = (tvm.free_space / 8) / block_size * block_size
-    1.upto(2) do |i|
-      tvm.add_volume(VolumeDescription.new("data_#{i}", data_size))
-    end
+    1.upto(2) {|id| tvm.add_volume(VolumeDescription.new("data_#{i}", data_size))}
 
     # Activate.  We need a component that automates this from a
     # description of the system.
@@ -88,9 +84,7 @@ class MultiplePoolTests < ThinpTestCase
       wipe_device(md, 8)
 
       with_devs(Table.new(ThinPool.new(data_size, md, data, 128, 0))) do |pool|
-        with_new_thin(pool, data_size, 0) do |thin|
-          yield(thin)
-        end
+        with_new_thin(pool, data_size, 0) {|thin| yield(thin)}
       end
     end
   end
@@ -98,9 +92,7 @@ class MultiplePoolTests < ThinpTestCase
   def test_stacked_pools
     with_pool_volume(@data_dev, @volume_size) do |layer1|
       with_pool_volume(layer1) do |layer2|
-        with_pool_volume(layer2) do |layer3|
-          dt_device(layer3)
-        end
+        with_pool_volume(layer2) {|layer3| dt_device(layer3)}
       end
     end
   end

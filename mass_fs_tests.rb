@@ -80,8 +80,6 @@ class MassFsTests < ThinpTestCase
     _mass_linear_create_apply_remove(:xfs, 128)
   end
 
-  tag :thinp_target, :slow
-
   def test_mass_create_apply_remove_ext4
     _mass_create_apply_remove(:ext4, 128)
   end
@@ -108,6 +106,8 @@ class MassFsTests < ThinpTestCase
       assert_equal(@size, PoolStatus.new(pool).free_data_sectors)
     end
   end
+
+  tag :linear_target, :slow
 
   def test_mass_create_apply_remove_with_config_load_ext4
     _mass_create_apply_remove_with_config_load(:ext4, 128)

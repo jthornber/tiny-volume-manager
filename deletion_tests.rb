@@ -15,13 +15,14 @@ class DeletionTests < ThinpTestCase
 
   def setup
     super
+    @max=1000
   end
 
-  tag :thinp_target
+  tag :thinp_target, :create_delete
 
   def test_create_delete_cycle
     with_standard_pool(@size) do |pool|
-      1000.times do
+      @max.times do
         pool.message(0, "create_thin 0")
         pool.message(0, "delete 0")
       end
@@ -30,41 +31,29 @@ class DeletionTests < ThinpTestCase
 
   def test_create_many_thins_then_delete_them
     with_standard_pool(@size) do |pool|
-      0.upto(999) do |i|
-        pool.message(0, "create_thin #{i}")
-      end
-
-      0.upto(999) do |i|
-        pool.message(0, "delete #{i}")
-      end
+      0.upto(@max) {|id| pool.message(0, "create_thin #{id}")}
+      0.upto(@max) {|id| pool.message(0, "delete #{id}")}
     end
   end
 
   def test_rolling_create_delete
     with_standard_pool(@size) do |pool|
-      0.upto(999) do |i|
-        pool.message(0, "create_thin #{i}")
-      end
-
-      0.upto(999) do |i|
-        pool.message(0, "delete #{i}")
-        pool.message(0, "create_thin #{i}")
+      0.upto(@max) {|id| pool.message(0, "create_thin #{id}")}
+      0.upto(@max) do |id|
+        pool.message(0, "delete #{id}")
+        pool.message(0, "create_thin #{id}")
       end
     end
   end
 
   def test_delete_thin
     with_standard_pool(@size) do |pool|
-      with_new_thin(pool, @tiny_size, 0) do |thin|
-        wipe_device(thin)
-      end
-
-      status = PoolStatus.new(pool)
-      assert_equal(@size - @tiny_size, status.free_data_sectors)
+      with_new_thin(pool, @tiny_size, 0) {|thin| wipe_device(thin)}
+      assert_equal(@size - @tiny_size, 
+                   PoolStatus.new(pool).free_data_sectors)
 
       pool.message(0, 'delete 0')
-      status = PoolStatus.new(pool)
-      assert_equal(@size, status.free_data_sectors)
+      assert_equal(@size, PoolStatus.new(pool).free_data_sectors)
     end
   end
 
@@ -72,10 +61,8 @@ class DeletionTests < ThinpTestCase
 
   def test_delete_unknown_devices
     with_standard_pool(@size) do |pool|
-      0.upto(10) do |i|
-        assert_raises(RuntimeError) do
-          pool.message(0, "delete #{i}")
-        end
+      0.upto(10) do |id|
+        assert_raises(RuntimeError) {pool.message(0, "delete #{id}")}
       end
     end
   end
@@ -83,9 +70,7 @@ class DeletionTests < ThinpTestCase
   def test_delete_active_device_fails
     with_standard_pool(@size) do |pool|
       with_new_thin(pool, @size, 0) do |thin|
-        assert_raises(RuntimeError) do
-          pool.message(0, 'delete 0')
-        end
+        assert_raises(RuntimeError) {pool.message(0, 'delete 0')}
       end
     end
   end
