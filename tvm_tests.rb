@@ -32,12 +32,13 @@ class TinyVolumeManagerTests < Test::Unit::TestCase
   def test_alloc_many_volumes
     tvm = VM.new
     tvm.add_allocation_volume('little_disk', 0, 1000)
+    vols = 10
 
-    1.upto(10) do |i|
+    1.upto(vols) do |i|
       tvm.add_volume(VolumeDescription.new("vol#{i}", 100))
     end
 
-    1.upto(10) do |i|
+    1.upto(vols) do |i|
       assert_equal(segment_total(tvm.segments("vol#{i}")), 100)
     end
   end
