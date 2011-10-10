@@ -110,24 +110,22 @@ class SnapshotTests < ThinpTestCase
         thin_fs = FS::file_system(fs_type, thin)
         thin_fs.format
 
-        t = time_block do
+	report_time("writing first dataset") do
           thin_fs.with_mount("./mnt1") do
             ds = Dataset.read('compile-bench-datasets/dataset-unpatched')
             Dir.chdir('mnt1') { ds.apply(1000) }
           end
         end
-        info "writing first dataset took #{t} seconds"
       end
 
       with_new_snap(pool, @volume_size, 1, 0) do |snap|
         snap_fs = FS::file_system(fs_type, snap)
-        t = time_block do
+	report_time("wrting second dataset") do
           snap_fs.with_mount("./mnt2") do
             ds = Dataset.read('compile-bench-datasets/dataset-unpatched-compiled')
             Dir.chdir('mnt2') { ds.apply(1000) }
           end
         end
-        info "writing second dataset took #{t} seconds"
       end
     end
   end
@@ -136,24 +134,20 @@ class SnapshotTests < ThinpTestCase
     with_standard_pool(@size) do |pool|
       with_new_thin(pool, @volume_size, 0) do |thin|
         thin_fs = FS::file_system(fs_type, thin)
-
-        t_format = time_block {thin_fs.format}
-        info "formatting took #{t_format} seconds"
+	report_time("formatting") {thin_fs.format}
 
         ds = Dataset.read('compile-bench-datasets/dataset-unpatched')
-        t = time_block do
+	report_time("writing first dataset") do
           thin_fs.with_mount("./mnt1") do
             Dir.chdir('mnt1') { ds.apply(1000) }
           end
         end
-        info "writing first dataset took #{t} seconds"
 
-        t = time_block do
+	report_time("writing second dataset") do
         thin_fs.with_mount("./mnt1") do
             Dir.chdir('mnt1') { ds.apply(1000) }
           end
         end
-        info "writing second dataset took #{t} seconds"
       end
     end
   end
@@ -176,12 +170,12 @@ class SnapshotTests < ThinpTestCase
     do_create_snap(:xfs)
   end
 
-  def test_break_sharing_xfs
-    do_break_sharing(:xfs)
-  end
-
   def test_break_sharing_ext4
     do_break_sharing(:ext4)
+  end
+
+  def test_break_sharing_xfs
+    do_break_sharing(:xfs)
   end
 
   def test_many_snapshots_of_same_volume

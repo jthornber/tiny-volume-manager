@@ -20,7 +20,7 @@ def fsck_linux(dm, pool, dev_id)
 
     mnt = "./mnt#{dev_id}"
     thin_fs.with_mount(mnt) do
-      ProcessControl.run("diff -ruNq linux-2.6.39.3 #{mnt}/linux-2.6.39.3");  
+      ProcessControl.run("diff -ruNq linux-2.6.39.3 #{mnt}/linux-2.6.39.3")
     end
 
   end
