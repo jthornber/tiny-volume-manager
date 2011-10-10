@@ -26,8 +26,16 @@ module Utils
     end
   end
 
-  def dt_device(dev)
-    ProcessControl.run("dt of=#{dev} pattern=iot passes=1 iotype=random bs=4M")
+  def dt_device(file, io_type = nil, pattern = nil, size = nil)
+    iotype = io_type.nil? ? "random" : "sequential"
+    if pattern.nil?
+      pattern = "iot"
+    end
+    if size.nil?
+       size = dev_size(file)
+    end
+
+    ProcessControl.run("dt of=#{file} capacity=#{size*512} pattern=#{pattern} passes=1 iotype=#{iotype} bs=4M")
   end
 
   def get_dev_code(path)
