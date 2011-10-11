@@ -24,6 +24,7 @@ module FS
 
     def umount
       ProcessControl.run("umount #{@mount_point}")
+      Pathname.new(@mount_point).delete
       @mount_point = nil
       check
     end

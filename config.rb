@@ -40,7 +40,7 @@ module Config
       :metadata_size => 32768,
       :data_dev => '/dev/tst_fc_enc/pool',
       :data_size => 838877184,
-      :volume_size => 70480, # 2097152,
+      :volume_size => 70377, # 2097152,
       :data_block_size => 524288,
       :low_water_mark => 5
     }

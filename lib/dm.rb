@@ -92,7 +92,7 @@ class DMDev
   end
 
   def resume()
-    ProcessControl.run("dmsetup resume #{@name}")
+    ProcessControl.run("strace dmsetup resume #{@name}")
   end
 
   def remove()
