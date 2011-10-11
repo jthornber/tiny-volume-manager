@@ -119,7 +119,7 @@ class DMDev
     m[1].to_i
   end
 
-  def event_tracker
+  def event_tracker(&condition)
     DMEventTracker.new(event_nr, self)
   end
 
@@ -146,9 +146,11 @@ class DMEventTracker
 
   # Wait for an event _since_ this one.  Updates event nr to reflect
   # the new number.
-  def wait
-    ProcessControl.run("dmsetup wait #{@device.name} #{@event_nr}")
-    @event_nr = @device.event_nr
+  def wait(&condition)
+    until condition.call
+      ProcessControl.run("dmsetup wait #{@device.name} #{@event_nr}")
+      @event_nr = @device.event_nr
+    end
   end
 end
 

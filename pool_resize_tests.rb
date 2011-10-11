@@ -66,7 +66,10 @@ class PoolResizeTests < ThinpTestCase
 
         2.upto(n) do |i|
           # wait until available space has been used
-          event_tracker.wait
+          event_tracker.wait do
+            status = PoolStatus.new(pool)
+            status.free_data_sectors <= (@low_water_mark * @data_block_size)
+          end
 
           table = Table.new(ThinPool.new(i * target_step, @metadata_dev, @data_dev,
                                          @data_block_size, @low_water_mark))
