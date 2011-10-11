@@ -16,6 +16,7 @@ require 'yaml'
 require 'tvm_tests'
 require 'process_tests'
 require 'prelude_tests'
+require 'xml_format_tests'
 
 # thinp test suites
 require 'basic_tests'
