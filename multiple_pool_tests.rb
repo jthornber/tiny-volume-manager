@@ -38,7 +38,7 @@ class MultiplePoolTests < ThinpTestCase
 
     block_size = 128
     data_size = (tvm.free_space / 8) / block_size * block_size
-    1.upto(2) {|id| tvm.add_volume(VolumeDescription.new("data_#{i}", data_size))}
+    1.upto(2) {|id| tvm.add_volume(VolumeDescription.new("data_#{id}", data_size))}
 
     # Activate.  We need a component that automates this from a
     # description of the system.
