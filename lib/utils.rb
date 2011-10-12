@@ -1,7 +1,7 @@
 require 'lib/process'
 
 module Utils
-  def div_up(n, d)
+  def round_up(n, d)
     n += d
     n -= n % d
     n
