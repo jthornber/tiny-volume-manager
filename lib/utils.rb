@@ -1,6 +1,12 @@
 require 'lib/process'
 
 module Utils
+  def div_up(n, d)
+    n += d
+    n -= n % d
+    n
+  end
+
   def dev_size(dev_or_path)
     ProcessControl.system("102400", "blockdev --getsize #{dev_or_path}").chomp.to_i
   end
