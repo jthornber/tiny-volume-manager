@@ -83,7 +83,7 @@ class MassFsTests < ThinpTestCase
       end
 
       ids.each { |id| pool.message(0, "delete #{id}") }
-      assert_equal(@size, PoolStatus.new(pool).free_data_sectors)
+      assert_equal(0, PoolStatus.new(pool).used_data_blocks)
     end
   end
 
@@ -152,7 +152,7 @@ class MassFsTests < ThinpTestCase
 
     with_standard_pool(@size, :zero => false) do |pool|
       in_parallel(*ids) {|id| _config_load_one(pool, id, fs_type, io_type)}
-      assert_equal(@size, PoolStatus.new(pool).free_data_sectors)
+      assert_equal(@size, PoolStatus.new(pool).used_data_blocks * @data_block_size)
     end
   end
 

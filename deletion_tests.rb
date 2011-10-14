@@ -49,11 +49,11 @@ class DeletionTests < ThinpTestCase
   def test_delete_thin
     with_standard_pool(@size) do |pool|
       with_new_thin(pool, @tiny_size, 0) {|thin| wipe_device(thin)}
-      assert_equal(@size - @tiny_size, 
-                   PoolStatus.new(pool).free_data_sectors)
+      assert_equal(@tiny_size, 
+                   PoolStatus.new(pool).used_data_blocks * @data_block_size)
 
       pool.message(0, 'delete 0')
-      assert_equal(@size, PoolStatus.new(pool).free_data_sectors)
+      assert_equal(0, PoolStatus.new(pool).used_data_blocks)
     end
   end
 
