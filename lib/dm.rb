@@ -24,9 +24,9 @@ class ThinPool < Target
   attr_accessor :metadata_dev
   def initialize(sector_count, metadata_dev, data_dev, block_size, low_water_mark, zero = true)
     if zero
-      super('thin-pool', sector_count, metadata_dev, data_dev, block_size, low_water_mark * block_size)
+      super('thin-pool', sector_count, metadata_dev, data_dev, block_size, low_water_mark)
     else
-      super('thin-pool', sector_count, metadata_dev, data_dev, block_size, low_water_mark * block_size, 1, 'skip_block_zeroing')
+      super('thin-pool', sector_count, metadata_dev, data_dev, block_size, low_water_mark, 1, 'skip_block_zeroing')
     end
 
     @metadata_dev = metadata_dev
