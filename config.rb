@@ -3,9 +3,9 @@
 module Config
   CONFIGS = {
     # ejt's machines
-    'vm2' =>
-    { :metadata_dev => '/dev/sdc',
-      :data_dev => '/dev/sdd'
+    'debian-vm2.lambda.co.uk' =>
+    { :metadata_dev => '/dev/vdb',
+      :data_dev => '/dev/vdc'
     },
 
     'vm-debian-6-x86-64' =>
