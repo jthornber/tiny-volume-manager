@@ -72,7 +72,7 @@ class MassFsTests < ThinpTestCase
 
   def _mass_create_apply_remove(fs_type, io_type, max)
     ids = (1..max).entries
-    size = dev_size(@data_dev) / max
+    size = round_down(dev_size(@data_dev) / max, @data_block_size)
     if size > @volume_size
       size = @volume_size
     end
@@ -152,7 +152,7 @@ class MassFsTests < ThinpTestCase
 
     with_standard_pool(@size, :zero => false) do |pool|
       in_parallel(*ids) {|id| _config_load_one(pool, id, fs_type, io_type)}
-      assert_equal(@size, PoolStatus.new(pool).used_data_blocks * @data_block_size)
+      assert_equal(0, PoolStatus.new(pool).used_data_blocks)
     end
   end
 
