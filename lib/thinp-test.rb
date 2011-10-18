@@ -148,6 +148,14 @@ class ThinpTestCase < Test::Unit::TestCase
     info "Elapsed #{elapsed}: #{desc}"
   end
 
+  def trans_id(pool)
+    PoolStatus.new(pool).transaction_id
+  end
+
+  def set_trans_id(pool, old, new)
+    pool.message(0, "set_transaction_id #{old} #{new}")
+  end
+
   private
   def check_prereqs
     return if $checked_prerequisites

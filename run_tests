@@ -20,12 +20,13 @@ require 'xml_format_tests'
 
 # thinp test suites
 require 'basic_tests'
-require 'pool_resize_tests'
 require 'creation_tests'
 require 'deletion_tests'
-require 'snapshot_tests'
-require 'multiple_pool_tests'
 require 'mass_fs_tests'
+require 'multiple_pool_tests'
+require 'pool_resize_tests'
+require 'snapshot_tests'
+require 'transaction_id_tests'
 
 #----------------------------------------------------------------
 
