@@ -102,6 +102,10 @@ module TinyVolumeManager
       @volumes[desc.name] = [desc, segments]
     end
 
+    def add_volume_(name, size)
+      add_volume(VolumeDescription.new(name, size))
+    end
+
     def remove_volume(name)
       check_exists(name)
       @allocator.release_segments(*segments(name))

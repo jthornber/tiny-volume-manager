@@ -78,7 +78,12 @@ class DMDev
 
   def load(table)
     # fixme: better to use popen and pump the table in on stdin
-    ProcessControl.run("dmsetup load #{@name} --table \"#{table}\"")
+    File.open('.table', 'w') do |f|
+      info "writing table:"
+      info table.to_s
+      f.puts table.to_s
+    end
+    ProcessControl.run("dmsetup load #{@name} .table")
     @active_table = table
   end
 

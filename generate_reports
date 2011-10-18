@@ -16,7 +16,6 @@ all_tests = Array.new
 
 Dir::glob('reports/*.yaml') do |yaml_file|
   t = YAML::load_file(yaml_file)
-  STDERR.puts "generating report for #{t.suite}__#{t.name}"
   generate_report(:unit_detail, binding, Pathname.new("reports/#{mangle(t.suite + "__" + t.name)}.html"))
 
   all_tests << t
