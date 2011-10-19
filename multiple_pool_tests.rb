@@ -34,11 +34,11 @@ class MultiplePoolTests < ThinpTestCase
     tvm.add_allocation_volume(@data_dev, 0, dev_size(@data_dev))
 
     md_size = tvm.free_space / 16
-    1.upto(2) {|id| tvm.add_volume(VolumeDescription.new("md_#{id}", md_size))}
+    1.upto(2) {|id| tvm.add_volume(linear_vol("md_#{id}", md_size))}
 
     block_size = 128
     data_size = (tvm.free_space / 8) / block_size * block_size
-    1.upto(2) {|id| tvm.add_volume(VolumeDescription.new("data_#{id}", data_size))}
+    1.upto(2) {|id| tvm.add_volume(linear_vol("data_#{id}", data_size))}
 
     # Activate.  We need a component that automates this from a
     # description of the system.
@@ -72,10 +72,10 @@ class MultiplePoolTests < ThinpTestCase
     tvm.add_allocation_volume(dev, 0, ds)
 
     md_size = tvm.free_space / 16
-    tvm.add_volume(VolumeDescription.new('md', md_size))
+    tvm.add_volume(linear_vol('md', md_size))
     block_size = 128
     data_size = tvm.free_space
-    tvm.add_volume(VolumeDescription.new('data', data_size))
+    tvm.add_volume(linear_vol('data', data_size))
 
     with_devs(tvm.table('md'),
               tvm.table('data')) do |md, data|

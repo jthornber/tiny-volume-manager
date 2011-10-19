@@ -27,8 +27,8 @@ class ImmutableTargetTests < ThinpTestCase
 
   # sanity check
   def test_linear_can_replace_linear
-    @tvm.add_volume_('linear1', @volume_size)
-    @tvm.add_volume_('linear2', @volume_size)
+    @tvm.add_volume(linear_vol('linear1', @volume_size))
+    @tvm.add_volume(linear_vol('linear2', @volume_size))
 
     with_dev(@tvm.table('linear1')) do |dev|
       dev.load(@tvm.table('linear2'))
@@ -37,8 +37,8 @@ class ImmutableTargetTests < ThinpTestCase
   end
 
   def test_multiple_linear_can_replace_linear
-    @tvm.add_volume_('linear1', @volume_size)
-    @tvm.add_volume_('linear2', @volume_size)
+    @tvm.add_volume(linear_vol('linear1', @volume_size))
+    @tvm.add_volume(linear_vol('linear2', @volume_size))
 
     with_dev(@tvm.table('linear1')) do |dev|
       # get the segment for linear2 and break up into sub segments.
@@ -56,8 +56,8 @@ class ImmutableTargetTests < ThinpTestCase
   end
 
   def test_pool_can_replace_linear
-    @tvm.add_volume_('linear', @volume_size)
-    @tvm.add_volume_('pool-data', @volume_size)
+    @tvm.add_volume(linear_vol('linear', @volume_size))
+    @tvm.add_volume(linear_vol('pool-data', @volume_size))
 
     with_devs(@tvm.table('linear'),
               @tvm.table('pool-data')) do |dev, data|
@@ -68,10 +68,10 @@ class ImmutableTargetTests < ThinpTestCase
   end
 
   def test_pool_must_be_singleton
-    @tvm.add_volume_('metadata1', @volume_size)
-    @tvm.add_volume_('metadata2', @volume_size)
-    @tvm.add_volume_('data1', @volume_size)
-    @tvm.add_volume_('data2', @volume_size)
+    @tvm.add_volume(linear_vol('metadata1', @volume_size))
+    @tvm.add_volume(linear_vol('metadata2', @volume_size))
+    @tvm.add_volume(linear_vol('data1', @volume_size))
+    @tvm.add_volume(linear_vol('data2', @volume_size))
 
     with_devs(@tvm.table('metadata1'),
               @tvm.table('metadata2'),
@@ -91,9 +91,9 @@ class ImmutableTargetTests < ThinpTestCase
   end
 
   def test_pool_must_be_singleton2
-    @tvm.add_volume_('metadata', @volume_size)
-    @tvm.add_volume_('data', @volume_size)
-    @tvm.add_volume_('linear', @volume_size)
+    @tvm.add_volume(linear_vol('metadata', @volume_size))
+    @tvm.add_volume(linear_vol('data', @volume_size))
+    @tvm.add_volume(linear_vol('linear', @volume_size))
 
     with_devs(@tvm.table('metadata'),
               @tvm.table('data')) do |md, d, linear|
@@ -109,8 +109,8 @@ class ImmutableTargetTests < ThinpTestCase
   end
 
   def test_same_pool_can_replace_pool
-    @tvm.add_volume_('md', @volume_size)
-    @tvm.add_volume_('data', @volume_size)
+    @tvm.add_volume(linear_vol('md', @volume_size))
+    @tvm.add_volume(linear_vol('data', @volume_size))
 
     with_devs(@tvm.table('md'),
               @tvm.table('data')) do |md, data|
@@ -126,10 +126,10 @@ class ImmutableTargetTests < ThinpTestCase
   end
 
   def test_different_pool_cant_replace_pool
-    @tvm.add_volume_('metadata1', @volume_size)
-    @tvm.add_volume_('metadata2', @volume_size)
-    @tvm.add_volume_('data1', @volume_size)
-    @tvm.add_volume_('data2', @volume_size)
+    @tvm.add_volume(linear_vol('metadata1', @volume_size))
+    @tvm.add_volume(linear_vol('metadata2', @volume_size))
+    @tvm.add_volume(linear_vol('data1', @volume_size))
+    @tvm.add_volume(linear_vol('data2', @volume_size))
 
     with_devs(@tvm.table('metadata1'),
               @tvm.table('metadata2'),
@@ -149,9 +149,9 @@ class ImmutableTargetTests < ThinpTestCase
   end
 
   def test_pool_replacement_must_be_singleton
-    @tvm.add_volume_('md', @volume_size)
-    @tvm.add_volume_('data', @volume_size)
-    @tvm.add_volume_('linear', @volume_size)
+    @tvm.add_volume(linear_vol('md', @volume_size))
+    @tvm.add_volume(linear_vol('data', @volume_size))
+    @tvm.add_volume(linear_vol('linear', @volume_size))
 
     with_devs(@tvm.table('md'),
               @tvm.table('data')) do |md, data|
@@ -172,9 +172,9 @@ class ImmutableTargetTests < ThinpTestCase
   end
 
   def test_pool_replace_cant_be_linear
-    @tvm.add_volume_('md', @volume_size)
-    @tvm.add_volume_('data', @volume_size)
-    @tvm.add_volume_('linear', @volume_size)
+    @tvm.add_volume(linear_vol('md', @volume_size))
+    @tvm.add_volume(linear_vol('data', @volume_size))
+    @tvm.add_volume(linear_vol('linear', @volume_size))
 
     with_devs(@tvm.table('md'),
               @tvm.table('data')) do |md, data|

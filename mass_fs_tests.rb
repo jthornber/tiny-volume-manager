@@ -61,7 +61,7 @@ class MassFsTests < ThinpTestCase
     names = Array.new
     1.upto(max) do |i|
       name = "linear-#{i}"
-      tvm.add_volume(VolumeDescription.new(name, size))
+      tvm.add_volume(linear_vol(name, size))
       names << name
     end
 

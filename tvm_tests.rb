@@ -17,14 +17,14 @@ class TinyVolumeManagerTests < Test::Unit::TestCase
     tvm = TinyVolumeManager::VM.new
     tvm.add_allocation_volume('little_disk', 0, 1000)
     assert_raises(RuntimeError) do
-      tvm.add_volume(VolumeDescription.new('vol1', 1001))
+      tvm.add_volume(linear_vol('vol1', 1001))
     end
   end
 
   def test_alloc_all_space_succeeds
     tvm = TinyVolumeManager::VM.new
     tvm.add_allocation_volume('little_disk', 0, 1000)
-    tvm.add_volume(VolumeDescription.new('vol1', 1000))
+    tvm.add_volume(linear_vol('vol1', 1000))
 
     assert_equal(segment_total(tvm.segments('vol1')), 1000)
   end
@@ -35,7 +35,7 @@ class TinyVolumeManagerTests < Test::Unit::TestCase
     vols = 10
 
     1.upto(vols) do |i|
-      tvm.add_volume(VolumeDescription.new("vol#{i}", 100))
+      tvm.add_volume(linear_vol("vol#{i}", 100))
     end
 
     1.upto(vols) do |i|
@@ -53,7 +53,7 @@ class TinyVolumeManagerTests < Test::Unit::TestCase
     while s >= max_volume_size
       n = "vol#{count}"
       l = rand(max_volume_size)
-      descs << VolumeDescription.new(n, l)
+      descs << linear_vol(n, l)
       s -= l
     end
 
@@ -74,7 +74,7 @@ class TinyVolumeManagerTests < Test::Unit::TestCase
     tvm.add_allocation_volume('little_disk', 0, 1000)
 
     1.upto(10) do |i|
-      tvm.add_volume(VolumeDescription.new("vol#{i}", 100))
+      tvm.add_volume(linear_vol("vol#{i}", 100))
     end
 
     assert_equal(tvm.free_space, 0)

@@ -65,12 +65,55 @@ module TinyVolumeManager
     end
   end
 
-  VolumeDescription = Struct.new(:name, :length)
+  #----------------------------------------------------------------
+
+  module Details
+    class Volume
+      attr_reader :name, :length, :segments, :targets, :allocated
+
+      def initialize(n, l)
+        @name = n
+        @length = l
+        @segments = nil
+        @targets = nil
+        @allocated = false
+      end
+
+      def resize(new_length)
+        raise RuntimeError, "resize not implemented"
+      end
+
+      def allocate(allocator)
+        raise RuntimeError, "allocate not implemented"
+      end
+    end
+
+    class LinearVolume < Volume
+      def initialize(n, l)
+        super(n, l)
+      end
+
+      def allocate(allocator)
+        @segments = allocator.allocate_segments(@length)
+        @targets = @segments.map {|s| Linear.new(s.length, s.dev, s.offset)}
+        @allocated = true
+      end
+    end
+  end
+
+  # Use these functions rather than explicitly instancing Volumes
+  def linear_vol(n, l)
+    Details::LinearVolume.new(n, l)
+  end
+
+  #----------------------------------------------------------------
 
   # This class manages the allocation aspect of volume management.  It
   # generate dm tables, but does _not_ manage activation.  Use the
   # standard with_dev() method for that.
   class VM
+    attr_reader :volumes
+
     def initialize()
       @allocator = Allocator.new
 
@@ -95,41 +138,31 @@ module TinyVolumeManager
       @allocator.free_space
     end
 
-    def add_volume(desc)
-      check_not_exist(desc.name)
-
-      segments = @allocator.allocate_segments(desc.length)
-      @volumes[desc.name] = [desc, segments]
-    end
-
-    def add_volume_(name, size)
-      add_volume(VolumeDescription.new(name, size))
+    def add_volume(vol)
+      check_not_exist(vol.name)
+      vol.allocate(@allocator)
+      @volumes[vol.name] = vol
     end
 
     def remove_volume(name)
       check_exists(name)
-      @allocator.release_segments(*segments(name))
+      vol = @volumes[name]
+      @allocator.release_segments(*vol.segments)
       @volumes.delete(name)
-    end
-
-    def desc(name)
-      check_exists(name)
-      desc, _ = @volumes[name]
-      desc
     end
 
     def segments(name)
       check_exists(name)
-      _, segments = @volumes[name]
-      segments
+      @volumes[name].segments
+    end
+
+    def targets(name)
+      check_exists(name)
+      @volumes[name].targets
     end
 
     def table(name)
-      targets = Array.new
-      segments(name).each do |seg|
-        targets << Linear.new(seg.length, seg.dev, seg.offset)
-      end
-      Table.new(*targets)
+      Table.new(*targets(name))
     end
 
     private
