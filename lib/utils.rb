@@ -1,6 +1,7 @@
 require 'lib/process'
 require 'tempfile'
 
+# A hodge podge of functions that should probably find a better home.
 module Utils
   def round_up(n, d)
     n += d
@@ -37,6 +38,8 @@ module Utils
     end
   end
 
+  # Runs dt on the device, defaulting to random io and the 'iot'
+  # pattern.
   def dt_device(file, io_type = nil, pattern = nil, size = nil)
     iotype = io_type.nil? ? "random" : "sequential"
     if pattern.nil?
