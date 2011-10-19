@@ -30,7 +30,10 @@ class ThinpTestCase < Test::Unit::TestCase
     @tiny_size = @data_block_size
 
     @low_water_mark = config[:low_water_mark]
-    @low_water_mark = 1024 if @low_water_mark.nil?
+    @low_water_mark = 5 if @low_water_mark.nil?
+
+    @mass_fs_tests_parallel_runs = config[:mass_fs_tests_parallel_runs]
+    @mass_fs_tests_parallel_runs = 128 if @mass_fs_tests_parallel_runs.nil?
 
     @dm = DMInterface.new
 
