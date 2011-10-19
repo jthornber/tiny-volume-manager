@@ -1,4 +1,5 @@
 require 'lib/process'
+require 'tempfile'
 
 module Utils
   def round_up(n, d)
@@ -54,6 +55,16 @@ module Utils
       "#{stat.rdev_major}:#{stat.rdev_minor}"
     else
       path
+    end
+  end
+
+  def Utils.with_temp_file(name)
+    f = Tempfile.new(name)
+    begin
+      yield(f)
+    ensure
+      f.close
+      f.unlink
     end
   end
 
