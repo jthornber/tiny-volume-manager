@@ -91,12 +91,13 @@ class DMDev
   end
 
   def load(table)
-    # fixme: better to use popen and pump the table in on stdin
-    File.open('.table', 'w') do |f|
+    Utils::with_temp_file('dm-table') do |f|
       info "writing table: #{table.to_embed}"
       f.puts table.to_s
+      f.flush
+      ProcessControl.run("dmsetup load #{@name} #{f.path}")
     end
-    ProcessControl.run("dmsetup load #{@name} .table")
+
     @active_table = table
   end
 
