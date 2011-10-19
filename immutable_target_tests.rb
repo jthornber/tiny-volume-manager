@@ -43,16 +43,12 @@ class ImmutableTargetTests < ThinpTestCase
     with_dev(@tvm.table('linear1')) do |dev|
       # get the segment for linear2 and break up into sub segments.
       segs = @tvm.segments('linear2')
-      if segs.size != 1
-        raise RuntimeError, "unexpected number of segments"
-      end
+      raise RuntimeError, "unexpected number of segments" if segs.size != 1
 
       seg = segs[0]
-      targets = Array.new
       l2 = seg.length / 2
-      targets << Linear.new(l2, seg.dev, seg.offset)
-      targets << Linear.new(seg.length - l2, seg.dev, seg.offset + l2)
-      table = Table.new(*targets)
+      table = Table.new(Linear.new(l2, seg.dev, seg.offset),
+                        Linear.new(seg.length - l2, seg.dev, seg.offset + l2))
 
       dev.load(table)
       dev.resume
@@ -87,7 +83,26 @@ class ImmutableTargetTests < ThinpTestCase
 
       assert_raises(RuntimeError) do
         with_dev(Table.new(ThinPool.new(@volume_size, md1, d1, 128, 0),
-                           ThinPool.new(@volume_size, md2, d2, 128, 0))) do
+                           ThinPool.new(@volume_size, md2, d2, 128, 0))) do |bad_pool|
+          # shouldn't get here
+        end
+      end
+    end
+  end
+
+  def test_pool_must_be_singleton2
+    @tvm.add_volume_('metadata', @volume_size)
+    @tvm.add_volume_('data', @volume_size)
+    @tvm.add_volume_('linear', @volume_size)
+
+    with_devs(@tvm.table('metadata'),
+              @tvm.table('data')) do |md, d, linear|
+
+      wipe_device(md, 8)
+      assert_raises(RuntimeError) do
+        with_dev(Table.new(ThinPool.new(@volume_size, md, d, 128, 0),
+                           *@tvm.segments('linear'))) do |bad_pool|
+          # shouldn't get here
         end
       end
     end

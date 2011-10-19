@@ -59,14 +59,28 @@ class Table
       r = "#{start_sector} #{start_sector + t.sector_count} #{t.type} #{t.args.join(' ')}"
       start_sector += t.sector_count
       r
-    end.join("\n")    
+    end.join("\n")
+  end
+
+  def to_embed_
+    start_sector = 0
+
+    @targets.map do |t|
+      r = "#{start_sector} #{start_sector + t.sector_count} #{t.type} #{t.args.join(' ')}"
+      start_sector += t.sector_count
+      r
+    end.join("; ")
+  end
+
+  def to_embed
+    "<<table:#{to_embed_}>>"
   end
 end
 
 class DMDev
   attr_accessor :name
   attr_reader :interface, :active_table
-  
+
   def initialize(name, interface)
     @name = name
     @interface = interface
@@ -79,8 +93,7 @@ class DMDev
   def load(table)
     # fixme: better to use popen and pump the table in on stdin
     File.open('.table', 'w') do |f|
-      info "writing table:"
-      info table.to_s
+      info "writing table: #{table.to_embed}"
       f.puts table.to_s
     end
     ProcessControl.run("dmsetup load #{@name} .table")
