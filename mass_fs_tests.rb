@@ -18,7 +18,7 @@ class MassFsTests < ThinpTestCase
   def setup
     super
 
-    @max = 128 # Maximum number of parallel test runs; FIXME: config variable
+    @max = @mass_fs_test_parallel_runs
   end
 
   # (format, fsck, mount, copy|)dt (, umount, fsck)
