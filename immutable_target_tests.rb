@@ -101,7 +101,7 @@ class ImmutableTargetTests < ThinpTestCase
       wipe_device(md, 8)
       assert_raises(RuntimeError) do
         with_dev(Table.new(ThinPool.new(@volume_size, md, d, 128, 0),
-                           *@tvm.segments('linear'))) do |bad_pool|
+                           *@tvm.table('linear').targets)) do |bad_pool|
           # shouldn't get here
         end
       end
