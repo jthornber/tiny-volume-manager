@@ -43,12 +43,25 @@ Run all tests that have 'resize' in their name:
 Run all tests in the MultiplePoolTests suite:
     ./run_tests -t MultiplePoolTests
 
+
+Reports
+=======
+
+After you run some tests you can view the results and logs by pointing
+your browser at reports/index.html.
+
+If you wish to quickly serve these reports on port 8080 for access
+from another machine.
+
+   ./serve_reports
+
+
 Udev
 ====
 
 You may find that udev interferes with your tests.  The typical
 symptom is test scripts being unable to remove devices (because udev
-has it open).  The test suite do retry removal after a pause, which
+has it open).  The test suite does retry removal after a pause, which
 avoids most cases of this.
 
 One way to disable udev is:
