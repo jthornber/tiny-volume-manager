@@ -21,6 +21,7 @@ class ImmutableTargetTests < ThinpTestCase
     @tvm = VM.new
     @tvm.add_allocation_volume(@data_dev, 0, dev_size(@data_dev))
     @volume_size = dev_size(@data_dev) / 5
+    @metadata_dev_size = limit_metadata_dev_size(@volume_size)
   end
 
   tag :dm_core, :quick, :thinp_target, :linear_target, :stripe_target
@@ -68,8 +69,8 @@ class ImmutableTargetTests < ThinpTestCase
   end
 
   def test_pool_must_be_singleton
-    @tvm.add_volume(linear_vol('metadata1', @volume_size))
-    @tvm.add_volume(linear_vol('metadata2', @volume_size))
+    @tvm.add_volume(linear_vol('metadata1', @metadata_dev_size))
+    @tvm.add_volume(linear_vol('metadata2', @metadata_dev_size))
     @tvm.add_volume(linear_vol('data1', @volume_size))
     @tvm.add_volume(linear_vol('data2', @volume_size))
 
@@ -91,7 +92,7 @@ class ImmutableTargetTests < ThinpTestCase
   end
 
   def test_pool_must_be_singleton2
-    @tvm.add_volume(linear_vol('metadata', @volume_size))
+    @tvm.add_volume(linear_vol('metadata', @metadata_dev_size))
     @tvm.add_volume(linear_vol('data', @volume_size))
     @tvm.add_volume(linear_vol('linear', @volume_size))
 
@@ -109,7 +110,7 @@ class ImmutableTargetTests < ThinpTestCase
   end
 
   def test_same_pool_can_replace_pool
-    @tvm.add_volume(linear_vol('md', @volume_size))
+    @tvm.add_volume(linear_vol('md', @metadata_dev_size))
     @tvm.add_volume(linear_vol('data', @volume_size))
 
     with_devs(@tvm.table('md'),
@@ -126,8 +127,8 @@ class ImmutableTargetTests < ThinpTestCase
   end
 
   def test_different_pool_cant_replace_pool
-    @tvm.add_volume(linear_vol('metadata1', @volume_size))
-    @tvm.add_volume(linear_vol('metadata2', @volume_size))
+    @tvm.add_volume(linear_vol('metadata1', @metadata_dev_size))
+    @tvm.add_volume(linear_vol('metadata2', @metadata_dev_size))
     @tvm.add_volume(linear_vol('data1', @volume_size))
     @tvm.add_volume(linear_vol('data2', @volume_size))
 
@@ -149,7 +150,7 @@ class ImmutableTargetTests < ThinpTestCase
   end
 
   def test_pool_replacement_must_be_singleton
-    @tvm.add_volume(linear_vol('md', @volume_size))
+    @tvm.add_volume(linear_vol('md', @metadata_dev_size))
     @tvm.add_volume(linear_vol('data', @volume_size))
     @tvm.add_volume(linear_vol('linear', @volume_size))
 
@@ -172,7 +173,7 @@ class ImmutableTargetTests < ThinpTestCase
   end
 
   def test_pool_replace_cant_be_linear
-    @tvm.add_volume(linear_vol('md', @volume_size))
+    @tvm.add_volume(linear_vol('md', @metadata_dev_size))
     @tvm.add_volume(linear_vol('data', @volume_size))
     @tvm.add_volume(linear_vol('linear', @volume_size))
 
