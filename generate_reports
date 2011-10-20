@@ -65,7 +65,7 @@ def expand_tables(txt)
 end
 
 def expand_message(msg)
-  "<tr><td><pre>#{msg.level}</pre></td><td><pre>#{msg.time}</pre></td><td><pre>#{expand_tables(msg.txt)}</pre></td></tr>"
+  "<tr class=\"#{msg.level}\"><td><pre>#{msg.level}</pre></td><td><pre>#{msg.time}</pre></td><td><pre>#{expand_tables(msg.txt)}</pre></td></tr>"
 end
 
 all_tests = Array.new
