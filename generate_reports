@@ -12,6 +12,17 @@ require 'yaml'
 
 include ReportTemplates
 
+# Formats dm tables
+def expand_tables(txt)
+  txt.chomp!.gsub(/<<table:([^>]*)>>/) do |match|
+    output = '</pre><table width="95%" cellspacing="0" cellpadding="0" border="0" class="stripes">'
+    $1.split(';').each do |line|
+      output << "<tr><td><pre>#{line}</pre></td></tr>"
+    end
+    output << '</table><pre>'
+  end
+end
+
 all_tests = Array.new
 
 Dir::glob('reports/*.yaml') do |yaml_file|
