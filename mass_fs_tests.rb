@@ -18,7 +18,7 @@ class MassFsTests < ThinpTestCase
   def setup
     super
 
-    @max = @mass_fs_test_parallel_runs
+    @max = @mass_fs_tests_parallel_runs
   end
 
   # (format, fsck, mount, copy|)dt (, umount, fsck)
@@ -55,9 +55,7 @@ class MassFsTests < ThinpTestCase
     tvm.add_allocation_volume(@data_dev, 0, dev_size(@data_dev))
 
     size = tvm.free_space / max
-    if size > @volume_size
-      size = @volume_size
-    end
+    size = @volume_size if size > @volume_size
     names = Array.new
     1.upto(max) do |i|
       name = "linear-#{i}"
@@ -73,9 +71,7 @@ class MassFsTests < ThinpTestCase
   def _mass_create_apply_remove(fs_type, io_type, max)
     ids = (1..max).entries
     size = round_down(dev_size(@data_dev) / max, @data_block_size)
-    if size > @volume_size
-      size = @volume_size
-    end
+    size = @volume_size if size > @volume_size
 
     with_standard_pool(@size, :zero => false) do |pool|
       with_new_thins(pool, size, *ids) do |*thins|
