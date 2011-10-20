@@ -63,16 +63,23 @@ class ImmutableTargetTests < ThinpTestCase
     with_devs(@tvm.table('linear'),
               @tvm.table('pool-data')) do |dev, data|
 
-      dev.load(Table.new(ThinPool.new(@volume_size, @metadata_dev, data, 128, 0)))
+      dev.load(Table.new(ThinPool.new(@metadata_dev_size, @metadata_dev, data, 128, 0)))
       dev.resume
     end
   end
 
   def test_pool_must_be_singleton
+<<<<<<< HEAD
     @tvm.add_volume(linear_vol('metadata1', @metadata_dev_size))
     @tvm.add_volume(linear_vol('metadata2', @metadata_dev_size))
     @tvm.add_volume(linear_vol('data1', @volume_size))
     @tvm.add_volume(linear_vol('data2', @volume_size))
+=======
+    @tvm.add_volume_('metadata1', @metadata_dev_size)
+    @tvm.add_volume_('metadata2', @metadata_dev_size)
+    @tvm.add_volume_('data1', @volume_size)
+    @tvm.add_volume_('data2', @volume_size)
+>>>>>>> 3081a57e0e97cdce95ebbb591db5a071d0fc55a0
 
     with_devs(@tvm.table('metadata1'),
               @tvm.table('metadata2'),
@@ -92,9 +99,15 @@ class ImmutableTargetTests < ThinpTestCase
   end
 
   def test_pool_must_be_singleton2
+<<<<<<< HEAD
     @tvm.add_volume(linear_vol('metadata', @metadata_dev_size))
     @tvm.add_volume(linear_vol('data', @volume_size))
     @tvm.add_volume(linear_vol('linear', @volume_size))
+=======
+    @tvm.add_volume_('metadata', @metadata_dev_size)
+    @tvm.add_volume_('data', @volume_size)
+    @tvm.add_volume_('linear', @volume_size)
+>>>>>>> 3081a57e0e97cdce95ebbb591db5a071d0fc55a0
 
     with_devs(@tvm.table('metadata'),
               @tvm.table('data')) do |md, d, linear|
@@ -110,8 +123,13 @@ class ImmutableTargetTests < ThinpTestCase
   end
 
   def test_same_pool_can_replace_pool
+<<<<<<< HEAD
     @tvm.add_volume(linear_vol('md', @metadata_dev_size))
     @tvm.add_volume(linear_vol('data', @volume_size))
+=======
+    @tvm.add_volume_('md', @metadata_dev_size)
+    @tvm.add_volume_('data', @volume_size)
+>>>>>>> 3081a57e0e97cdce95ebbb591db5a071d0fc55a0
 
     with_devs(@tvm.table('md'),
               @tvm.table('data')) do |md, data|
@@ -127,10 +145,17 @@ class ImmutableTargetTests < ThinpTestCase
   end
 
   def test_different_pool_cant_replace_pool
+<<<<<<< HEAD
     @tvm.add_volume(linear_vol('metadata1', @metadata_dev_size))
     @tvm.add_volume(linear_vol('metadata2', @metadata_dev_size))
     @tvm.add_volume(linear_vol('data1', @volume_size))
     @tvm.add_volume(linear_vol('data2', @volume_size))
+=======
+    @tvm.add_volume_('metadata1', @metadata_dev_size)
+    @tvm.add_volume_('metadata2', @metadata_dev_size)
+    @tvm.add_volume_('data1', @volume_size)
+    @tvm.add_volume_('data2', @volume_size)
+>>>>>>> 3081a57e0e97cdce95ebbb591db5a071d0fc55a0
 
     with_devs(@tvm.table('metadata1'),
               @tvm.table('metadata2'),
@@ -150,9 +175,15 @@ class ImmutableTargetTests < ThinpTestCase
   end
 
   def test_pool_replacement_must_be_singleton
+<<<<<<< HEAD
     @tvm.add_volume(linear_vol('md', @metadata_dev_size))
     @tvm.add_volume(linear_vol('data', @volume_size))
     @tvm.add_volume(linear_vol('linear', @volume_size))
+=======
+    @tvm.add_volume_('md', @metadata_dev_size)
+    @tvm.add_volume_('data', @volume_size)
+    @tvm.add_volume_('linear', @volume_size)
+>>>>>>> 3081a57e0e97cdce95ebbb591db5a071d0fc55a0
 
     with_devs(@tvm.table('md'),
               @tvm.table('data')) do |md, data|
@@ -173,9 +204,15 @@ class ImmutableTargetTests < ThinpTestCase
   end
 
   def test_pool_replace_cant_be_linear
+<<<<<<< HEAD
     @tvm.add_volume(linear_vol('md', @metadata_dev_size))
     @tvm.add_volume(linear_vol('data', @volume_size))
     @tvm.add_volume(linear_vol('linear', @volume_size))
+=======
+    @tvm.add_volume_('md', @metadata_dev_size)
+    @tvm.add_volume_('data', @volume_size)
+    @tvm.add_volume_('linear', @volume_size)
+>>>>>>> 3081a57e0e97cdce95ebbb591db5a071d0fc55a0
 
     with_devs(@tvm.table('md'),
               @tvm.table('data')) do |md, data|
