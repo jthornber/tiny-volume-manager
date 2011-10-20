@@ -13,11 +13,7 @@
 </table>
 
 <table width="95%" cellspacing="1" cellpadding="1" border="0" class="stripes">
-<tr><th>Output</th></tr>
-<tr>
-  <td>
-  <pre><% File.open(t.log_path) do |file| %><% file.each_line do |line| %><tr><td><pre><%= expand_tables(line) %></pre></td></tr><% end %><% end %></pre>
-  </td>
-</tr>
+<tr><th>Level</th><th>Time</th><th>Message</th></tr>
+<% File.open(t.log_path) do |file| %><% file.each_message do |msg| %><%= expand_message(msg) %><% end %><% end %>
 </table>
 
