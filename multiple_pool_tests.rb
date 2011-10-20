@@ -13,6 +13,18 @@ class MultiplePoolTests < ThinpTestCase
   include TinyVolumeManager
   include Utils
 
+  def setup
+    super
+
+    @block_size = 128
+  end
+
+  def limit_data_dev_size(size)
+    max_size = 1024 * 2048 # 1GB
+    size = max_size if size > max_size
+    size
+  end
+
   tag :thinp_target, :quick
 
   def test_two_pools_pointing_to_the_same_metadata_fails
@@ -33,11 +45,10 @@ class MultiplePoolTests < ThinpTestCase
     tvm = VM.new
     tvm.add_allocation_volume(@data_dev, 0, dev_size(@data_dev))
 
-    md_size = tvm.free_space / 16
+    md_size = limit_metadata_dev_size(tvm.free_space / 16)
     1.upto(2) {|id| tvm.add_volume(VolumeDescription.new("md_#{id}", md_size))}
 
-    block_size = 128
-    data_size = (tvm.free_space / 8) / block_size * block_size
+    data_size = limit_data_dev_size(round_up(tvm.free_space / 8, @block_size))
     1.upto(2) {|id| tvm.add_volume(VolumeDescription.new("data_#{id}", data_size))}
 
     # Activate.  We need a component that automates this from a
@@ -51,8 +62,8 @@ class MultiplePoolTests < ThinpTestCase
       wipe_device(md_1, 8)
       wipe_device(md_2, 8)
 
-      with_devs(Table.new(ThinPool.new(data_size, md_1, data_1, 128, 0)),
-                Table.new(ThinPool.new(data_size, md_2, data_2, 128, 0))) do |pool1, pool2|
+      with_devs(Table.new(ThinPool.new(data_size, md_1, data_1, @block_size, 1)),
+                Table.new(ThinPool.new(data_size, md_2, data_2, @block_size, 1))) do |pool1, pool2|
 
         with_new_thin(pool1, data_size, 0) do |thin1|
           with_new_thin(pool2, data_size, 0) do |thin2|
@@ -71,10 +82,9 @@ class MultiplePoolTests < ThinpTestCase
     ds = [ds, max_size].min unless max_size.nil?
     tvm.add_allocation_volume(dev, 0, ds)
 
-    md_size = tvm.free_space / 16
+    md_size = limit_metadata_dev_size(tvm.free_space / 16)
     tvm.add_volume(VolumeDescription.new('md', md_size))
-    block_size = 128
-    data_size = tvm.free_space
+    data_size = limit_data_dev_size(tvm.free_space)
     tvm.add_volume(VolumeDescription.new('data', data_size))
 
     with_devs(tvm.table('md'),
@@ -83,7 +93,7 @@ class MultiplePoolTests < ThinpTestCase
       # zero the metadata so we get a fresh pool
       wipe_device(md, 8)
 
-      with_devs(Table.new(ThinPool.new(data_size, md, data, 128, 0))) do |pool|
+      with_devs(Table.new(ThinPool.new(data_size, md, data, @block_size, 1))) do |pool|
         with_new_thin(pool, data_size, 0) {|thin| yield(thin)}
       end
     end

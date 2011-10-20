@@ -115,8 +115,10 @@ class DMDev
   end
 
   def remove()
-    Utils.retry_if_fails(1.0) do
-      ProcessControl.run("dmsetup remove #{@name}")
+    Utils.retry_if_fails(5.0) do
+      if File.exists?("/dev/mapper/" + @name)
+        ProcessControl.run("dmsetup remove #{@name}")
+      end
     end
   end
 

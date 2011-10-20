@@ -47,6 +47,12 @@ class ThinpTestCase < Test::Unit::TestCase
     info("Peak bufio allocation was #{@bufio.get_param('peak_allocated_bytes')}")
   end
 
+  def limit_metadata_dev_size(size)
+    max_size = 8355840
+    size = max_size if size > max_size
+    size
+  end
+
   def with_standard_pool(size, opts = Hash.new)
     zero = opts[:zero] || false
     table = Table.new(ThinPool.new(size, @metadata_dev, @data_dev,
