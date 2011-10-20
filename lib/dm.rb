@@ -92,7 +92,7 @@ class DMDev
 
   def load(table)
     Utils::with_temp_file('dm-table') do |f|
-      info "writing table: #{table.to_embed}"
+      debug "writing table: #{table.to_embed}"
       f.puts table.to_s
       f.flush
       ProcessControl.run("dmsetup load #{@name} #{f.path}")
