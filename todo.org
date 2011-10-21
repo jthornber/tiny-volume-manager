@@ -3,6 +3,8 @@
 We need many more tests, particularly ones that check the correctness
 of the interface.
 
+  - [ ] check all status fields for correctness (format/values)
+
   - [ ] is the low_water_mark being acted upon correctly?
     - is it given in blocks or sectors?
     - does it send the event at the correct level?  (tests with a variety of levels, including 0)

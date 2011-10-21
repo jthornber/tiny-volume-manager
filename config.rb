@@ -43,7 +43,7 @@ module Config
       :volume_size => 70377, # 2097152,
       :data_block_size => 524288,
       :low_water_mark => 5,
-      :mass_fs_tests_parallel_runs => 3
+      :mass_fs_tests_parallel_runs => 128
     }
 
   }
