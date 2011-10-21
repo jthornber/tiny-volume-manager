@@ -45,4 +45,4 @@ Created a couple of useful ones
 
   - automate sending the results to a central collator
 
-
+  - [ ] add xml writer to xml_format*.rb
