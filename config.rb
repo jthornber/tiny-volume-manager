@@ -5,7 +5,8 @@ module Config
     # ejt's machines
     'debian-vm2.lambda.co.uk' =>
     { :metadata_dev => '/dev/vdb',
-      :data_dev => '/dev/vdc'
+      :data_dev => '/dev/vdc',
+      :mass_fs_tests_parallel_runs => 3
     },
 
     'vm-debian-6-x86-64' =>
