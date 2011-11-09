@@ -17,14 +17,27 @@ class XMLFormatTests < Test::Unit::TestCase
     assert_equal(16384, metadata.devices[0].mapped_blocks)
     assert_equal(2, metadata.devices.length)
   end
+
+  def read_write_cycle(str)
+    io = StringIO.new(str)
+    metadata = read_xml(io)
+    io = StringIO.new('')
+    write_xml(metadata, io)
+    assert_equal(str, io.string)
+  end
+
+  def test_write
+    read_write_cycle(BASIC_TESTS_DD)
+    read_write_cycle(BASIC_TESTS_DT)
+  end
 end
 
 BASIC_TESTS_DD = <<END
 <superblock uuid="" time="1" transaction="0" data_block_size="128">
-  <device dev_id ="0" mapped_blocks="16384" transaction="0" creation_time="0" snap_time="1">
+  <device dev_id="0" mapped_blocks="16384" transaction="0" creation_time="0" snap_time="1">
     <range_mapping origin_begin="0" data_begin="0" length="16384"/>
   </device>
-  <device dev_id ="1" mapped_blocks="16384" transaction="0" creation_time="1" snap_time="1">
+  <device dev_id="1" mapped_blocks="16384" transaction="0" creation_time="1" snap_time="1">
     <range_mapping origin_begin="0" data_begin="16384" length="16384"/>
   </device>
 </superblock>
@@ -32,7 +45,7 @@ END
 
 BASIC_TESTS_DT = <<END
 <superblock uuid="" time="1" transaction="0" data_block_size="128">
-  <device dev_id ="0" mapped_blocks="9133" transaction="0" creation_time="0" snap_time="1">
+  <device dev_id="0" mapped_blocks="9133" transaction="0" creation_time="0" snap_time="1">
     <range_mapping origin_begin="0" data_begin="9004" length="12"/>
     <range_mapping origin_begin="12" data_begin="7862" length="2"/>
     <single_mapping origin_block="14" data_block="7530"/>
@@ -269,7 +282,7 @@ BASIC_TESTS_DT = <<END
     <range_mapping origin_begin="16380" data_begin="3976" length="3"/>
     <single_mapping origin_block="16383" data_block="6584"/>
   </device>
-  <device dev_id ="1" mapped_blocks="10964" transaction="0" creation_time="1" snap_time="1">
+  <device dev_id="1" mapped_blocks="10964" transaction="0" creation_time="1" snap_time="1">
     <range_mapping origin_begin="0" data_begin="9004" length="8"/>
     <range_mapping origin_begin="8" data_begin="13177" length="23"/>
     <range_mapping origin_begin="31" data_begin="9867" length="15"/>
