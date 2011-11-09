@@ -32,7 +32,7 @@ class RestoreTests < ThinpTestCase
 
   # Reads the metadata from an _inactive_ pool
   # FIXME: move to thinp-test.rb ?
-  def read_metadata(dev)
+  def dump_metadata(dev)
     metadata = nil
     Utils::with_temp_file('metadata_xml') do |file|
       ProcessControl::run("thin_dump -i #{dev} > #{file.path}")
@@ -56,8 +56,8 @@ class RestoreTests < ThinpTestCase
   def test_dump_is_idempotent
     prepare_md
 
-    read_metadata(@metadata_dev) do |xml_path1|
-      read_metadata(@metadata_dev) do |xml_path2|
+    dump_metadata(@metadata_dev) do |xml_path1|
+      dump_metadata(@metadata_dev) do |xml_path2|
         assert_identical_files(xml_path1, xml_path2)
       end
     end
@@ -66,12 +66,34 @@ class RestoreTests < ThinpTestCase
   def test_dump_restore_dump_is_idempotent
     prepare_md
 
-    read_metadata(@metadata_dev) do |xml_path1|
+    dump_metadata(@metadata_dev) do |xml_path1|
       wipe_device(@metadata_dev)
       restore_metadata(xml_path1, @metadata_dev)
 
-      read_metadata(@metadata_dev) do |xml_path2|
+      dump_metadata(@metadata_dev) do |xml_path2|
         assert_identical_files(xml_path1, xml_path2);
+      end
+    end
+  end
+
+  def test_kernel_can_use_restored_volume
+    # fully provision a dev
+    with_standard_pool(@size) do |pool|
+      with_new_thin(pool, @volume_size, 0) {|thin| wipe_device(thin)}
+    end
+    
+    dump_metadata(@metadata_dev) do |xml_path1|
+      wipe_device(@metadata_dev)
+      restore_metadata(xml_path1, @metadata_dev)
+      
+      with_standard_pool(@size) do |pool|
+        with_thin(pool, @volume_size, 0) {|thin| wipe_device(thin)}
+      end
+
+      # metadata shouldn't have changed, since thin was fully
+      # provisioned.
+      dump_metadata(@metadata_dev) do |xml_path2|
+        assert_identical_files(xml_path1, xml_path2)
       end
     end
   end
