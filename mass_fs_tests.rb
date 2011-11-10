@@ -145,6 +145,8 @@ class MassFsTests < ThinpTestCase
   def _mass_create_apply_remove_with_config_load(fs_type, io_type, max = nil)
     max = 128 if max.nil?
     ids = (1..max).entries
+    sz = @size / max
+    @volume_size = sz if @volume_size > sz
 
     with_standard_pool(@size, :zero => false) do |pool|
       in_parallel(*ids) {|id| _config_load_one(pool, id, fs_type, io_type)}
