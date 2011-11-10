@@ -32,9 +32,8 @@ module Utils
 
     remainder = sectors % block_size
     if remainder > 0
-      # we have a little bit to do at the end
-      offset = count * block_size
-      ProcessControl.run("dd if=/dev/zero of=#{dev_or_path} oflag=direct bs=#{remainder * 512} count=1 seek=#{offset * 512}")
+      # we have a partial block to do at the end
+      ProcessControl.run("dd if=/dev/zero of=#{dev_or_path} oflag=direct bs=512 count=#{remainder} seek=#{count * block_size}")
     end
   end
 
