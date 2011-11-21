@@ -146,18 +146,24 @@ class RestoreTests < ThinpTestCase
     end
 
     ProcessControl.run("thin_repair #{@metadata_dev}")
+    metadata
   end
 
   def do_kernel_happy_test(allocator)
     n = 1000
 
     restore_mappings(4, n, allocator)
-    with_standard_pool(@size) do |pool|
-      with_thin(pool, n * 128, 0) {|thin| wipe_device(thin)}
-    end
+    dump_metadata(@metadata_dev) do |xml1|
+      with_standard_pool(@size) do |pool|
+        with_thin(pool, n * 128, 0) {|thin| wipe_device(thin)}
+      end
 
-    # FIXME: These devices were fully provisioned, check the mapping
-    # is identical after the wipe.
+      # These devices were fully provisioned, so we check the mapping is
+      # identical after the wipe.
+      dump_metadata(@metadata_dev) do |xml2|
+        assert_identical_files(xml1, xml2);
+      end
+    end
   end
 
   def test_kernel_happy_with_linear_restored_data
