@@ -84,7 +84,7 @@ module XMLFormat
         @metadata.devices << @current_device
 
       when 'single_mapping'
-        @current_device.mappings << Mapping.new(attr[:origin_block], attr[:data_block], 1)
+        @current_device.mappings << Mapping.new(attr[:origin_block], attr[:data_block], 1, attr[:time])
 
       when 'range_mapping'
         @current_device.mappings << Mapping.new(*get_fields(attr, MAPPING_FIELDS))
