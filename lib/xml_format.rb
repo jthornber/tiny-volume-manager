@@ -17,7 +17,8 @@ module XMLFormat
 
   MAPPING_FIELDS = [[:origin_begin, :int],
                     [:data_begin, :int],
-                    [:length, :int]]
+                    [:length, :int],
+                    [:time, :int]]
 
   DEVICE_FIELDS = [[:dev_id, :int],
                    [:mapped_blocks, :int],
@@ -151,9 +152,9 @@ module XMLFormat
 
   def emit_mapping(e, m)
     if m.length == 1
-      e.emit_line("<single_mapping origin_block=\"#{m.origin_begin}\" data_block=\"#{m.data_begin}\"/>")
+      e.emit_line("<single_mapping origin_block=\"#{m.origin_begin}\" data_block=\"#{m.data_begin}\" time=\"#{m.time}\"/>")
     else
-      e.emit_tag(m, 'range_mapping', :origin_begin, :data_begin, :length)
+      e.emit_tag(m, 'range_mapping', :origin_begin, :data_begin, :length, :time)
     end
   end
 
