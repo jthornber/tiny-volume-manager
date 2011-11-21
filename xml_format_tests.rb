@@ -10,7 +10,7 @@ class XMLFormatTests < Test::Unit::TestCase
 
   tag :quick, :infrastructure
 
-  def test_parse
+  def test_xml_parse
     io = StringIO.new(BASIC_TESTS_DD)
     metadata = read_xml(io)
     assert_equal(128, metadata.superblock.data_block_size)
@@ -26,7 +26,7 @@ class XMLFormatTests < Test::Unit::TestCase
     assert_equal(str, io.string)
   end
 
-  def test_write
+  def test_xml_write
     read_write_cycle(BASIC_TESTS_DD)
     read_write_cycle(BASIC_TESTS_DT)
   end
