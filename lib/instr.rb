@@ -5,6 +5,27 @@ require 'set'
 
 module DM
   module LowLevel
+    class Instruction
+      attr_accessor :op, :args
+
+      def initialize(op, args)
+        @op = op
+        @args = args
+      end
+
+      def [](n)
+        @args[n]
+      end
+
+      def []=(n, v)
+        @args[n] = v
+      end
+
+      def each(&block)
+        @args.each(&block)
+      end
+    end
+
     # The virtual machine has a set of methods that represent an
     # individual instruction.  Some core instructions, that control
     # program logic, will be common to all implementations.  Others are
@@ -92,10 +113,202 @@ module DM
 
       def instr_noop
       end
+
+      def instr_label(l)
+      end
+    end
+
+    def self.def_instr(method)
+      define_method(method) do |*args|
+        Instruction.new(method, args)
+      end
+    end
+
+    def_instr(:create)
+    def_instr(:remove)
+    def_instr(:suspend)
+    def_instr(:resume)
+    def_instr(:load)
+    def_instr(:clear)
+    def_instr(:message)
+    def_instr(:wait)
+    def_instr(:jump)
+    def_instr(:jump_on_fail)
+    def_instr(:clear_fail)
+    def_instr(:noop)
+    def_instr(:label)
+
+    class Program
+      attr_accessor :instrs
+
+      def initialize(instrs)
+        @instrs = instrs
+      end
+
+      def pp
+        @instrs.each do |i|
+          case i.op
+          when :label
+            puts ''
+            puts ".#{i.args[0]}"
+
+          else
+            pp_instr(8, i)
+          end
+        end
+      end
+
+      def pp_instr(offset, i)
+        indent = ' ' * offset
+        case
+        when [:jump_on_fail, :jump].member?(i.op)
+          puts "#{indent}#{i.op.to_s} #{i.args[0]}"
+
+        else
+          args = i.args.map {|a| quote(a)}.join(' ')
+          puts "#{indent}#{i.op.to_s} #{args}"
+        end
+      end
+
+      def quote(str)
+        (str.class == String) ? "\"#{str}\"" : str.to_s
+      end
+    end
+  end
+
+  module MediumLevel
+    # The medium level representation deals with basic blocks and
+    # conditionals.  It compiles to a low-level program.  Some
+    # peep-hole optimisation is done - eg, inlining, dead code
+    # elimination.  This optimisation is done to improve
+    # comprehensibility of the final program, rather than to improve
+    # performance.
+
+    class BasicBlock
+      VALID_OPS = [:create, :remove, :suspend, :resume, :load, :clear, :message, :wait, :clear_fail, :noop]
+
+      attr_accessor :instrs
+
+      def initialize(instrs)
+        unless instrs.all? {|e| VALID_OPS.member?(e.op)}
+          raise RuntimeError, "invalid op for basic block: #{e.op}"
+        end
+
+        @instrs = instrs
+      end
+
+      def compile
+        @instrs
+      end
+    end
+
+    class Label
+      attr_accessor :mir, :label
+
+      @@key = 0
+      def self.next_label
+        l = "label_#{@@key}"
+        @@key = @@key + 1
+
+        l
+      end
+
+      def initialize(mir)
+        @mir = mir
+        @label = Label.next_label
+      end
+
+      def compile
+        code = Array.new
+        code << Instruction.new(:label, [@label])
+        code.concat(@mir.compile)
+
+        code
+      end
+    end
+
+    class Cond
+      attr_accessor :on_success, :on_fail
+
+      def initialize(on_success, on_fail)
+        @on_success = Label.new(on_success)
+        @on_fail = Label.new(on_fail)
+      end
+
+      def compile
+        out = Label.new(BasicBlock.new([]))
+
+        code = Array.new
+        code << LowLevel::jump_on_fail(@on_fail.label)
+        code.concat(@on_success.compile)
+        code << LowLevel::jump(out.label)
+
+        code.concat(@on_fail.compile)
+        code.concat(out.compile)
+
+        code
+      end
+    end
+
+    class Sequence
+      attr_accessor :blocks
+
+      def initialize(blocks)
+        @blocks = blocks
+      end
+
+      def append(block)
+        @blocks << block
+      end
+
+      def compile
+        code = Array.new
+
+        blocks.each do |b|
+          code.concat(b.compile)
+        end
+
+        code
+      end
+    end
+
+    def unlabel(instrs)
+      instrs                    # FIXME: finish
+    end
+
+    def compile(mir)
+      # FIXME: optimise at the mir level, then compile, then optimise
+      # at the lir level
+      mir.compile
     end
   end
 
   module HighLevel
+    # The high level interface is less general, instead providing
+    # constructs that are more specific to our needs.
+
+
+    # Associate labels with BBs
+    class BBSet
+      attr_accessor :blocks
+
+      def initialize
+        @key = 0
+        @blocks = Hash.new
+      end
+
+      def insert(bb)
+        key = "basic_block_#{@key}".intern
+        @key = @key + 1
+        @blocks[key] = bb
+        key
+      end
+
+      def lookup(key)
+        @blocks.fetch(key)
+      end
+    end
+
     class Sequence
       def initialize(instrs)
         @instrs = instrs
@@ -396,21 +609,6 @@ module DM
       push_instr(s)
       s
     end
-
-    def self.def_instr(method, klass)
-      define_method(method) do |*args|
-        push_instr(klass.new(*args))
-      end
-    end
-
-    def_instr(:create, Create)
-    def_instr(:remove, Remove)
-    def_instr(:suspend, Suspend)
-    def_instr(:resume, Resume)
-    def_instr(:load, Load)
-    def_instr(:clear, Clear)
-    def_instr(:message, Message)
-    def_instr(:wait, Wait)
 
     def quote(str)
       (str.class == String) ? "\"#{str}\"" : str.to_s
