@@ -26,6 +26,74 @@ module DM
       end
     end
 
+
+    class Program
+      attr_accessor :instrs, :strings
+
+      def initialize()
+        @strings = Hash.new
+        @instrs = Array.new
+      end
+
+      def add_string(str)
+        # we don't bother with short strings
+        if str.length < 20
+          str
+        else
+          if @strings.has_key?(str)
+            @strings[str]
+          else
+            key = @strings.size
+            @strings[str] = key
+            key
+          end
+        end
+      end
+
+      def append_instrs(instrs)
+        @instrs.concat(instrs)
+      end
+
+      def pp
+        @strings.entries.sort_by {|p| p[1]}.each do |str, key|
+          puts ".string #{key}"
+          str.lines.each do |l|
+            puts "        #{l}"
+          end
+          puts
+        end
+        puts "\n"
+
+        puts ".main"
+        @instrs.each do |i|
+          case i.op
+          when :label
+            puts ''
+            puts ".#{i.args[0]}"
+
+          else
+            pp_instr(8, i)
+          end
+        end
+      end
+
+      def pp_instr(offset, i)
+        indent = ' ' * offset
+        case
+        when [:jump_on_fail, :jump].member?(i.op)
+          puts "#{indent}#{i.op.to_s} #{i.args[0]}"
+
+        else
+          args = i.args.map {|a| quote(a)}.join(' ')
+          puts "#{indent}#{i.op.to_s} #{args}"
+        end
+      end
+
+      def quote(str)
+        (str.class == String) ? "\"#{str}\"" : str.to_s
+      end
+    end
+
     # The virtual machine has a set of methods that represent an
     # individual instruction.  Some core instructions, that control
     # program logic, will be common to all implementations.  Others are
@@ -47,10 +115,6 @@ module DM
       end
 
       private
-      def instr_push_return(addr)
-        @return_stack.push(addr)
-      end
-
       def instr_jump(addr)
         @pc = addr
       end
@@ -59,16 +123,6 @@ module DM
         if @fail_flag
           @pc = addr
         end
-      end
-
-      # pops an address off the return stack, and jumps to it.  If the
-      # return stack is empty then it ends execution.
-      def instr_return
-        if @return_stack.size == 0
-          throw :done
-        end
-
-        @pc = @return_stack.pop
       end
 
       def instr_clear_fail(addr)
@@ -137,43 +191,6 @@ module DM
     def_instr(:clear_fail)
     def_instr(:noop)
     def_instr(:label)
-
-    class Program
-      attr_accessor :instrs
-
-      def initialize(instrs)
-        @instrs = instrs
-      end
-
-      def pp
-        @instrs.each do |i|
-          case i.op
-          when :label
-            puts ''
-            puts ".#{i.args[0]}"
-
-          else
-            pp_instr(8, i)
-          end
-        end
-      end
-
-      def pp_instr(offset, i)
-        indent = ' ' * offset
-        case
-        when [:jump_on_fail, :jump].member?(i.op)
-          puts "#{indent}#{i.op.to_s} #{i.args[0]}"
-
-        else
-          args = i.args.map {|a| quote(a)}.join(' ')
-          puts "#{indent}#{i.op.to_s} #{args}"
-        end
-      end
-
-      def quote(str)
-        (str.class == String) ? "\"#{str}\"" : str.to_s
-      end
-    end
   end
 
   module MediumLevel
@@ -277,9 +294,16 @@ module DM
     end
 
     def compile(mir)
-      # FIXME: optimise at the mir level, then compile, then optimise
-      # at the lir level
-      mir.compile
+      instrs = mir.compile
+
+      prog = Program.new
+
+      instrs.each do |i|
+        i.args.map! {|a| prog.add_string(a.to_s)}
+      end
+
+      prog.append_instrs(instrs)
+      prog
     end
   end
 
