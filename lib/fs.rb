@@ -43,7 +43,7 @@ module FS
   class Ext4 < BaseFS
     def mount_cmd(mount_point); "mount #{dev} #{mount_point}"; end
     def check_cmd; "fsck.ext4 -fn #{dev}"; end
-    def mkfs_cmd; "mkfs.ext4 #{dev}"; end
+    def mkfs_cmd; "mkfs.ext4 -E lazy_itable_init=0 #{dev}"; end
   end
 
   class XFS < BaseFS
