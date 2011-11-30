@@ -13,9 +13,10 @@ require 'test/unit/ui/testrunnerutilities'
 require 'yaml'
 
 # library test suites
-require 'tvm_tests'
-require 'process_tests'
 require 'prelude_tests'
+require 'process_tests'
+require 'segment_tests'
+require 'tvm_tests'
 require 'xml_format_tests'
 
 # thinp test suites
