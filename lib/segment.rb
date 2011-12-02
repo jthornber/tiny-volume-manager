@@ -4,6 +4,59 @@ require 'lib/prelude'
 #----------------------------------------------------------------
 
 module TinyVolumeManager
+  module AllocPolicy
+    class First
+      def select(segs)
+        0
+      end
+    end
+
+    class Last
+      def select(segs)
+        segs.size - 1
+      end
+    end
+
+    class BestFit
+      def initialize(len)
+        @len = len
+      end
+
+      def select(segs)
+        positive_found = false
+        best = nil
+        best_index = nil
+
+        segs.each_with_index do |s, i|
+          delta = s.length - @len
+          if delta == 0
+            return i
+
+          elsif delta > 0
+            if !positive_found
+              best = nil
+              positive_found = true
+            end
+
+            if best.nil? || delta < best
+              best = delta
+              best_index = i
+            end
+
+          elsif !positive_found
+            delta = delta.abs
+            if best.nil? || delta < best
+              best = delta
+              best_index = i
+            end
+          end
+        end
+
+        best_index
+      end
+    end
+  end
+
   class Segment < Struct.new(:begin, :end)
     def initialize(b, e)
       super(b, e)
@@ -105,8 +158,22 @@ module TinyVolumeManager
     def quantise(size)
     end
 
-    def each(&block)
-      @segs.each(&block)
+    # We have various accessors for removing a single segment.  We
+    # _don't_ allow people to iterate the list - this would just
+    # encourage mutable code.  The policy should have a 'select'
+    # method that takes an Array of segments, and returns either an
+    # index or raises an exception.
+    def alloc(policy)
+      index = policy.select(@segs)
+
+      if index < 0 || index >= @segs.size
+        raise RuntimeError, "index out of bounds"
+      end
+
+      s = @segs[index]
+      @segs.delete_at(index)
+
+      s
     end
 
     private
