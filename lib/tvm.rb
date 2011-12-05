@@ -6,7 +6,8 @@ require 'lib/prelude'
 
 module TinyVolumeManager
 
-  Segment = Struct.new(:dev, :offset, :length)
+  # FIXME: define in terms of Segment
+  DevSegment = Struct.new(:dev, :offset, :length)
 
   class Allocator
     def initialize
@@ -20,7 +21,7 @@ module TinyVolumeManager
 
       s = @free_segments.shift
       if s.length > max_length
-        @free_segments.unshift(Segment.new(s.dev, s.offset + max_length, s.length - max_length))
+        @free_segments.unshift(DevSegment.new(s.dev, s.offset + max_length, s.length - max_length))
         s.length = max_length
       end
       s
@@ -123,7 +124,7 @@ module TinyVolumeManager
 
     # PV in LVM parlance
     def add_allocation_volume(dev, offset, length)
-      @allocator.release_segments(Segment.new(dev, offset, length))
+      @allocator.release_segments(DevSegment.new(dev, offset, length))
     end
 
     def member?(name)
