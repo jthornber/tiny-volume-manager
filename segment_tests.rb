@@ -155,4 +155,10 @@ class SegmentTests < Test::Unit::TestCase
     assert_equal(8, segs.total)
   end
 
+  def test_best_fit_policy5
+    segs = SegmentList.new
+    assert_raises(RuntimeError) do
+      s = segs.alloc(AllocPolicy::BestFit.new(100))
+    end
+  end
 end

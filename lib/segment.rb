@@ -164,6 +164,10 @@ module TinyVolumeManager
     # method that takes an Array of segments, and returns either an
     # index or raises an exception.
     def alloc(policy)
+      if @segs.size == 0
+        raise RuntimeError, "segments to choose from"
+      end
+
       index = policy.select(@segs)
 
       if index < 0 || index >= @segs.size
