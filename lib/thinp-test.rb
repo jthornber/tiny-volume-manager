@@ -37,10 +37,10 @@ class ThinpTestCase < Test::Unit::TestCase
 
     @dm = DMInterface.new
 
-    wipe_device(@metadata_dev, 8)
-
     @bufio = BufIOParams.new
     @bufio.set_param('peak_allocated_bytes', 0)
+
+    wipe_device(@metadata_dev, 8)
   end
 
   def teardown

@@ -17,23 +17,29 @@ module Utils
     ProcessControl.system("102400", "blockdev --getsize #{dev_or_path}").chomp.to_i
   end
 
+  def dev_logical_block_size(dev_or_path)
+    ProcessControl.system("102400", "blockdev --getbsz #{dev_or_path}").chomp.to_i
+  end
+
   def wipe_device(dev_or_path, sectors = nil)
     size = dev_size(dev_or_path)
+    lbsize = dev_logical_block_size(dev_or_path)
 
     if sectors.nil? || size < sectors
       sectors = size
     end
+    sectors /= (lbsize / 512)
 
-    block_size = 2048 * 64       # 64 M
+    block_size = ((1024 << 10) / lbsize) * 64       # 64 M
     count = sectors / block_size
     if count > 0
-      ProcessControl.run("dd if=/dev/zero of=#{dev_or_path} oflag=direct bs=#{block_size * 512} count=#{count}")
+      ProcessControl.run("dd if=/dev/zero of=#{dev_or_path} oflag=direct bs=#{block_size * lbsize} count=#{count}")
     end
 
     remainder = sectors % block_size
     if remainder > 0
       # we have a partial block to do at the end
-      ProcessControl.run("dd if=/dev/zero of=#{dev_or_path} oflag=direct bs=512 count=#{remainder} seek=#{count * block_size}")
+      ProcessControl.run("dd if=/dev/zero of=#{dev_or_path} oflag=direct bs=#{lbsize} count=#{remainder} seek=#{count * block_size}")
     end
   end
 
