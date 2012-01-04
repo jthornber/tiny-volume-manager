@@ -130,6 +130,10 @@ class DMDev
     ProcessControl.run("dmsetup status #{@name}")
   end
 
+  def info
+    ProcessControl.run("dmsetup info #{@name}")
+  end
+
   def event_nr
     output = ProcessControl.run("dmsetup status -v #{@name}")
     m = output.match(/Event number:[ \t]*([0-9]+)/)

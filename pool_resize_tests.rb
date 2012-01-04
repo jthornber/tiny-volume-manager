@@ -5,6 +5,7 @@ require 'lib/process'
 require 'lib/utils'
 require 'lib/tags'
 require 'lib/thinp-test'
+require 'timeout'
 
 #----------------------------------------------------------------
 
@@ -14,7 +15,7 @@ class PoolResizeTests < ThinpTestCase
 
   def setup
     super
-    @low_water_mark = 0 if @low_water_mark.nil?
+    @low_water_mark = 0
     @data_block_size = 128
   end
 
@@ -88,6 +89,54 @@ class PoolResizeTests < ThinpTestCase
 
   def test_resize_io
     resize_io_many(8)
+  end
+
+  # I think the current behaviour is correct.  You should just avoid
+  # opening the device on critical paths that do the resizing.  Even
+  # if you do succeed in opening the dev, you can't close until after
+  # the resize, or you'll hang again.
+  def _test_close_on_out_of_data_doesnt_cause_hang
+    size = 128
+    opened = false
+
+    with_standard_pool(size) do |pool|
+      with_new_thin(pool, 256, 0) do |thin|
+        event_tracker = pool.event_tracker;
+        pid = fork {wipe_device(thin)}
+
+        event_tracker.wait do
+          status = PoolStatus.new(pool)
+          status.used_data_blocks >= status.total_data_blocks - @low_water_mark
+        end
+
+        # dd may be blocked in the close call which flushes the
+        # device.  Opening a device should always succeed, but the
+        # close/sync may be causing it to block forever waiting for a
+        # resize.  agk wishes to change this behaviour.
+        f = nil
+        begin
+          f = File.open(thin.to_s)
+          opened = true
+        ensure
+          # resize the pool so the wipe can complete.
+          table = Table.new(ThinPool.new(256, @metadata_dev, @data_dev,
+                                         @data_block_size, @low_water_mark))
+          pool.load(table)
+          pool.resume
+
+          f.close unless f.nil?
+        end
+      end
+    end
+
+    Process.wait
+    if $?.exitstatus > 0
+      raise RuntimeError, "wipe sub process failed"
+    end
+
+    if !opened
+      raise RuntimeError, "open failed"
+    end
   end
 
   # def test_reload_an_empty_table
