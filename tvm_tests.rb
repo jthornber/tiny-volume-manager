@@ -85,6 +85,41 @@ class TinyVolumeManagerTests < Test::Unit::TestCase
 
     assert_equal(tvm.free_space, 1000)
   end
+
+  def test_extend_linear_vol
+    allocator = Allocator.new()
+    allocator.release_segments(DevSegment.new('some_pv', 0, 1024))
+    lv = Details::LinearVolume.new('volume', 100);
+    lv.allocate(allocator)
+    assert_equal(100, lv.length)
+    assert_equal(100, segment_total(lv.segments))
+
+    lv.resize(allocator, 101)
+    assert_equal(101, lv.length)
+    assert_equal(101, segment_total(lv.segments))
+
+    lv.resize(allocator, 513)
+    assert_equal(513, lv.length)
+    assert_equal(513, segment_total(lv.segments))
+  end
+
+  def test_reduce_linear_vol
+    allocator = Allocator.new()
+    allocator.release_segments(DevSegment.new('some_pv', 0, 1024))
+    lv = Details::LinearVolume.new('volume', 100);
+    lv.allocate(allocator)
+    assert_equal(100, lv.length)
+    assert_equal(100, segment_total(lv.segments))
+
+    # reduce isn't implemented yet
+    assert_raises(RuntimeError) do
+      lv.resize(allocator, 99)
+    end
+
+    # Nothing should have changed
+    assert_equal(100, lv.length)
+    assert_equal(100, segment_total(lv.segments))
+  end
 end
 
 #----------------------------------------------------------------

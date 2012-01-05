@@ -80,7 +80,7 @@ module TinyVolumeManager
         @allocated = false
       end
 
-      def resize(new_length)
+      def resize(allocator, new_length)
         raise RuntimeError, "resize not implemented"
       end
 
@@ -94,10 +94,31 @@ module TinyVolumeManager
         super(n, l)
       end
 
+      def resize(allocator, new_length)
+        if !@allocated
+          @length = new_length
+          return
+        end
+
+        if new_length < @length
+          raise RuntimeError, "reduce not implemented"
+        end
+
+        new_segs = allocator.allocate_segments(new_length - @length)
+        @segments.concat(new_segs)
+        @targets.concat(LinearVolume.segs_to_targets(new_segs))
+        @length = new_length
+      end
+
       def allocate(allocator)
         @segments = allocator.allocate_segments(@length)
-        @targets = @segments.map {|s| Linear.new(s.length, s.dev, s.offset)}
+        @targets = LinearVolume.segs_to_targets(@segments)
         @allocated = true
+      end
+
+      private
+      def self.segs_to_targets(segs)
+        segs.map {|s| Linear.new(s.length, s.dev, s.offset)}
       end
     end
   end
@@ -150,6 +171,11 @@ module TinyVolumeManager
       vol = @volumes[name]
       @allocator.release_segments(*vol.segments)
       @volumes.delete(name)
+    end
+
+    def resize(name, new_size)
+      check_exists(name)
+      @volumes[name].resize(@allocator, new_size)
     end
 
     def segments(name)
