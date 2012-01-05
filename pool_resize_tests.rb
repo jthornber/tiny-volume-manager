@@ -139,6 +139,42 @@ class PoolResizeTests < ThinpTestCase
     end
   end
 
+  # see BZ #769921
+  def test_ext4_runs_out_of_space
+    # we create a pool with a really tiny data volume that wont be
+    # able to complete a mkfs.
+    with_standard_pool(16) do |pool|
+      with_new_thin(pool, @volume_size, 0) do |thin|
+
+        event_tracker = pool.event_tracker;
+
+        thin_fs = FS::file_system(:ext4, thin)
+        fork {thin_fs.format}
+
+        # FIXME: this is so common it should go into a utility lib
+        event_tracker.wait do
+          status = PoolStatus.new(pool)
+          status.used_data_blocks >= status.total_data_blocks - @low_water_mark
+        end
+
+        # we're not sure what the development version of dmeventd was
+        # doing to create the issue; some experiments to find out.
+        pool.info
+
+        # Resize the pool so the format can complete
+        table = Table.new(ThinPool.new(@size, @metadata_dev, @data_dev,
+                                       @data_block_size, @low_water_mark))
+        pool.load(table)
+        pool.resume
+      end
+    end
+
+    Process.wait
+    if $?.exitstatus > 0
+      raise RuntimeError, "wipe sub process failed"
+    end
+  end
+
   # def test_reload_an_empty_table
   #   with_standard_pool(@size) do |pool|
   #     with_new_thin(pool, @volume_size, 0) do |thin|
