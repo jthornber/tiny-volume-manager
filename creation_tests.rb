@@ -10,6 +10,7 @@ require 'lib/thinp-test'
 
 class CreationTests < ThinpTestCase
   include Tags
+  include TinyVolumeManager
   include Utils
 
   def setup
@@ -85,6 +86,26 @@ class CreationTests < ThinpTestCase
 
   def test_largest_dev_t_succeeds
     with_standard_pool(@size) {|pool| pool.message(0, "create_thin #{2**24 - 1}")}
+  end
+
+  def test_too_small_a_metadata_dev_fails
+    tvm = VM.new
+    tvm.add_allocation_volume(@data_dev, 0, dev_size(@data_dev))
+
+    md_size = 64                # 32k, way too small
+    data_size = 2097152
+    tvm.add_volume(linear_vol('metadata', md_size))
+    tvm.add_volume(linear_vol('data', 2097152))
+
+    with_devs(tvm.table('metadata'),
+              tvm.table('data')) do |md, data|
+      wipe_device(md)
+      assert_raises(RuntimeError) do
+        with_dev(Table.new(ThinPool.new(data_size, md, data, 128, 1))) do |pool|
+          # shouldn't get here
+        end
+      end
+    end
   end
 end
 
