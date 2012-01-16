@@ -19,7 +19,7 @@ class RamDiskTests < ThinpTestCase
     @data_dev = '/dev/ram1'
     @size = 2097152 * 2         # sectors
     @volume_size = 1900000
-    #@data_block_size = 2 * 1024 * 8 # 8 M
+    @data_block_size = 2 * 1024 * 8 # 8 M
   end
 
   tag :thinp_target
