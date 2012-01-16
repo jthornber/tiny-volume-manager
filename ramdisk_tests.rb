@@ -29,22 +29,28 @@ class RamDiskTests < ThinpTestCase
     @dm.with_dev(linear_table) {|linear_dev| wipe_device(linear_dev)}
   end
 
-  tag :thinp_target
+  def test_read_a_linear_device
+    linear_table = Table.new(Linear.new(@volume_size, @data_dev, 0))
+    @dm.with_dev(linear_table) {|linear_dev| read_device_to_null(linear_dev)}
+  end
+
+  def test_read_ramdisk
+    read_device_to_null('/dev/ram1')
+  end
 
   def test_dd_benchmark
     with_standard_pool(@size, :zero => true) do |pool|
-
       info "wipe an unprovisioned thin device"
       with_new_thin(pool, @volume_size, 0) {|thin| wipe_device(thin)}
 
       info "wipe a fully provisioned thin device"
-      with_thin(pool, @volume_size, 0) {|thin| wipe_device(thin)}
+      with_thin(pool, @volume_size, 0) {|thin| read_device_to_null(thin)}
 
       info "wipe a snapshot of a fully provisioned device"
       with_new_snap(pool, @volume_size, 1, 0) {|snap| wipe_device(snap)}
 
       info "wipe a snapshot with no sharing"
-      with_thin(pool, @volume_size, 1) {|snap| wipe_device(snap)}
+      with_thin(pool, @volume_size, 1) {|snap| read_device_to_null(snap)}
     end
   end
 end

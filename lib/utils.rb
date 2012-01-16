@@ -43,6 +43,29 @@ module Utils
     end
   end
 
+  def read_device_to_null(dev_or_path, sectors = nil)
+    size = dev_size(dev_or_path)
+    lbsize = dev_logical_block_size(dev_or_path)
+
+    if sectors.nil? || size < sectors
+      sectors = size
+    end
+    sectors /= (lbsize / 512)
+
+    block_size = ((1024 << 10) / lbsize) * 64       # 64 M
+    count = sectors / block_size
+    if count > 0
+      ProcessControl.run("dd of=/dev/null if=#{dev_or_path} bs=#{block_size * lbsize} count=#{count}")
+    end
+
+    remainder = sectors % block_size
+    if remainder > 0
+      # we have a partial block to do at the end
+      ProcessControl.run("dd of=/dev/null if=#{dev_or_path} bs=#{lbsize} count=#{remainder} seek=#{count * block_size}")
+    end
+  end
+
+
   # Runs dt on the device, defaulting to random io and the 'iot'
   # pattern.
   def dt_device(file, io_type = nil, pattern = nil, size = nil)
