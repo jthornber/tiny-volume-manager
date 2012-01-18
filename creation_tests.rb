@@ -92,7 +92,7 @@ class CreationTests < ThinpTestCase
     tvm = VM.new
     tvm.add_allocation_volume(@data_dev, 0, dev_size(@data_dev))
 
-    md_size = 64                # 32k, way too small
+    md_size = 32                # 16k, way too small
     data_size = 2097152
     tvm.add_volume(linear_vol('metadata', md_size))
     tvm.add_volume(linear_vol('data', 2097152))
