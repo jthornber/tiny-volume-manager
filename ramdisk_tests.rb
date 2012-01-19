@@ -93,7 +93,12 @@ class RamDiskTests < ThinpTestCase
       info "wipe an unprovisioned thin device"
       with_new_thin(pool, @volume_size, 0) do |thin|
         wipe_device(thin)
-        aio_stress(thin)
+
+        deferred_ios = count_deferred_ios do
+          aio_stress(thin)
+        end
+
+        info "deferred ios: #{deferred_ios}"
       end
     end
   end

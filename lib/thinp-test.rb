@@ -165,7 +165,17 @@ class ThinpTestCase < Test::Unit::TestCase
     pool.message(0, "set_transaction_id #{old} #{new}")
   end
 
+  def count_deferred_ios(&block)
+    b = get_deferred_io_count
+    block.call
+    get_deferred_io_count - b
+  end
+
   private
+  def get_deferred_io_count
+    ProcessControl.run("cat /sys/module/dm_thin_pool/parameters/deferred_io_count").to_i
+  end
+
   def check_prereqs
     return if $checked_prerequisites
 
