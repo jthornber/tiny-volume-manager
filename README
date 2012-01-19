@@ -9,6 +9,8 @@ been released yet, so just sym link it to /bin/true.
 
 You also need dt in your path.
 
+And aio_stress (http://fsbench.filesystems.org/bench/aio-stress.c).
+
 
 Running
 =======
