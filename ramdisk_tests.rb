@@ -85,7 +85,11 @@ class RamDiskTests < ThinpTestCase
 
   def test_linear_aio_stress
     linear_table = Table.new(Linear.new(@volume_size, @data_dev, 0))
-    @dm.with_dev(linear_table) {|linear_dev| aio_stress(linear_dev)}
+    @dm.with_dev(linear_table) do |linear_dev|
+      aio_stress(linear_dev)
+      wipe_device(linear_dev)   # cause slow down?
+      aio_stress(linear_dev)
+    end
   end
 
   def test_stacked_linear_aio_stress
