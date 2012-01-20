@@ -88,6 +88,18 @@ class RamDiskTests < ThinpTestCase
     @dm.with_dev(linear_table) {|linear_dev| aio_stress(linear_dev)}
   end
 
+  def test_stacked_linear_aio_stress
+    linear_table = Table.new(Linear.new(@volume_size, @data_dev, 0))
+    @dm.with_dev(linear_table) do |linear_dev|
+      linear_table2 = Table.new(Linear.new(@volume_size, linear_dev, 0))
+      @dm.with_dev(linear_table2) do |linear_dev2|
+        aio_stress(linear_dev2)
+        wipe_device(linear_dev2)       # this causes the slowdown
+        aio_stress(linear_dev2)
+      end
+    end
+  end
+
   def test_thin_aio_stress
     with_standard_pool(@size, :zero => true) do |pool|
       info "wipe an unprovisioned thin device"
@@ -99,6 +111,30 @@ class RamDiskTests < ThinpTestCase
         end
 
         info "deferred ios: #{deferred_ios}"
+      end
+    end
+  end
+
+  def test_pool_aio_stress
+    with_standard_pool(@size, :zero => true) do |pool|
+      aio_stress(pool)
+    end
+  end
+
+  def test_linear_stacked_on_pool_aio_stress
+    with_standard_pool(@size, :zero => true) do |pool|
+      table = Table.new(Linear.new(@size, pool, 0))
+      @dm.with_dev(table) do |linear|
+        aio_stress(linear)
+      end
+    end
+  end
+
+  def test_thin_stacked_on_pool_aio_stress
+    with_standard_pool(@size, :zero => true) do |pool|
+      with_new_thin(pool, @volume_size, 0) do |thin|
+        wipe_device(thin)       # this causes the slowdown
+        aio_stress(thin)
       end
     end
   end
