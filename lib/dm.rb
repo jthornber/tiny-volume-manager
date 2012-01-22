@@ -38,8 +38,12 @@ class ThinPool < Target
 end
 
 class Thin < Target
-  def initialize(sector_count, pool, id)
-    super('thin', sector_count, pool.path, id)
+  def initialize(sector_count, pool, id, origin = nil)
+    if origin
+      super('thin', sector_count, pool.path, id, origin)
+    else
+      super('thin', sector_count, pool.path, id)
+    end
   end
 end
 

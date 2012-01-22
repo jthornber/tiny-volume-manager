@@ -71,15 +71,15 @@ class ThinpTestCase < Test::Unit::TestCase
     @dm.with_devs(*tables, &block)
   end
 
-  def with_thin(pool, size, id)
-    @dm.with_dev(Table.new(Thin.new(size, pool, id))) do |thin|
+  def with_thin(pool, size, id, opts = Hash.new)
+    @dm.with_dev(Table.new(Thin.new(size, pool, id, opts[:origin]))) do |thin|
       yield(thin)
     end
   end
 
-  def with_new_thin(pool, size, id, &block)
+  def with_new_thin(pool, size, id, opts = Hash.new, &block)
     pool.message(0, "create_thin #{id}")
-    with_thin(pool, size, id, &block)
+    with_thin(pool, size, id, opts, &block)
   end
 
   def with_thins(pool, size, *ids, &block)

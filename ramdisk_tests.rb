@@ -19,6 +19,12 @@ class RamDiskTests < ThinpTestCase
 
     # I'm assuming you have set up 2G ramdisks (ramdisk_size=2097152 on boot)
     @data_dev = '/dev/ram1'
+
+    if !$wiped_ramdisk
+      wipe_device(@data_dev)
+      $wiped_ramdisk = true
+    end
+
     @size = 2097152 * 2         # sectors
     @volume_size = 1900000
     @data_block_size = 2 * 1024 * 8 # 8 M
@@ -87,8 +93,6 @@ class RamDiskTests < ThinpTestCase
     linear_table = Table.new(Linear.new(@volume_size, @data_dev, 0))
     @dm.with_dev(linear_table) do |linear_dev|
       aio_stress(linear_dev)
-      wipe_device(linear_dev)   # cause slow down?
-      aio_stress(linear_dev)
     end
   end
 
@@ -97,8 +101,6 @@ class RamDiskTests < ThinpTestCase
     @dm.with_dev(linear_table) do |linear_dev|
       linear_table2 = Table.new(Linear.new(@volume_size, linear_dev, 0))
       @dm.with_dev(linear_table2) do |linear_dev2|
-        aio_stress(linear_dev2)
-        wipe_device(linear_dev2)       # this causes the slowdown
         aio_stress(linear_dev2)
       end
     end
@@ -109,12 +111,12 @@ class RamDiskTests < ThinpTestCase
       info "wipe an unprovisioned thin device"
       with_new_thin(pool, @volume_size, 0) do |thin|
         wipe_device(thin)
+        aio_stress(pool)
+        # deferred_ios = count_deferred_ios do
+        #   aio_stress(thin)
+        # end
 
-        deferred_ios = count_deferred_ios do
-          aio_stress(thin)
-        end
-
-        info "deferred ios: #{deferred_ios}"
+        # info "deferred ios: #{deferred_ios}"
       end
     end
   end
@@ -130,15 +132,6 @@ class RamDiskTests < ThinpTestCase
       table = Table.new(Linear.new(@size, pool, 0))
       @dm.with_dev(table) do |linear|
         aio_stress(linear)
-      end
-    end
-  end
-
-  def test_thin_stacked_on_pool_aio_stress
-    with_standard_pool(@size, :zero => true) do |pool|
-      with_new_thin(pool, @volume_size, 0) do |thin|
-        wipe_device(thin)       # this causes the slowdown
-        aio_stress(thin)
       end
     end
   end
