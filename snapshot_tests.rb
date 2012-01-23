@@ -215,6 +215,24 @@ class SnapshotTests < ThinpTestCase
       end
     end
   end
+
+  # This test is specifically aimed at exercising the auxillery ref
+  # count tree in the metadata.
+  def test_ref_count_tree
+    with_standard_pool(@size) do |pool|
+      with_new_thin(pool, @volume_size, 0) {|thin| wipe_device(thin)}
+
+      1.upto(5) do |id|
+        pool.message(0, "create_snap #{id} 0")
+      end
+
+      with_thins(pool, @volume_size, 0, 1, 2, 3, 4, 5) do |*thins|
+        thins.each do |thin|
+          wipe_device(thin)
+        end
+      end
+    end    
+  end
 end
 
 #----------------------------------------------------------------
