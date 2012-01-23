@@ -35,7 +35,7 @@ module ProcessControl
     end
   end
 
-  def ProcessControl.really_run(consumer, *cmd)
+  def self.really_run(consumer, *cmd)
     cmd_line = cmd.join(' ')
     debug "executing: '#{cmd_line}'"
 
@@ -92,7 +92,7 @@ module ProcessControl
     exit_status
   end
 
-  def ProcessControl.run_(default, *cmd)
+  def self.run_(default, *cmd)
     DryRun.run(default) do
       c = LogConsumer.new
       ProcessControl.really_run(c, *cmd)
@@ -100,15 +100,15 @@ module ProcessControl
     end
   end
 
-  def ProcessControl.system(default, *cmd)
+  def self.system(default, *cmd)
     run_(default, *cmd)
   end
 
-  def ProcessControl.run(*cmd)
+  def self.run(*cmd)
     run_('', *cmd)
   end
 
-  def ProcessControl.sleep(duration)
+  def self.sleep(duration)
     if !$dry_run
       Kernel.sleep(duration)
     end

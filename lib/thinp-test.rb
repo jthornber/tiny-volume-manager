@@ -1,5 +1,6 @@
 require 'lib/bufio'
 require 'lib/log'
+require 'lib/process'
 require 'test/unit'
 
 #----------------------------------------------------------------
@@ -8,6 +9,7 @@ $checked_prerequisites = false
 
 class ThinpTestCase < Test::Unit::TestCase
   undef_method :default_test
+  include ProcessControl
 
   def setup
     check_prereqs()
