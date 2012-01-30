@@ -21,15 +21,6 @@ class RestoreTests < ThinpTestCase
   tag :thinp_target
   tag :thinp_target, :slow
 
-  # FIXME: move to thinp-test
-  def assert_identical_files(f1, f2)
-    begin
-      ProcessControl::run("diff #{f1} #{f2}")
-    rescue
-      flunk("files differ #{f1} #{f2}")
-    end
-  end
-
   # Reads the metadata from an _inactive_ pool
   # FIXME: move to thinp-test.rb ?
   def dump_metadata(dev)

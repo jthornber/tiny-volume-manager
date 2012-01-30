@@ -173,6 +173,14 @@ class ThinpTestCase < Test::Unit::TestCase
     get_deferred_io_count - b
   end
 
+  def assert_identical_files(f1, f2)
+    begin
+      ProcessControl::run("diff #{f1} #{f2}")
+    rescue
+      flunk("files differ #{f1} #{f2}")
+    end
+  end
+
   private
   def get_deferred_io_count
     ProcessControl.run("cat /sys/module/dm_thin_pool/parameters/deferred_io_count").to_i
