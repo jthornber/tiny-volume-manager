@@ -163,6 +163,16 @@ class DMDev
   def to_s()
     path
   end
+
+  # discards bytes delimited by b (begin, inclusive) and e (end,
+  # non-inclusive).  b and e are given in 512 byte sectors.
+  BLKDISCARD = 4727
+
+  def discard(b, e)
+    File.open(path, File::RDWR | File::NONBLOCK) do |ctrl|
+      ctrl.ioctl(BLKDISCARD, [b * 512, e * 512].pack('QQ'))
+    end
+  end
 end
 
 class DMEventTracker
