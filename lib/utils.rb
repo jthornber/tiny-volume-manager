@@ -9,6 +9,10 @@ module Utils
     n
   end
 
+  def div_up(n, d)
+    (n + (d - 1)) / d
+  end
+
   def round_down(n, d)
     round_up(n, d) - d
   end
