@@ -7,6 +7,7 @@ require 'lib/status'
 require 'lib/tags'
 require 'lib/thinp-test'
 require 'lib/xml_format'
+require 'set'
 
 #----------------------------------------------------------------
 
@@ -149,29 +150,39 @@ class DiscardTests < ThinpTestCase
     check_provisioned_blocks(md, 0, @blocks_per_dev) {|b| b.odd?}
   end
 
+  WIPES = 4
+
   def test_discard_random_sectors
-    provisioned_sectors = 0
+    provisioned = Set.new
 
     with_standard_pool(@size) do |pool|
       with_new_thin(pool, @volume_size, 0) do |thin|
         n = 0
 
-        while n < @blocks_per_dev
-          if (provisioned_sectors <= 0)
-            wipe_device(thin) # provison in case of no mappings
-            provisioned_sectors = @volume_size
+        while n < WIPES
+          if provisioned.size == 0
+            STDERR.puts "wipe #{n}"
+
+            # provison in case of no mappings
+            wipe_device(thin)
+            0.upto(@blocks_per_dev - 1) do |b|
+              provisioned << b
+            end
+
+            n += 1
           end
 
-          s = rand(@volume_size - 1)
-          s_len = rand(@volume_size)
-          if (s + s_len > @volume_size)
-            s_len = @volume_size - s
+          s = rand(@blocks_per_dev - 1)
+          s_len = rand(@blocks_per_dev)
+          if (s + s_len > @blocks_per_dev)
+            s_len = @blocks_per_dev - s
           end
 
-          thin.discard(s, s_len)
+          thin.discard(s * @data_block_size, s_len * @data_block_size)
 
-          provisioned_sectors -= s_len
-          n += 1
+          s.upto(s + s_len - 1) do |b|
+            provisioned.delete(b)
+          end
         end
       end
     end
