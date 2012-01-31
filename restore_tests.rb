@@ -21,21 +21,6 @@ class RestoreTests < ThinpTestCase
   tag :thinp_target
   tag :thinp_target, :slow
 
-  # Reads the metadata from an _inactive_ pool
-  # FIXME: move to thinp-test.rb ?
-  def dump_metadata(dev)
-    metadata = nil
-    Utils::with_temp_file('metadata_xml') do |file|
-      ProcessControl::run("thin_dump -i #{dev} > #{file.path}")
-      file.rewind
-      yield(file.path)
-    end
-  end
-
-  def restore_metadata(xml_path, dev)
-    ProcessControl::run("thin_restore -i #{xml_path} -o #{dev}")
-  end
-
   # Uses io to prepare a simple metadata dev
   # FIXME: we need snapshots, and multiple thins in here
   def prepare_md

@@ -181,6 +181,20 @@ class ThinpTestCase < Test::Unit::TestCase
     end
   end
 
+  # Reads the metadata from an _inactive_ pool
+  def dump_metadata(dev)
+    metadata = nil
+    Utils::with_temp_file('metadata_xml') do |file|
+      ProcessControl::run("thin_dump -i #{dev} > #{file.path}")
+      file.rewind
+      yield(file.path)
+    end
+  end
+
+  def restore_metadata(xml_path, dev)
+    ProcessControl::run("thin_restore -i #{xml_path} -o #{dev}")
+  end
+
   private
   def get_deferred_io_count
     ProcessControl.run("cat /sys/module/dm_thin_pool/parameters/deferred_io_count").to_i
