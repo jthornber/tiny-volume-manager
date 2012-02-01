@@ -70,8 +70,7 @@ class DiscardTests < ThinpTestCase
   end
 
   def used_data_blocks(pool)
-    status = PoolStatus.new(pool)
-    status.used_data_blocks
+    PoolStatus.new(pool).used_data_blocks
   end
 
   def assert_used_blocks(pool, count)
