@@ -71,9 +71,9 @@ class DiscardTests < ThinpTestCase
   end
 
   def used_data_blocks(pool)
-    u = PoolStatus.new(pool).used_data_blocks
-    STDERR.puts "used: #{u}"
-    u
+    s = PoolStatus.new(pool)
+    STDERR.puts "pool status metadata(#{s.used_metadata_blocks}/#{s.total_metadata_blocks}) data(#{s.used_data_blocks}/#{s.total_data_blocks})"
+    s.used_data_blocks
   end
 
   def assert_used_blocks(pool, count)
@@ -162,10 +162,16 @@ class DiscardTests < ThinpTestCase
     with_standard_pool(@size) do |pool|
       with_new_thin(pool, @volume_size, 0) do |thin|
         while (Time.now - start) < duration
+
+          # FIXME: hack to force a commit
+          pool.message(0, 'create_thin 1')
+          pool.message(0, 'delete 1')
+
           if used_data_blocks(pool) < threshold_blocks
             STDERR.puts "#{Time.now} wiping dev"
             wipe_device(thin) # provison in case of too few mappings
           end
+
 
           STDERR.puts 'entering discard loop'
           10000.times do
