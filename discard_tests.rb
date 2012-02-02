@@ -155,6 +155,13 @@ class DiscardTests < ThinpTestCase
     check_provisioned_blocks(md, 0, @blocks_per_dev) {|b| b.odd?}
   end
 
+  def discard(thin, b, len)
+    b_sectors = b * @data_block_size
+    len_sectors = len * @data_block_size
+
+    thin.discard(b_sectors, [len_sectors, @volume_size - b_sectors].min)
+  end
+
   def do_discard_random_sectors(duration)
     start = Time.now
     threshold_blocks = @blocks_per_dev / 3
@@ -164,22 +171,20 @@ class DiscardTests < ThinpTestCase
         while (Time.now - start) < duration
 
           # FIXME: hack to force a commit
-          pool.message(0, 'create_thin 1')
-          pool.message(0, 'delete 1')
+          # pool.message(0, 'create_thin 1')
+          # pool.message(0, 'delete 1')
 
           if used_data_blocks(pool) < threshold_blocks
             STDERR.puts "#{Time.now} wiping dev"
             wipe_device(thin) # provison in case of too few mappings
           end
 
-
           STDERR.puts 'entering discard loop'
           10000.times do
-            s = rand(@blocks_per_dev - 1) * @data_block_size
-            s_len = (1 + rand(5)) * @data_block_size
-            s_len = [s_len, @blocks_per_dev * @data_block_size - s].min
+            s = rand(@blocks_per_dev - 1)
+            s_len = 1 + rand(5)
 
-            thin.discard(s, s_len)
+            discard(thin, s, s_len)
           end
         end
       end
