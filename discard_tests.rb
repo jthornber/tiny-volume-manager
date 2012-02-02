@@ -70,9 +70,14 @@ class DiscardTests < ThinpTestCase
     end
   end
 
+  def used_data_blocks(pool)
+    u = PoolStatus.new(pool).used_data_blocks
+    STDERR.puts "used: #{u}"
+    u
+  end
+
   def assert_used_blocks(pool, count)
-    status = PoolStatus.new(pool)
-    assert_equal(status.used_data_blocks, count)
+    assert_equal(used_data_blocks(pool), count)
   end
 
   def test_discard_empty_device
@@ -150,41 +155,32 @@ class DiscardTests < ThinpTestCase
     check_provisioned_blocks(md, 0, @blocks_per_dev) {|b| b.odd?}
   end
 
-  WIPES = 4
-
-  def test_discard_random_sectors
-    provisioned = Set.new
+  def do_discard_random_sectors(duration)
+    start = Time.now
+    threshold_blocks = @blocks_per_dev / 3
 
     with_standard_pool(@size) do |pool|
       with_new_thin(pool, @volume_size, 0) do |thin|
-        n = 0
-
-        while n < WIPES
-          if provisioned.size == 0
-            STDERR.puts "wipe #{n}"
-
-            # provison in case of no mappings
-            wipe_device(thin)
-            0.upto(@blocks_per_dev - 1) do |b|
-              provisioned << b
-            end
-
-            n += 1
+        while (Time.now - start) < duration
+          if used_data_blocks(pool) < threshold_blocks
+            STDERR.puts "#{Time.now} wiping dev"
+            wipe_device(thin) # provison in case of too few mappings
           end
 
-          s = rand(@blocks_per_dev - 1)
-          s_len = rand(@blocks_per_dev)
-          if (s + s_len > @blocks_per_dev)
-            s_len = @blocks_per_dev - s
-          end
+          STDERR.puts 'entering discard loop'
+          10000.times do
+            s = rand(@blocks_per_dev - 1) * @data_block_size
+            s_len = (1 + rand(5)) * @data_block_size
+            s_len = [s_len, @blocks_per_dev * @data_block_size - s].min
 
-          thin.discard(s * @data_block_size, s_len * @data_block_size)
-
-          s.upto(s + s_len - 1) do |b|
-            provisioned.delete(b)
+            thin.discard(s, s_len)
           end
         end
       end
     end
+  end
+
+  def test_discard_random_sectors
+    do_discard_random_sectors(10 * 60)
   end
 end
