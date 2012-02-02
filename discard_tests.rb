@@ -19,7 +19,8 @@ class DiscardTests < ThinpTestCase
   def setup
     super
     @data_block_size = 128
-    @blocks_per_dev = div_up(@volume_size, @data_block_size)
+    @blocks_per_dev = @volume_size / @data_block_size
+    @volume_size = @blocks_per_dev * @data_block_size # we want whole blocks for these tests
   end
 
   def read_metadata
@@ -77,7 +78,8 @@ class DiscardTests < ThinpTestCase
   end
 
   def assert_used_blocks(pool, count)
-    assert_equal(used_data_blocks(pool), count)
+    sleep(2)                # sleep long enough for a commit, so we know the used count is up to date
+    assert_equal(count, used_data_blocks(pool))
   end
 
   def test_discard_empty_device
