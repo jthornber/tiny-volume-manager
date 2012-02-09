@@ -180,12 +180,12 @@ class DiscardTests < ThinpTestCase
             STDERR.puts "#{Time.now} wiping dev"
             wipe_device(thin) # provison in case of too few mappings
           end
-
+    
           STDERR.puts 'entering discard loop'
           10000.times do
             s = rand(@blocks_per_dev - 1)
             s_len = 1 + rand(5)
-
+    
             discard(thin, s, s_len)
           end
         end
@@ -195,5 +195,70 @@ class DiscardTests < ThinpTestCase
 
   def test_discard_random_sectors
     do_discard_random_sectors(10 * 60)
+  end
+
+  #
+  # set up 2 level pool stack to provison and discard a thin device
+  # at the upper level and allow for enabling/disabling
+  # discards and discard_passdown at any level
+  #
+
+  def do_discard_levels(duration, levels = Hash.new)
+    with_standard_pool(@size, {:discard => levels[:lower] || true, :discard_passdown => levels[:lower_passdown] || true}) do |lower|
+      with_pool_volume(lower, @size, {:discard => levels[:upper] || true, :discard_passdown => levels[:upper_passdown] || true}) do |upper|
+        with_new_thin(upper, @volume_size, 0) do |thin|
+          # provison the whole thin dev and discard half of its blocks
+          wipe_device(thin)
+          discard(thin, 0, @blocks_per_dev / 2 * @data_block_size)
+
+          # assert results for combinations
+          if (levels[:lower])
+            if (levels[:upper_pass])
+              assert_equal(used_data_blocks(lower), @blocks_per_dev / 2)
+            else
+              assert_equal(used_data_blocks(lower), @blocks_per_dev)
+            end
+          else
+            assert_equal(used_data_blocks(lower), @blocks_per_dev)
+          end
+
+          if (levels[:upper])
+            assert_equal(used_data_blocks(upper), @blocks_per_dev / 2)
+          else
+            assert_equal(used_data_blocks(upper), @blocks_per_dev)
+          end
+        end
+      end
+    end
+  end
+
+  def test_discard_lower_both_upper_both
+    do_discard_levels(60, {:lower => true, :lower_passdown => true,
+                           :upper => true, :upper_passdown => true})
+  end
+
+  def test_discard_lower_none_upper_both
+    do_discard_levels(60, {:lower => false, :lower_passdown => false,
+                           :upper => true,  :upper_passdown => true})
+  end
+
+  def test_discard_lower_both_upper_none
+    do_discard_levels(60, {:lower => true,  :lower_passdown => true,
+                           :upper => false, :upper_passdown => false})
+  end
+
+  def test_discard_lower_none_upper_none
+    do_discard_levels(60, {:lower => false, :lower_passdown => false,
+                           :upper => false, :upper_passdown => false})
+  end
+
+  def test_discard_lower_both_upper_discard
+    do_discard_levels(60, {:lower => true, :lower_passdown => true,
+                           :upper => true, :upper_passdown => false})
+  end
+
+  def test_discard_lower_both_upper_discard
+    do_discard_levels(60, {:lower => true, :lower_passdown => true,
+                           :upper => true, :upper_passdown => false})
   end
 end

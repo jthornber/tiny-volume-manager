@@ -22,13 +22,19 @@ end
 
 class ThinPool < Target
   attr_accessor :metadata_dev
-  def initialize(sector_count, metadata_dev, data_dev, block_size, low_water_mark, zero = true)
-    if zero
-      super('thin-pool', sector_count, metadata_dev, data_dev, block_size, low_water_mark)
+  def initialize(sector_count, metadata_dev, data_dev, block_size, low_water_mark, opts = Hash.new)
+    features = Array.new
+    zero = opts[:zero] || false
+    discard = opts[:discard] || true
+    discard_passdown = opts[:discard_passdown] || true
+    features.push('skip_block_zeroing') if !zero
+    features.push('skip_discard') if !discard
+    features.push('skip_discard_passdown') if !discard_passdown
+    if features.length
+      super('thin-pool', sector_count, metadata_dev, data_dev, block_size, low_water_mark, features.length, features)
     else
-      super('thin-pool', sector_count, metadata_dev, data_dev, block_size, low_water_mark, 1, 'skip_block_zeroing')
+      super('thin-pool', sector_count, metadata_dev, data_dev, block_size, low_water_mark)
     end
-
     @metadata_dev = metadata_dev
   end
 
@@ -99,6 +105,7 @@ class DMDev
       debug "writing table: #{table.to_embed}"
       f.puts table.to_s
       f.flush
+ProcessControl.sleep(3.0)
       ProcessControl.run("dmsetup load #{@name} #{f.path}")
     end
 

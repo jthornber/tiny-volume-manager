@@ -1,6 +1,7 @@
 require 'lib/bufio'
 require 'lib/log'
 require 'lib/process'
+require 'lib/tvm'
 require 'test/unit'
 
 #----------------------------------------------------------------
@@ -56,12 +57,35 @@ class ThinpTestCase < Test::Unit::TestCase
   end
 
   def with_standard_pool(size, opts = Hash.new)
-    zero = opts[:zero] || false
     table = Table.new(ThinPool.new(size, @metadata_dev, @data_dev,
-                                   @data_block_size, @low_water_mark, zero))
+                                   @data_block_size, @low_water_mark, opts))
 
     @dm.with_dev(table) do |pool|
       yield(pool)
+    end
+  end
+  
+  # creates a pool on dev, and creates as big a thin as possible on that
+  def with_pool_volume(dev, max_size = nil, opts = Hash.new)
+    tvm = VM.new
+    ds = dev_size(dev)
+    ds = [ds, max_size].min unless max_size.nil?
+    tvm.add_allocation_volume(dev, 0, ds)
+
+    md_size = limit_metadata_dev_size(tvm.free_space / 16)
+    tvm.add_volume(linear_vol('md', md_size))
+    data_size = limit_data_dev_size(tvm.free_space)
+    tvm.add_volume(linear_vol('data', data_size))
+
+    with_devs(tvm.table('md'),
+              tvm.table('data')) do |md, data|
+
+      # zero the metadata so we get a fresh pool
+      wipe_device(md, 8)
+
+      with_devs(Table.new(ThinPool.new(data_size, md, data, @block_size, 1, opts))) do |pool|
+        with_new_thin(pool, data_size, 0) {|thin| yield(thin)}
+      end
     end
   end
 
