@@ -22,13 +22,16 @@ end
 
 class ThinPool < Target
   attr_accessor :metadata_dev
-  def initialize(sector_count, metadata_dev, data_dev, block_size, low_water_mark, zero = true)
-    if zero
-      super('thin-pool', sector_count, metadata_dev, data_dev, block_size, low_water_mark)
-    else
-      super('thin-pool', sector_count, metadata_dev, data_dev, block_size, low_water_mark, 1, 'skip_block_zeroing')
+  def initialize(sector_count, metadata_dev, data_dev, block_size, low_water_mark, zero = true, discard = true, discard_pass = true)
+    extra_opts = Array.new
+
+    extra_opts.instance_eval do
+      push :skip_block_zeroing unless zero
+      push :skip_discard unless discard
+      push :skip_discard_passdown unless discard_pass
     end
 
+    super('thin-pool', sector_count, metadata_dev, data_dev, block_size, low_water_mark, extra_opts.length, *extra_opts)
     @metadata_dev = metadata_dev
   end
 
