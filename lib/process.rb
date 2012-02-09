@@ -35,61 +35,78 @@ module ProcessControl
     end
   end
 
-  def self.really_run(consumer, *cmd)
-    cmd_line = cmd.join(' ')
-    debug "executing: '#{cmd_line}'"
+  class Child
+    def initialize(consumer, *cmd)
+      @consumer = consumer
 
-    cld_in = IO.pipe
-    cld_out = IO.pipe
-    cld_err = IO.pipe
+      @cmd_line = cmd.join(' ')
+      debug "executing: '#{@cmd_line}'"
 
-    pid = fork do
+      cld_in = IO.pipe
+      cld_out = IO.pipe
+      cld_err = IO.pipe
+
+      @pid = fork do
+        cld_in[1].close
+        cld_out[0].close
+        cld_err[0].close
+
+        STDIN.reopen(cld_in[0])
+        STDOUT.reopen(cld_out[1])
+        STDERR.reopen(cld_err[1])
+
+        exec(@cmd_line)
+      end
+
+      # we're not sending any input yet
+      cld_in[0].close
       cld_in[1].close
-      cld_out[0].close
-      cld_err[0].close
 
-      STDIN.reopen(cld_in[0])
-      STDOUT.reopen(cld_out[1])
-      STDERR.reopen(cld_err[1])
+      cld_out[1].close
+      cld_err[1].close
 
-      exec(cmd_line)
-    end
-
-    # we're not sending any input yet
-    cld_in[0].close
-    cld_in[1].close
-
-    cld_out[1].close
-    cld_err[1].close
-
-    # kick off threads to gather output
-    stdout_tid = Thread.new(cld_out[0]) do |p|
-      while line = p.gets
-        consumer.stdout(line.chomp)
+      # kick off threads to gather output
+      @stdout_tid = Thread.new(cld_out[0]) do |p|
+        while line = p.gets
+          @consumer.stdout(line.chomp)
+        end
+        @consumer.stdout_end
+        p.close
       end
-      consumer.stdout_end
-      p.close
-    end
 
-    stderr_tid = Thread.new(cld_err[0]) do |p|
-      while line = p.gets
-        consumer.stderr(line.chomp)
+      @stderr_tid = Thread.new(cld_err[0]) do |p|
+        while line = p.gets
+          @consumer.stderr(line.chomp)
+        end
+        @consumer.stderr_end
+        p.close
       end
-      consumer.stderr_end
-      p.close
     end
 
-    stdout_tid.join
-    stderr_tid.join
+    def wait
+      pid, exit_status = Process.wait2(@pid)
 
-    pid, exit_status = Process.wait2(pid)
+      @stdout_tid.join
+      @stderr_tid.join
 
-    if exit_status != 0
-      debug "command failed with '#{exit_status}': #{cmd_line}"
-      raise RuntimeError, "command failed: #{cmd_line}"
+      if exit_status != 0
+        debug "command failed with '#{exit_status}': #{@cmd_line}"
+        raise RuntimeError, "command failed: #{@cmd_line}"
+      end
+
+      exit_status
     end
 
-    exit_status
+    # blocks until process has exited
+    def interrupt
+      Process.kill('INT', @pid)
+      wait
+    end
+  end
+
+  def self.really_run(consumer, *cmd)
+    p = Child.new(consumer, *cmd)
+    p.wait
   end
 
   def self.run_(default, *cmd)
