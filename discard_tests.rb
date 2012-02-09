@@ -1,4 +1,5 @@
 require 'config'
+require 'lib/blktrace'
 require 'lib/dm'
 require 'lib/log'
 require 'lib/utils'
@@ -15,6 +16,7 @@ class DiscardTests < ThinpTestCase
   include Tags
   include Utils
   include XMLFormat
+  include BlkTrace
 
   def setup
     super
@@ -195,5 +197,53 @@ class DiscardTests < ThinpTestCase
 
   def test_discard_random_sectors
     do_discard_random_sectors(10 * 60)
+  end
+
+  def test_disable_discard
+    with_standard_pool(@size, :discard => false) do |pool|
+      with_new_thin(pool, @volume_size, 0) do |thin|
+        wipe_device(thin, 4)
+
+        assert_raises(Errno::EOPNOTSUPP) do
+          thin.discard(0, @data_block_size)
+        end
+      end
+    end
+  end
+
+  def test_enable_passdown
+    with_standard_pool(@size, :discard_passdown => true) do |pool|
+      with_new_thin(pool, @volume_size, 0) do |thin|
+        wipe_device(thin, 8)
+
+        traces, _ = blktrace(thin, @data_dev) do
+          discard(thin, 0, 1)
+        end
+
+        assert(traces[0].member?(Event.new('D', 0, 128)))
+        assert(traces[1].member?(Event.new('D', 0, 128)))
+      end
+    end
+
+    md = read_metadata
+    assert_no_mappings(md, 0)
+  end
+
+  def test_disable_passdown
+    with_standard_pool(@size, :discard_passdown => false) do |pool|
+      with_new_thin(pool, @volume_size, 0) do |thin|
+        wipe_device(thin, 8)
+
+        traces, _ = blktrace(thin, @data_dev) do
+          discard(thin, 0, 1)
+        end
+
+        assert(traces[0].member?(Event.new('D', 0, 128)))
+        assert(!traces[1].member?(Event.new('D', 0, 128)))
+      end
+    end
+
+    md = read_metadata
+    assert_no_mappings(md, 0)
   end
 end
