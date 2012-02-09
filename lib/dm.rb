@@ -24,17 +24,13 @@ class ThinPool < Target
   attr_accessor :metadata_dev
   def initialize(sector_count, metadata_dev, data_dev, block_size, low_water_mark, opts = Hash.new)
     features = Array.new
-    zero = opts[:zero] || false
-    discard = opts[:discard] || true
-    discard_passdown = opts[:discard_passdown] || true
+    zero = opts[:zero].nil? ? false : opts[:zero]
+    discard = opts[:discard].nil? ? true : opts[:discard]
+    discard_passdown = opts[:discard_passdown].nil? ? true : opts[:discard_passdown]
     features.push('skip_block_zeroing') if !zero
     features.push('skip_discard') if !discard
     features.push('skip_discard_passdown') if !discard_passdown
-    if features.length
-      super('thin-pool', sector_count, metadata_dev, data_dev, block_size, low_water_mark, features.length, features)
-    else
-      super('thin-pool', sector_count, metadata_dev, data_dev, block_size, low_water_mark)
-    end
+    super('thin-pool', sector_count, metadata_dev, data_dev, block_size, low_water_mark, features.length, features)
     @metadata_dev = metadata_dev
   end
 

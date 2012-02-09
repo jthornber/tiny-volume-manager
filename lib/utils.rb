@@ -25,6 +25,12 @@ module Utils
     ProcessControl.system("102400", "blockdev --getbsz #{dev_or_path}").chomp.to_i
   end
 
+  def limit_data_dev_size(size)
+    max_size = 1024 * 2048 # 1GB
+    size = max_size if size > max_size
+    size
+  end
+
   def wipe_device(dev_or_path, sectors = nil)
     size = dev_size(dev_or_path)
     lbsize = dev_logical_block_size(dev_or_path)

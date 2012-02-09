@@ -1,7 +1,6 @@
 require 'lib/bufio'
 require 'lib/log'
 require 'lib/process'
-require 'lib/tvm'
 require 'test/unit'
 
 #----------------------------------------------------------------
@@ -11,6 +10,7 @@ $checked_prerequisites = false
 class ThinpTestCase < Test::Unit::TestCase
   undef_method :default_test
   include ProcessControl
+  include TinyVolumeManager
 
   def setup
     check_prereqs()

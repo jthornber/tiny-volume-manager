@@ -204,8 +204,8 @@ class DiscardTests < ThinpTestCase
   #
 
   def do_discard_levels(duration, levels = Hash.new)
-    with_standard_pool(@size, {:discard => levels[:lower] || true, :discard_passdown => levels[:lower_passdown] || true}) do |lower|
-      with_pool_volume(lower, @size, {:discard => levels[:upper] || true, :discard_passdown => levels[:upper_passdown] || true}) do |upper|
+    with_standard_pool(@size, {:discard => levels[:lower], :discard_passdown => levels[:lower_passdown]}) do |lower|
+      with_pool_volume(lower, @size, {:discard => levels[:upper], :discard_passdown => levels[:upper_passdown]}) do |upper|
         with_new_thin(upper, @volume_size, 0) do |thin|
           # provison the whole thin dev and discard half of its blocks
           wipe_device(thin)

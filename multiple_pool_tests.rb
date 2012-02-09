@@ -19,12 +19,6 @@ class MultiplePoolTests < ThinpTestCase
     @block_size = 128
   end
 
-  def limit_data_dev_size(size)
-    max_size = 1024 * 2048 # 1GB
-    size = max_size if size > max_size
-    size
-  end
-
   tag :thinp_target, :quick
 
   def test_two_pools_pointing_to_the_same_metadata_fails
