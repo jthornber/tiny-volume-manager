@@ -83,8 +83,8 @@ class ThinpTestCase < Test::Unit::TestCase
       # zero the metadata so we get a fresh pool
       wipe_device(md, 8)
 
-      with_devs(Table.new(ThinPool.new(data_size, md, data, @block_size, 1, opts))) do |pool|
-        with_new_thin(pool, data_size, 0) {|thin| yield(thin)}
+      with_devs(Table.new(ThinPool.new(data_size, md, data, @data_block_size, 0, opts))) do |pool|
+        with_new_thin(pool, data_size, 0) {|thin| yield(thin, pool)}
       end
     end
   end

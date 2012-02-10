@@ -18,7 +18,6 @@ class DiscardTests < ThinpTestCase
 
   def setup
     super
-    @data_block_size = 128
     @blocks_per_dev = @volume_size / @data_block_size
     @volume_size = @blocks_per_dev * @data_block_size # we want whole blocks for these tests
   end
@@ -205,28 +204,26 @@ class DiscardTests < ThinpTestCase
 
   def do_discard_levels(duration, levels = Hash.new)
     with_standard_pool(@size, {:discard => levels[:lower], :discard_passdown => levels[:lower_passdown]}) do |lower|
-      with_pool_volume(lower, @size, {:discard => levels[:upper], :discard_passdown => levels[:upper_passdown]}) do |upper|
-        with_new_thin(upper, @volume_size, 0) do |thin|
-          # provison the whole thin dev and discard half of its blocks
-          wipe_device(thin)
-          discard(thin, 0, @blocks_per_dev / 2 * @data_block_size)
+      with_pool_volume(lower, @size, {:discard => levels[:upper], :discard_passdown => levels[:upper_passdown]}) do |thin, upper|
+        # provison the whole thin dev and discard half of its blocks
+        wipe_device(thin)
+        discard(thin, 0, @blocks_per_dev / 2 * @data_block_size)
 
-          # assert results for combinations
-          if (levels[:lower])
-            if (levels[:upper_pass])
-              assert_equal(used_data_blocks(lower), @blocks_per_dev / 2)
-            else
-              assert_equal(used_data_blocks(lower), @blocks_per_dev)
-            end
+        # assert results for combinations
+        if (levels[:lower])
+          if (levels[:upper_pass])
+            assert_equal(used_data_blocks(lower), @blocks_per_dev / 2)
           else
             assert_equal(used_data_blocks(lower), @blocks_per_dev)
           end
+        else
+          assert_equal(used_data_blocks(lower), @blocks_per_dev)
+        end
 
-          if (levels[:upper])
-            assert_equal(used_data_blocks(upper), @blocks_per_dev / 2)
-          else
-            assert_equal(used_data_blocks(upper), @blocks_per_dev)
-          end
+        if (levels[:upper])
+          assert_equal(used_data_blocks(upper), @blocks_per_dev / 2)
+        else
+          assert_equal(used_data_blocks(upper), @blocks_per_dev)
         end
       end
     end
