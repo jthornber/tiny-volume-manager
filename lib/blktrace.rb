@@ -10,6 +10,22 @@ module BlkTrace
     File.symlink?(path) ? File.readlink(path) : path
   end
 
+  def to_event_type(c)
+    case c
+    when 'D'
+      :discard
+
+    when 'R'
+      :read
+
+    when 'W'
+      :write
+
+    else
+      raise RuntimeError, "Unknown blktrace event type: '#{c}'"
+    end
+  end
+
   def blkparse(dev)
     # we need to work out what blktrace called this dev
     path = File.basename(follow_link(dev.to_s))
@@ -18,7 +34,7 @@ module BlkTrace
     pattern = /([DRW]) (\d+) (\d+)/
     `blkparse -f \"%d %S %N\n\" #{path}`.lines.each do |l|
       m = pattern.match(l)
-      events.push(Event.new(m[1], m[2].to_i, m[3].to_i / 512)) if m
+      events.push(Event.new(to_event_type(m[1]), m[2].to_i, m[3].to_i / 512)) if m
     end
 
     events
