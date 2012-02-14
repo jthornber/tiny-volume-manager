@@ -44,18 +44,18 @@ module Utils
     # in case we got many sectors, do dd in large blocks
     dd_lblocks = 64 * (1024 << 10) / lbsize # 64 M in logical blocks
     count = lblocks / dd_lblocks
-    ProcessControl.run("dd if=#[ifile} of=#{ofile} #{oflag} bs=#{dd_lblocks * lbsize} count=#{count}") if count > 0
+    ProcessControl.run("dd if=#{ifile} of=#{ofile} #{oflag} bs=#{dd_lblocks * lbsize} count=#{count}") if count > 0
 
     # do we have a partial dd block to do at the end?
     remainder = lblocks % dd_lblocks
     ProcessControl.run("dd if=#{ifile} of=#{ofile} #{oflag} bs=#{lbsize} count=#{remainder} seek=#{count * dd_lblocks}") if remainder > 0
   end
 
-  def wipe_device(dev_or_path, sectors)
+  def wipe_device(dev_or_path, sectors = nil)
     _dd_device(dev_or_path, true, sectors)
   end
 
-  def read_device_to_null(dev_or_path, sectors)
+  def read_device_to_null(dev_or_path, sectors = nil)
     _dd_device(dev_or_path, false, sectors)
   end
 
