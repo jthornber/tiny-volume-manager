@@ -53,7 +53,7 @@ class ThinpTestCase < Test::Unit::TestCase
   def limit_metadata_dev_size(size)
     max_size = 8355840
     size = max_size if size > max_size
-    size
+    size = @data_block_size if size < @data_block_size
   end
 
   def with_standard_pool(size, opts = Hash.new)
@@ -66,7 +66,7 @@ class ThinpTestCase < Test::Unit::TestCase
   end
   
   # creates a pool on dev, and creates as big a thin as possible on that
-  def with_pool_volume(dev, max_size = nil, opts = Hash.new)
+  def with_pool_volume(dev, max_size = nil, opts = Hash.new, vol_size = nil)
     tvm = VM.new
     ds = dev_size(dev)
     ds = [ds, max_size].min unless max_size.nil?
@@ -77,14 +77,20 @@ class ThinpTestCase < Test::Unit::TestCase
     data_size = limit_data_dev_size(tvm.free_space)
     tvm.add_volume(linear_vol('data', data_size))
 
+    vol_size = data_size if vol_size.nil?
+    vol_size = data_size if vol_size > data_size
+
     with_devs(tvm.table('md'),
               tvm.table('data')) do |md, data|
-
       # zero the metadata so we get a fresh pool
       wipe_device(md, 8)
+      meta_blocks = div_up(dev_size(md), @data_block_size)
 
       with_devs(Table.new(ThinPool.new(data_size, md, data, @data_block_size, 0, opts))) do |pool|
-        with_new_thin(pool, data_size, 0) {|thin| yield(thin, pool)}
+        with_new_thin(pool, vol_size, 0) do |thin|
+          thin_blocks = div_up(dev_size(thin), @data_block_size)
+          yield(thin, pool, thin_blocks, meta_blocks)
+        end
       end
     end
   end

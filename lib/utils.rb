@@ -18,7 +18,7 @@ module Utils
   end
 
   def dev_size(dev_or_path)
-    ProcessControl.system("102400", "blockdev --getsize #{dev_or_path}").chomp.to_i
+    ProcessControl.system("102400", "blockdev --getsz #{dev_or_path}").chomp.to_i
   end
 
   def dev_logical_block_size(dev_or_path)
