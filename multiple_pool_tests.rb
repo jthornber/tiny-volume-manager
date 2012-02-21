@@ -69,9 +69,9 @@ class MultiplePoolTests < ThinpTestCase
   end
 
   def test_stacked_pools
-    with_pool_volume(@data_dev, @volume_size) do |layer1|
-      with_pool_volume(layer1) do |layer2|
-        with_pool_volume(layer2) {|layer3| dt_device(layer3)}
+    with_pool_volume(@data_dev, @volume_size) do |layer1, *ignored|
+      with_pool_volume(layer1) do |layer2, *ignored|
+        with_pool_volume(layer2) {|layer3, *ignored| dt_device(layer3)}
       end
     end
   end

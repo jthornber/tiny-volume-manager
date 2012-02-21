@@ -54,6 +54,8 @@ class ThinpTestCase < Test::Unit::TestCase
     max_size = 8355840
     size = max_size if size > max_size
     size = @data_block_size if size < @data_block_size
+    size = round_up(size, 8)
+    size
   end
 
   def with_standard_pool(size, opts = Hash.new)
