@@ -78,6 +78,11 @@ class DiscardTests < ThinpTestCase
     s.used_data_blocks
   end
 
+  def used_metadata_blocks(pool)
+    s = PoolStatus.new(pool)
+    div_up(s.used_metadata_blocks * 8, @data_block_size)
+  end
+
   def assert_used_blocks(pool, count)
     sleep(2)                # sleep long enough for a commit, so we know the used count is up to date
     assert_equal(count, used_data_blocks(pool))
@@ -253,36 +258,43 @@ class DiscardTests < ThinpTestCase
   #
   def do_discard_levels(levels = Hash.new)
     with_standard_pool(@size,
-                       {:discard => levels[:lower],
-                         :discard_passdown => levels[:lower_passdown]}) do |lower|
+                       {:zero => false,
+                        :discard => levels[:lower],
+                        :discard_passdown => levels[:lower_passdown]}) do |lower|
       with_new_thin(lower, @size, 0) do |lower_thin|
         with_pool_volume(lower_thin, @size - @low_water_mark * @data_block_size,
-                         {:discard => levels[:upper],
-                           :discard_passdown => levels[:upper_passdown]}) do |upper_thin, upper, upper_blocks, meta_blocks|
-          # provison the whole thin dev and discard half of its blocks
-          upper_blocks_discard = div_up(upper_blocks, 2)
-          upper_blocks_used = upper_blocks - upper_blocks_discard
+                         {:zero => false,
+                          :discard => levels[:upper],
+                          :discard_passdown => levels[:upper_passdown]}, @volume_size) do |upper_thin, upper|
+          # provison the whole thin dev and discard half of its blocks_used
+          upper_blocks_full = div_up(dev_size(upper_thin), @data_block_size)
+          upper_blocks_discard = div_up(upper_blocks_full, 2)
+          upper_blocks_after = upper_blocks_full - upper_blocks_discard
           wipe_device(upper_thin)
+          sleep(2)
+          lower_blocks_full = used_data_blocks(lower)
   
           # assert results for combinations
           if (levels[:upper])
             discard(upper_thin, 0, upper_blocks_discard)
             sleep(2)
-            assert_equal(upper_blocks_used, used_data_blocks(upper))
+            assert_equal(upper_blocks_after, used_data_blocks(upper))
           else
             assert_raises(Errno::EOPNOTSUPP) do
               discard(upper_thin, 0, upper_blocks_discard)
             end
+
+            assert_equal(upper_blocks_full, used_data_blocks(upper))
           end
 
           if (levels[:lower])
             if (levels[:upper_passdown])
-              assert_equal(upper_blocks_used, used_data_blocks(lower) - meta_blocks)
+              assert_equal(upper_blocks_after + used_metadata_blocks(lower), used_data_blocks(lower))
             else
-              assert_equal(upper_blocks, used_data_blocks(lower) - meta_blocks)
+              assert_equal(lower_blocks_full, used_data_blocks(lower))
             end
           else
-            assert_equal(upper_blocks, used_data_blocks(lower) - meta_blocks)
+            assert_equal(lower_blocks_full, used_data_blocks(lower))
           end
         end
       end

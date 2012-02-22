@@ -62,19 +62,22 @@ class ThinpTestCase < Test::Unit::TestCase
     h.member?(k) ? h[k] : d
   end
 
+  def dflt_extra_opts(opts = Hash.new)
+    [dflt(opts, :zero, true), dflt(opts, :discard, true), dflt(opts, :discard_passdown, true)]
+  end
+
   def with_standard_pool(size, opts = Hash.new)
-    zero = dflt(opts, :zero, true)
-    discard = dflt(opts, :discard, true)
-    discard_pass = dflt(opts, :discard_passdown, true)
+    (zero, discard, discard_pass) = dflt_extra_opts(opts)
     table = Table.new(ThinPool.new(size, @metadata_dev, @data_dev,
                                    @data_block_size, @low_water_mark, zero, discard, discard_pass))
     @dm.with_dev(table) do |pool|
       yield(pool)
     end
   end
-  
+
   # creates a pool on dev, and creates as big a thin as possible on that
   def with_pool_volume(dev, max_size = nil, opts = Hash.new, vol_size = nil)
+    (zero, discard, discard_pass) = dflt_extra_opts(opts)
     tvm = VM.new
     ds = dev_size(dev)
     ds = [ds, max_size].min unless max_size.nil?
@@ -94,13 +97,10 @@ class ThinpTestCase < Test::Unit::TestCase
 
       # zero the metadata so we get a fresh pool
       wipe_device(md, 8)
-      meta_blocks = div_up(dev_size(md), @data_block_size)
-      pp meta_blocks
 
-      with_devs(Table.new(ThinPool.new(data_size, md, data, @data_block_size, 0, opts))) do |pool|
+      with_devs(Table.new(ThinPool.new(data_size, md, data, @data_block_size, 0, zero, discard, discard_pass))) do |pool|
         with_new_thin(pool, vol_size, 0) do |thin|
-          thin_blocks = div_up(dev_size(thin), @data_block_size)
-          yield(thin, pool, thin_blocks, meta_blocks)
+          yield(thin, pool)
         end
       end
     end
