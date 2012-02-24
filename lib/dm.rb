@@ -36,7 +36,7 @@ class ThinPool < Target
   end
 
   def post_remove_check
-    ProcessControl.run("thin_repair #{@metadata_dev}")
+    ProcessControl.run("thin_check #{@metadata_dev}")
   end
 end
 

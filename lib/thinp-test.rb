@@ -209,10 +209,10 @@ class ThinpTestCase < Test::Unit::TestCase
   def check_prereqs
     return if $checked_prerequisites
 
-    # Can we find thin_repair?
+    # Can we find thin_check?
     begin
       raise "wrong ruby version" unless RUBY_VERSION =~ /^1.8/
-      ProcessControl.run('which thin_repair')
+      ProcessControl.run('which thin_check')
       ProcessControl.run('which dt')
     rescue
       STDERR.puts "Missing prerequisites, please check the README"
