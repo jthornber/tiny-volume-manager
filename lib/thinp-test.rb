@@ -215,6 +215,7 @@ class ThinpTestCase < Test::Unit::TestCase
       raise "wrong ruby version" unless RUBY_VERSION =~ /^1.8/
       ProcessControl.run('which thin_check')
       ProcessControl.run('which dt')
+      ProcessControl.run('which blktrace')
     rescue
       STDERR.puts "Missing prerequisites, please check the README"
       exit(1)
