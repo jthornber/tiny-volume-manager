@@ -103,7 +103,6 @@ class DMDev
       debug "writing table: #{table.to_embed}"
       f.puts table.to_s
       f.flush
-ProcessControl.sleep(3.0)
       ProcessControl.run("dmsetup load #{@name} #{f.path}")
     end
 

@@ -10,7 +10,6 @@ $checked_prerequisites = false
 class ThinpTestCase < Test::Unit::TestCase
   undef_method :default_test
   include ProcessControl
-  include TinyVolumeManager
 
   def setup
     check_prereqs()
@@ -53,8 +52,6 @@ class ThinpTestCase < Test::Unit::TestCase
   def limit_metadata_dev_size(size)
     max_size = 8355840
     size = max_size if size > max_size
-    size = @data_block_size if size < @data_block_size
-    size = (size / @data_block_size) * @data_block_size # round to a data block size
     size
   end
 
@@ -62,47 +59,16 @@ class ThinpTestCase < Test::Unit::TestCase
     h.member?(k) ? h[k] : d
   end
 
-  def dflt_extra_opts(opts = Hash.new)
-    [dflt(opts, :zero, true), dflt(opts, :discard, true), dflt(opts, :discard_passdown, true)]
-  end
-
   def with_standard_pool(size, opts = Hash.new)
-    (zero, discard, discard_pass) = dflt_extra_opts(opts)
+    zero = dflt(opts, :zero, true)
+    discard = dflt(opts, :discard, true)
+    discard_pass = dflt(opts, :discard_passdown, true)
+
     table = Table.new(ThinPool.new(size, @metadata_dev, @data_dev,
                                    @data_block_size, @low_water_mark, zero, discard, discard_pass))
+
     @dm.with_dev(table) do |pool|
       yield(pool)
-    end
-  end
-
-  # creates a pool on dev, and creates as big a thin as possible on that
-  def with_pool_volume(dev, max_size = nil, opts = Hash.new, vol_size = nil)
-    (zero, discard, discard_pass) = dflt_extra_opts(opts)
-    tvm = VM.new
-    ds = dev_size(dev)
-    ds = [ds, max_size].min unless max_size.nil?
-    tvm.add_allocation_volume(dev, 0, ds)
-
-    data_size = limit_data_dev_size(tvm.free_space * 15 / 16)
-    tvm.add_volume(linear_vol('data', data_size))
-
-    md_size = limit_metadata_dev_size(tvm.free_space)
-    tvm.add_volume(linear_vol('md', md_size))
-
-    vol_size = data_size if vol_size.nil?
-    vol_size = data_size if vol_size > data_size
-
-    with_devs(tvm.table('md'),
-              tvm.table('data')) do |md, data|
-
-      # zero the metadata so we get a fresh pool
-      wipe_device(md, 8)
-
-      with_devs(Table.new(ThinPool.new(data_size, md, data, @data_block_size, 0, zero, discard, discard_pass))) do |pool|
-        with_new_thin(pool, vol_size, 0) do |thin|
-          yield(thin, pool)
-        end
-      end
     end
   end
 
