@@ -80,11 +80,6 @@ class DiscardTests < ThinpTestCase
     s.used_data_blocks
   end
 
-  def used_metadata_blocks(pool)
-    s = PoolStatus.new(pool)
-    div_up(s.used_metadata_blocks * 8, @data_block_size)
-  end
-
   def assert_used_blocks(pool, count)
     sleep(2)                # sleep long enough for a commit, so we know the used count is up to date
     assert_equal(count, used_data_blocks(pool))
