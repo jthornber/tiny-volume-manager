@@ -22,6 +22,7 @@ end
 
 class ThinPool < Target
   attr_accessor :metadata_dev
+
   def initialize(sector_count, metadata_dev, data_dev, block_size, low_water_mark, zero = true, discard = true, discard_pass = true)
     extra_opts = Array.new
 

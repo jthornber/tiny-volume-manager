@@ -63,6 +63,7 @@ class ThinpTestCase < Test::Unit::TestCase
     zero = dflt(opts, :zero, true)
     discard = dflt(opts, :discard, true)
     discard_pass = dflt(opts, :discard_passdown, true)
+
     table = Table.new(ThinPool.new(size, @metadata_dev, @data_dev,
                                    @data_block_size, @low_water_mark, zero, discard, discard_pass))
 

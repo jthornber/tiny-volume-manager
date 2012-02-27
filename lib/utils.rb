@@ -18,68 +18,46 @@ module Utils
   end
 
   def dev_size(dev_or_path)
-    ProcessControl.system("102400", "blockdev --getsize #{dev_or_path}").chomp.to_i
+    ProcessControl.system("102400", "blockdev --getsz #{dev_or_path}").chomp.to_i
   end
 
   def dev_logical_block_size(dev_or_path)
     ProcessControl.system("102400", "blockdev --getbsz #{dev_or_path}").chomp.to_i
   end
 
-  def wipe_device(dev_or_path, sectors = nil)
-    size = dev_size(dev_or_path)
-    lbsize = dev_logical_block_size(dev_or_path)
+  def _dd_device(ifile, ofile, oflag, sectors)
+    size = dev_size(ofile)
+    sectors = size if sectors.nil? || size < sectors
 
-    if sectors.nil? || size < sectors
-      sectors = size
-    end
-    sectors /= (lbsize / 512)
-
-    block_size = ((1024 << 10) / lbsize) * 64       # 64 M
+    # in case we got many sectors, do dd in large blocks
+    block_size = 64 * 1024 * 2 # 64M in sectors
     count = sectors / block_size
+
     if count > 0
-      ProcessControl.run("dd if=/dev/zero of=#{dev_or_path} oflag=direct bs=#{block_size * lbsize} count=#{count}")
+      ProcessControl.run("dd if=#{ifile} of=#{ofile} #{oflag} bs=#{block_size * 512} count=#{count}")
     end
 
+    # do we have a partial dd block to do at the end?
     remainder = sectors % block_size
     if remainder > 0
-      # we have a partial block to do at the end
-      ProcessControl.run("dd if=/dev/zero of=#{dev_or_path} oflag=direct bs=#{lbsize} count=#{remainder} seek=#{count * block_size}")
+      ProcessControl.run("dd if=#{ifile} of=#{ofile} #{oflag} bs=512 count=#{remainder} seek=#{count * block_size * 512}")
     end
+  end
+
+  def wipe_device(dev_or_path, sectors = nil)
+    _dd_device("/dev/zero", dev_or_path, "oflag=direct", sectors)
   end
 
   def read_device_to_null(dev_or_path, sectors = nil)
-    size = dev_size(dev_or_path)
-    lbsize = dev_logical_block_size(dev_or_path)
-
-    if sectors.nil? || size < sectors
-      sectors = size
-    end
-    sectors /= (lbsize / 512)
-
-    block_size = ((1024 << 10) / lbsize) * 64       # 64 M
-    count = sectors / block_size
-    if count > 0
-      ProcessControl.run("dd of=/dev/null if=#{dev_or_path} bs=#{block_size * lbsize} count=#{count}")
-    end
-
-    remainder = sectors % block_size
-    if remainder > 0
-      # we have a partial block to do at the end
-      ProcessControl.run("dd of=/dev/null if=#{dev_or_path} bs=#{lbsize} count=#{remainder} seek=#{count * block_size}")
-    end
+    _dd_device(dev_or_path, "/dev/null", "", sectors)
   end
-
 
   # Runs dt on the device, defaulting to random io and the 'iot'
   # pattern.
   def dt_device(file, io_type = nil, pattern = nil, size = nil)
     iotype = io_type.nil? ? "random" : "sequential"
-    if pattern.nil?
-      pattern = "iot"
-    end
-    if size.nil?
-       size = dev_size(file)
-    end
+    pattern = "iot" if pattern.nil?
+    size = dev_size(file) if size.nil?
 
     ProcessControl.run("dt of=#{file} capacity=#{size*512} pattern=#{pattern} passes=1 iotype=#{iotype} bs=4M rseed=1234")
   end
@@ -120,4 +98,3 @@ module Utils
     end
   end
 end
-

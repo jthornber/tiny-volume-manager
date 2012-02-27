@@ -17,11 +17,12 @@ class DiscardTests < ThinpTestCase
   include Utils
   include XMLFormat
   include BlkTrace
+  include TinyVolumeManager
 
   def setup
     super
     @data_block_size = 128
-    @blocks_per_dev = @volume_size / @data_block_size
+    @blocks_per_dev = div_up(@volume_size, @data_block_size)
     @volume_size = @blocks_per_dev * @data_block_size # we want whole blocks for these tests
   end
 
@@ -77,6 +78,11 @@ class DiscardTests < ThinpTestCase
     s = PoolStatus.new(pool)
     STDERR.puts "pool status metadata(#{s.used_metadata_blocks}/#{s.total_metadata_blocks}) data(#{s.used_data_blocks}/#{s.total_data_blocks})"
     s.used_data_blocks
+  end
+
+  def used_metadata_blocks(pool)
+    s = PoolStatus.new(pool)
+    div_up(s.used_metadata_blocks * 8, @data_block_size)
   end
 
   def assert_used_blocks(pool, count)
@@ -245,5 +251,115 @@ class DiscardTests < ThinpTestCase
 
     md = read_metadata
     assert_no_mappings(md, 0)
+  end
+
+  def with_stacked_pools(levels, &block)
+    # create 2 metadata devs
+    tvm = VM.new
+    tvm.add_allocation_volume(@metadata_dev, 0, dev_size(@metadata_dev))
+
+    md_size = tvm.free_space / 2
+    tvm.add_volume(linear_vol('md1', md_size))
+    tvm.add_volume(linear_vol('md2', md_size))
+
+    with_devs(tvm.table('md1'),
+              tvm.table('md2')) do |md1, md2|
+      wipe_device(md1, 8)
+      wipe_device(md2, 8)
+
+      t1 = Table.new(ThinPool.new(@volume_size, md1, @data_dev, @data_block_size, 0, true, levels[:lower], levels[:lower_passdown]))
+      @dm.with_dev(t1) do |lower_pool|
+        with_new_thin(lower_pool, @volume_size, 0) do |lower_thin|
+          t2 = Table.new(ThinPool.new(@volume_size, md2, lower_thin, @data_block_size, 0, true, levels[:upper], levels[:upper_passdown]))
+          @dm.with_dev(t2) do |upper_pool|
+            with_new_thin(upper_pool, @volume_size, 0) do |upper_thin|
+              block.call(lower_pool, lower_thin, upper_pool, upper_thin)
+            end
+          end
+        end
+      end
+    end
+  end
+
+  #
+  # set up 2 level pool stack to provison and discard a thin device
+  # at the upper level and allow for enabling/disabling
+  # discards and discard_passdown at any level
+  #
+  def do_discard_levels(levels = Hash.new)
+    with_stacked_pools(levels) do |lpool, lthin, upool, uthin|
+      # provison the whole thin dev and discard half of its blocks_used
+      total = div_up(@volume_size, @data_block_size)
+      discard_count = total / 2
+      remaining = total - discard_count
+
+      wipe_device(uthin)
+      assert_equal(total, used_data_blocks(upool))
+      assert_equal(total, used_data_blocks(lpool))
+
+      # assert results for combinations
+      if (levels[:upper])
+        0.upto(discard_count - 1) {|b| discard(uthin, b, 1)}
+        assert_equal(remaining, used_data_blocks(upool))
+      else
+        assert_raises(Errno::EOPNOTSUPP) do
+          discard(uthin, 0, discard_count)
+        end
+
+        assert_equal(total, used_data_blocks(upool))
+      end
+
+      if (levels[:lower])
+        if (levels[:upper_passdown])
+          assert_equal(remaining, used_data_blocks(lpool))
+        else
+          assert_equal(total, used_data_blocks(lpool))
+        end
+      else
+        assert_equal(total, used_data_blocks(lpool))
+      end
+    end
+  end
+
+  def test_discard_lower_both_upper_both
+    do_discard_levels(:lower => true,
+                      :lower_passdown => true,
+                      :upper => true,
+                      :upper_passdown => true)
+  end
+
+  def test_discard_lower_none_upper_both
+    do_discard_levels(:lower => false,
+                      :lower_passdown => false,
+                      :upper => true,
+                      :upper_passdown => true)
+  end
+
+  def test_discard_lower_both_upper_none
+    do_discard_levels(:lower => true,
+                      :lower_passdown => true,
+                      :upper => false,
+                      :upper_passdown => false)
+  end
+
+  def test_discard_lower_none_upper_none
+    do_discard_levels(:lower => false,
+                      :lower_passdown => false,
+                      :upper => false,
+                      :upper_passdown => false)
+  end
+
+  def test_discard_lower_both_upper_discard
+    do_discard_levels(:lower => true,
+                      :lower_passdown => true,
+                      :upper => true,
+                      :upper_passdown => false)
+  end
+
+  def test_discard_lower_discard_upper_both
+    do_discard_levels(:lower => true,
+                      :lower_passdown => false,
+                      :upper => true,
+                      :upper_passdown => true)
   end
 end
