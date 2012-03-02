@@ -182,7 +182,7 @@ class ThinpTestCase < Test::Unit::TestCase
 
   def assert_identical_files(f1, f2)
     begin
-      ProcessControl::run("diff #{f1} #{f2}")
+      ProcessControl::run("diff -bu #{f1} #{f2}")
     rescue
       flunk("files differ #{f1} #{f2}")
     end

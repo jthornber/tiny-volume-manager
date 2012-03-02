@@ -52,8 +52,12 @@ class RestoreTests < ThinpTestCase
     end
   end
 
+  def data_dev_blocks
+    dev_size(@data_dev) / @data_block_size
+  end
+
   def create_linear_metadata(dev_count, dev_size)
-    superblock = Superblock.new("uuid here", 0, 1, 128)
+    superblock = Superblock.new("uuid here", 0, 1, 128, data_dev_blocks)
 
     devices = Array.new
     offset = 0
@@ -89,11 +93,12 @@ class RestoreTests < ThinpTestCase
   end
 
   def create_metadata(dev_count, dev_size, block_mapper)
-    superblock = Superblock.new("uuid here", 0, 1, 128)
+    nr_data_blocks = dev_size * dev_count
+    superblock = Superblock.new("uuid here", 0, 1, 128, data_dev_blocks)
 
     devices = Array.new
     offset = 0
-    dest_blocks = self.send(block_mapper, dev_size * dev_count)
+    dest_blocks = self.send(block_mapper, nr_data_blocks)
 
     0.upto(dev_count - 1) do |dev|
       nr_mappings = dev_size

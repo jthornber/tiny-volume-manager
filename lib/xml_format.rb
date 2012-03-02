@@ -13,7 +13,8 @@ module XMLFormat
   SUPERBLOCK_FIELDS = [[:uuid, :string],
                        [:time, :int],
                        [:transaction, :int],
-                       [:data_block_size, :int]]
+                       [:data_block_size, :int],
+                       [:nr_data_blocks, :int]]
 
   MAPPING_FIELDS = [[:origin_begin, :int],
                     [:data_begin, :int],
@@ -143,7 +144,7 @@ module XMLFormat
   end
 
   def emit_superblock(e, sb, &block)
-    e.emit_tag(sb, 'superblock', :uuid, :time, :transaction, :data_block_size, &block)
+    e.emit_tag(sb, 'superblock', :uuid, :time, :transaction, :data_block_size, :nr_data_blocks, &block)
   end
 
   def emit_device(e, dev, &block)
