@@ -4,6 +4,9 @@ require 'lib/log'
 #----------------------------------------------------------------
 
 module ProcessControl
+  class ExitError < RuntimeError
+  end
+
   class LogConsumer
     attr_reader :stdout_lines, :stderr_lines
 
@@ -91,7 +94,7 @@ module ProcessControl
 
       if exit_status != 0
         debug "command failed with '#{exit_status}': #{@cmd_line}"
-        raise RuntimeError, "command failed: #{@cmd_line}"
+        raise ExitError, "command failed: #{@cmd_line}"
       end
 
       exit_status
@@ -115,6 +118,19 @@ module ProcessControl
       ProcessControl.really_run(c, *cmd)
       c.stdout_lines.join("\n")
     end
+  end
+
+  def self.capture(*cmd)
+    e = false
+
+    c = LogConsumer.new
+    begin
+      ProcessControl.really_run(c, *cmd)
+    rescue ExitError => e
+      e = true
+    end
+
+    [c.stdout_lines.join("\n"), c.stderr_lines.join("\n"), e]
   end
 
   def self.system(default, *cmd)
