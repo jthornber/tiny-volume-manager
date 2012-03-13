@@ -192,7 +192,7 @@ class ThinpTestCase < Test::Unit::TestCase
   def dump_metadata(dev)
     metadata = nil
     Utils::with_temp_file('metadata_xml') do |file|
-      ProcessControl::run("thin_dump -i #{dev} > #{file.path}")
+      ProcessControl::run("thin_dump #{dev} > #{file.path}")
       file.rewind
       yield(file.path)
     end
@@ -207,15 +207,19 @@ class ThinpTestCase < Test::Unit::TestCase
     ProcessControl.run("cat /sys/module/dm_thin_pool/parameters/deferred_io_count").to_i
   end
 
+  def check_in_path(cmd)
+    ProcessControl.run("which #{cmd}")
+  end
+
   def check_prereqs
     return if $checked_prerequisites
 
     # Can we find thin_check?
     begin
       raise "wrong ruby version" unless RUBY_VERSION =~ /^1.8/
-      ProcessControl.run('which thin_check')
-      ProcessControl.run('which dt')
-      ProcessControl.run('which blktrace')
+      ['thin_check', 'thin_dump', 'thin_restore', 'dt', 'blktrace'].each do |cmd|
+        check_in_path(cmd)
+      end
     rescue
       STDERR.puts "Missing prerequisites, please check the README"
       exit(1)
