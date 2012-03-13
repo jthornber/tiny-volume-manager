@@ -1,6 +1,7 @@
 require 'lib/log'
 
 #----------------------------------------------------------------
+
 class PoolStatus
   attr_reader :transaction_id, :used_metadata_blocks, :total_metadata_blocks, :used_data_blocks, :total_data_blocks, :held_root
 
