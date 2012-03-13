@@ -82,7 +82,7 @@ class ImmutableTargetTests < ThinpTestCase
       wipe_device(md1, 8)
       wipe_device(md2, 8)
 
-      assert_raises(RuntimeError) do
+      assert_raise(ExitError) do
         with_dev(Table.new(ThinPool.new(@volume_size, md1, d1, 128, 0),
                            ThinPool.new(@volume_size, md2, d2, 128, 0))) do |bad_pool|
           # shouldn't get here
@@ -100,7 +100,7 @@ class ImmutableTargetTests < ThinpTestCase
               @tvm.table('data')) do |md, d, linear|
 
       wipe_device(md, 8)
-      assert_raises(RuntimeError) do
+      assert_raise(ExitError) do
         with_dev(Table.new(ThinPool.new(@volume_size, md, d, 128, 0),
                            *@tvm.table('linear').targets)) do |bad_pool|
           # shouldn't get here
@@ -141,7 +141,7 @@ class ImmutableTargetTests < ThinpTestCase
       wipe_device(md2, 8)
 
       with_dev(Table.new(ThinPool.new(@volume_size, md1, d1, 128, 0))) do |pool|
-        assert_raises(RuntimeError) do
+        assert_raise(ExitError) do
           pool.load(Table.new(ThinPool.new(@volume_size, md2, d2, 128, 0)))
           pool.resume
         end
@@ -164,7 +164,7 @@ class ImmutableTargetTests < ThinpTestCase
         seg = @tvm.segments('linear')[0]
         table = Table.new(ThinPool.new(@volume_size, md, data, 128, 0),
                           Linear.new(@volume_size, seg.dev, seg.offset))
-        assert_raises(RuntimeError) do
+        assert_raise(ExitError) do
           pool.load(table)
         end
       end
@@ -184,7 +184,7 @@ class ImmutableTargetTests < ThinpTestCase
       table = Table.new(ThinPool.new(@volume_size, md, data, 128, 0))
       
       with_dev(table) do |pool|
-        assert_raises(RuntimeError) do
+        assert_raise(ExitError) do
           pool.load(@tvm.table('linear'))
         end
       end

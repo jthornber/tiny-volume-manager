@@ -29,23 +29,23 @@ class TransactionIdTests < ThinpTestCase
 
   def test_set_trans_id_check_first_arg
     with_standard_pool(@size) do |pool|
-      assert_raises(RuntimeError) do
+      assert_raise(ExitError) do
         set_trans_id(pool, 500, 1000)
       end
 
-      assert_raises(RuntimeError) do
+      assert_raise(ExitError) do
         set_trans_id(pool, 500, 0)
       end
 
       set_trans_id(pool, 0, 1234)
 
-      assert_raises(RuntimeError) do
+      assert_raise(ExitError) do
         set_trans_id(pool, 0, 1234)
       end
 
       set_trans_id(pool, 1234, 0)
 
-      assert_raises(RuntimeError) do
+      assert_raise(ExitError) do
         set_trans_id(pool, 1234, 0)
       end
 

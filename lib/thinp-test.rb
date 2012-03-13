@@ -128,7 +128,7 @@ class ThinpTestCase < Test::Unit::TestCase
   end
 
   def assert_bad_table(table)
-    assert_raises(RuntimeError) do
+    assert_raise(ExitError) do
       @dm.with_dev(table) do |pool|
       end
     end

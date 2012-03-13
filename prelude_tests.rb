@@ -21,7 +21,7 @@ class PreludeTests < Test::Unit::TestCase
   def test_bracket_fail_path
     tidied = false
 
-    assert_raises(RuntimeError, 'bang!') do
+    assert_raise(ExitError, 'bang!') do
       bracket(5, lambda {|n| tidied = true}) do |n|
         raise RuntimeError, 'bang!'
       end
@@ -57,7 +57,7 @@ class PreludeTests < Test::Unit::TestCase
 
   def test_bracket__fail
     tidied = false
-    assert_raises(RuntimeError, 'bang!') do
+    assert_raise(ExitError, 'bang!') do
       v = bracket_(lambda {tidied = true}) do
         raise RuntimeError, 'bang!'
       end
@@ -78,7 +78,7 @@ class PreludeTests < Test::Unit::TestCase
 
   def test_protect_fail_path
     tidied = false
-    assert_raises(RuntimeError, 'bang!') do
+    assert_raise(ExitError, 'bang!') do
       v = protect(5, lambda {|n| tidied = true}) do |n|
         raise RuntimeError, 'bang!'
       end
@@ -99,7 +99,7 @@ class PreludeTests < Test::Unit::TestCase
 
   def test_protect__fail_path
     tidied = false
-    assert_raises(RuntimeError, 'bang!') do
+    assert_raise(ExitError, 'bang!') do
       v = protect_(lambda {tidied = true}) do
         raise RuntimeError, 'bang!'
       end

@@ -62,7 +62,7 @@ class DeletionTests < ThinpTestCase
   def test_delete_unknown_devices
     with_standard_pool(@size) do |pool|
       0.upto(10) do |id|
-        assert_raises(RuntimeError) {pool.message(0, "delete #{id}")}
+        assert_raise(ExitError) {pool.message(0, "delete #{id}")}
       end
     end
   end
@@ -70,7 +70,7 @@ class DeletionTests < ThinpTestCase
   def test_delete_active_device_fails
     with_standard_pool(@size) do |pool|
       with_new_thin(pool, @size, 0) do |thin|
-        assert_raises(RuntimeError) {pool.message(0, 'delete 0')}
+        assert_raise(ExitError) {pool.message(0, 'delete 0')}
       end
     end
   end

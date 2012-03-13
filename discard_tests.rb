@@ -204,7 +204,7 @@ class DiscardTests < ThinpTestCase
       with_new_thin(pool, @volume_size, 0) do |thin|
         wipe_device(thin, 4)
 
-        assert_raises(Errno::EOPNOTSUPP) do
+        assert_raise(Errno::EOPNOTSUPP) do
           thin.discard(0, @data_block_size)
         end
       end
@@ -296,7 +296,7 @@ class DiscardTests < ThinpTestCase
         0.upto(discard_count - 1) {|b| discard(uthin, b, 1)}
         assert_equal(remaining, used_data_blocks(upool))
       else
-        assert_raises(Errno::EOPNOTSUPP) do
+        assert_raise(Errno::EOPNOTSUPP) do
           discard(uthin, 0, discard_count)
         end
 

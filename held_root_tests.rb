@@ -42,7 +42,7 @@ class HeldRootTests < ThinpTestCase
   def test_cannot_hold_twice
     with_standard_pool(@size) do |pool|
       pool.message(0, "hold_root")
-      assert_raises(RuntimeError) do
+      assert_raise(ExitError) do
         pool.message(0, "hold_root")
       end
     end
@@ -53,7 +53,7 @@ class HeldRootTests < ThinpTestCase
       pool.message(0, "hold_root")
       pool.message(0, "release_root")
 
-      assert_raises(RuntimeError) do
+      assert_raise(ExitError) do
         pool.message(0, "release_root")
       end
     end
@@ -61,7 +61,7 @@ class HeldRootTests < ThinpTestCase
 
   def test_no_initial_hold
     with_standard_pool(@size) do |pool|
-      assert_raises(RuntimeError) do
+      assert_raise(ExitError) do
         pool.message(0, "release_root")
       end
     end

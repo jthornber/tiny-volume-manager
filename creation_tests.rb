@@ -80,7 +80,7 @@ class CreationTests < ThinpTestCase
 
   def test_too_large_a_dev_t_fails
     with_standard_pool(@size) do |pool|
-      assert_raises(RuntimeError) {pool.message(0, "create_thin #{2**24}")}
+      assert_raises(ExitError) {pool.message(0, "create_thin #{2**24}")}
     end
   end
 
@@ -100,7 +100,7 @@ class CreationTests < ThinpTestCase
     with_devs(tvm.table('metadata'),
               tvm.table('data')) do |md, data|
       wipe_device(md)
-      assert_raises(RuntimeError) do
+      assert_raise(ExitError) do
         with_dev(Table.new(ThinPool.new(data_size, md, data, 128, 1))) do |pool|
           # shouldn't get here
         end

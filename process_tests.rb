@@ -19,7 +19,7 @@ class ProcessTests < Test::Unit::TestCase
   end
 
   def test_false_fails
-    assert_raises(RuntimeError) do
+    assert_raise(ExitError) do
       ProcessControl.run('false')
     end
   end
@@ -31,7 +31,7 @@ class ProcessTests < Test::Unit::TestCase
   end
 
   def test_stderr_captured
-    assert_raises(RuntimeError) do
+    assert_raise(ExitError) do
       ProcessControl.run("sed -e 's/badlyformed'")
     end
   end
