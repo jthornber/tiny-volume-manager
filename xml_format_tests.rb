@@ -33,7 +33,7 @@ class XMLFormatTests < Test::Unit::TestCase
 end
 
 BASIC_TESTS_DD = <<END
-<superblock uuid="" time="1" transaction="0" data_block_size="128">
+<superblock uuid="" time="1" transaction="0" data_block_size="128" nr_data_blocks="100000">
   <device dev_id="0" mapped_blocks="16384" transaction="0" creation_time="0" snap_time="1">
     <range_mapping origin_begin="0" data_begin="0" length="16384" time="1"/>
   </device>
@@ -44,7 +44,7 @@ BASIC_TESTS_DD = <<END
 END
 
 BASIC_TESTS_DT = <<END
-<superblock uuid="" time="1" transaction="0" data_block_size="128">
+<superblock uuid="" time="1" transaction="0" data_block_size="128" nr_data_blocks="100000">
   <device dev_id="0" mapped_blocks="9133" transaction="0" creation_time="0" snap_time="1">
     <range_mapping origin_begin="0" data_begin="9004" length="12" time="1"/>
     <range_mapping origin_begin="12" data_begin="7862" length="2" time="1"/>
