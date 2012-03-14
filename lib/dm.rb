@@ -28,8 +28,8 @@ class ThinPool < Target
 
     extra_opts.instance_eval do
       push :skip_block_zeroing unless zero
-      push :skip_discard unless discard
-      push :skip_discard_passdown unless discard_pass
+      push :ignore_discard unless discard
+      push :no_discard_passdown unless discard_pass
     end
 
     super('thin-pool', sector_count, metadata_dev, data_dev, block_size, low_water_mark, extra_opts.length, *extra_opts)
