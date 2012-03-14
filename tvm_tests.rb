@@ -16,7 +16,7 @@ class TinyVolumeManagerTests < Test::Unit::TestCase
   def test_alloc_too_big_fails
     tvm = TinyVolumeManager::VM.new
     tvm.add_allocation_volume('little_disk', 0, 1000)
-    assert_raise(ExitError) do
+    assert_raise(RuntimeError) do
       tvm.add_volume(linear_vol('vol1', 1001))
     end
   end
@@ -112,7 +112,7 @@ class TinyVolumeManagerTests < Test::Unit::TestCase
     assert_equal(100, segment_total(lv.segments))
 
     # reduce isn't implemented yet
-    assert_raise(ExitError) do
+    assert_raise(RuntimeError) do
       lv.resize(allocator, 99)
     end
 
