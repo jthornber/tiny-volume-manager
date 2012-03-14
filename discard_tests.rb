@@ -356,4 +356,40 @@ class DiscardTests < ThinpTestCase
                       :upper => true,
                       :upper_passdown => true)
   end
+
+  def create_and_delete_lots_of_files(dev, fs_type)
+    fs = FS::file_system(fs_type, dev)
+    fs.format
+    fs.with_mount("./mnt1", :discard => true) do
+      ds = Dataset.read('compile-bench-datasets/dataset-unpatched')
+      Dir.chdir('mnt1') do
+        Dir.mkdir('linux')
+        Dir.chdir('linux') do
+          10.times do
+            STDERR.write "."
+            ds.apply
+            ProcessControl.run("sync")
+            ProcessControl.run("rm -rf *")
+            ProcessControl.run("sync")
+          end
+        end
+      end
+    end
+  end
+
+  def do_discard_test(fs_type)
+    with_standard_pool(@size) do |pool|
+      with_new_thin(pool, @volume_size, 0) do |thin|
+        create_and_delete_lots_of_files(thin, fs_type)
+      end
+    end
+  end
+
+  def test_fs_discard_ext4
+    do_discard_test(:ext4)
+  end
+
+  def test_fs_discard_xfs
+    do_discard_test(:xfs)
+  end
 end
