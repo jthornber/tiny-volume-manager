@@ -26,7 +26,13 @@ module Utils
   end
 
   def _dd_device(ifile, ofile, oflag, sectors)
-    size = dev_size(ofile)
+    # quick hack
+    if ofile == '/dev/null'
+      size = dev_size(ifile)
+    else
+      size = dev_size(ofile)
+    end
+
     sectors = size if sectors.nil? || size < sectors
 
     # in case we got many sectors, do dd in large blocks
