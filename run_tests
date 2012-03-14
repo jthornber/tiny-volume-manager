@@ -233,6 +233,11 @@ def options
       end
     end
 
+    o.on('-p', '--profile=NAME', String,
+         "Selects a config profile.") do |p|
+      $profile = p
+    end
+
     o.on('-t', '--testcase=TESTCASE', String,
          "Runs tests in TestCases matching TESTCASE (patterns may be used).") do |n|
       n = (%r{\A/(.*)/\Z} =~ n ? Regexp.new($1) : n)
@@ -276,6 +281,7 @@ def options
 end
 
 $filters = []
+$profile = nil
 
 def process_args(args = ARGV)
   begin
