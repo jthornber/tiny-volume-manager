@@ -190,7 +190,7 @@ class RestoreTests < ThinpTestCase
   mk_cmd(:thin_dump)
   mk_cmd(:thin_restore)
 
-  TOOLS_VERSION = /0.1.3/
+  TOOLS_VERSION = /0.1.4/
   CHECK_USAGE =<<EOF.chomp
 Usage: thin_check [options] {device|file}
 Options:
