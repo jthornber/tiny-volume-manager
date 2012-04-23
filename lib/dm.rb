@@ -51,6 +51,12 @@ class Thin < Target
   end
 end
 
+class Cache < Target
+  def initialize(sector_count, origin_dev, cache_dev, block_size)
+    super('cache', sector_count, origin_dev, cache_dev, block_size);
+  end
+end
+
 #----------------------------------------------------------------
 
 class Table

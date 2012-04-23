@@ -1,15 +1,19 @@
 require 'lib/bufio'
 require 'lib/log'
 require 'lib/process'
+require 'lib/tvm'
+require 'lib/utils'
 require 'test/unit'
 
 #----------------------------------------------------------------
 
 $checked_prerequisites = false
 
+#FIXME: rename this class, or perhaps split it into mix-ins?
 class ThinpTestCase < Test::Unit::TestCase
   undef_method :default_test
   include ProcessControl
+  include TinyVolumeManager
 
   def setup
     check_prereqs()
@@ -70,6 +74,24 @@ class ThinpTestCase < Test::Unit::TestCase
     @dm.with_dev(table) do |pool|
       yield(pool)
     end
+  end
+
+  def with_standard_cache()
+    # we set up a small linear device, made out of the metadata dev.
+    # That is at most a 16th the size of the data dev.
+    tvm = VM.new
+    tvm.add_allocation_volume(@metadata_dev, 0, dev_size(@metadata_dev))
+    
+    tvm.add_volume(linear_vol('cache', round_up(@size / 16, @data_block_size)))
+    with_dev(tvm.table('cache')) do |cache|
+      table = Table.new(Cache.new(@size, @data_dev, cache, @data_block_size))
+      with_dev(table) {|cached_dev| yield(cached_dev)}
+    end
+  end
+
+  def with_standard_linear()
+    table = Table.new(Linear.new(@size, @data_dev, 0))
+    with_dev(table) {|linear| yield(linear)}
   end
 
   def with_dev(table, &block)

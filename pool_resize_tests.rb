@@ -47,9 +47,9 @@ class PoolResizeTests < ThinpTestCase
   end
 
   def test_resize_no_io
-    target_step = @size / 10
+    target_step = @size / 8
     with_standard_pool(target_step) do |pool|
-      2.upto(10) do |n|
+      2.upto(8) do |n|
         table = Table.new(ThinPool.new(n * target_step, @metadata_dev, @data_dev,
                                        @data_block_size, @low_water_mark))
         pool.load(table)

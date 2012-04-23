@@ -247,6 +247,34 @@ class DiscardTests < ThinpTestCase
     assert_no_mappings(md, 0)
   end
 
+  def check_discard_thin_working(thin)
+      wipe_device(thin, 8)
+      traces, _ = blktrace(thin) do
+        discard(thin, 0, 1)
+      end
+      assert(traces[0].member?(Event.new(:discard, 0, 128)))
+  end
+
+  # we don't allow people to change their minds about top level
+  # discard support.
+  def test_change_discard_with_reload_fails
+    with_standard_pool(@size, :discard => true) do |pool|
+      assert_raise(ExitError) do
+        table = Table.new(ThinPool.new(@size, @metadata_dev, @data_dev,
+                                       @data_block_size, @low_water_mark, false, false, false))
+        pool.load(table)
+      end
+    end
+
+    with_standard_pool(@size, :discard => false) do |pool|
+      assert_raise(ExitError) do
+        table = Table.new(ThinPool.new(@size, @metadata_dev, @data_dev,
+                                       @data_block_size, @low_water_mark, false, true, false))
+        pool.load(table)
+      end
+    end
+  end
+
   def with_stacked_pools(levels, &block)
     # create 2 metadata devs
     tvm = VM.new

@@ -12,7 +12,7 @@ module Config
     'debian-vm2.lambda.co.uk' => {
       :metadata_dev => '/dev/vdb',
       :data_dev => '/dev/vdc',
-      :mass_fs_tests_parallel_runs => 3
+      :mass_fs_tests_parallel_runs => 3,
     },
 
     'debian-vm2.lambda.co.uk:mix' => {
@@ -20,7 +20,7 @@ module Config
       :data_dev => '/dev/vde',
       :data_size => 1097152 * 2 * 10,
       :volume_size => 1097152 * 2,
-      :mass_fs_tests_parallel_runs => 3
+      :mass_fs_tests_parallel_runs => 3,
     },
 
     'debian-vm2.lambda.co.uk:spindle' => {
