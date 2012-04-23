@@ -133,8 +133,8 @@ class DiscardTests < ThinpTestCase
       with_new_thin(pool, @volume_size, 0) do |thin|
         wipe_device(thin)
 
-        thin.discard(0, 127)
-        thin.discard(63, 159)
+        thin.discard(0, 120)
+        thin.discard(56, 160)
       end
     end
 
