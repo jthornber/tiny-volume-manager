@@ -46,7 +46,8 @@ module Utils
     # do we have a partial dd block to do at the end?
     remainder = sectors % block_size
     if remainder > 0
-      ProcessControl.run("dd if=#{ifile} of=#{ofile} #{oflag} bs=512 count=#{remainder} seek=#{count * block_size}")
+      # deliberately missing out #{oflag} because we don't want O_DIRECT
+      ProcessControl.run("dd if=#{ifile} of=#{ofile} bs=512 count=#{remainder} seek=#{count * block_size}")
     end
   end
 
