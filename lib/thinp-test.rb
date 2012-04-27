@@ -84,7 +84,7 @@ class ThinpTestCase < Test::Unit::TestCase
     
     tvm.add_volume(linear_vol('cache', round_up(@size / 16, @data_block_size)))
     with_dev(tvm.table('cache')) do |cache|
-      table = Table.new(Cache.new(@size, @data_dev, cache, @data_block_size))
+      table = Table.new(Cache.new(dev_size(@data_dev), @data_dev, cache, @data_block_size))
       with_dev(table) {|cached_dev| yield(cached_dev)}
     end
   end
