@@ -10,22 +10,22 @@ module Config
   CONFIGS = {
     # ejt's machines
     'debian-vm2.lambda.co.uk' => {
-      :metadata_dev => '/dev/vdb',
-      :data_dev => '/dev/vdc',
+      :metadata_dev => '/dev/vdb', # SSD
+      :data_dev => '/dev/vdc',     # SSD
       :mass_fs_tests_parallel_runs => 3,
     },
 
     'debian-vm2.lambda.co.uk:mix' => {
       :metadata_dev => '/dev/vdb', # SSD
-      :data_dev => '/dev/vde',
+      :data_dev => '/dev/vde',     # Spindle
       :data_size => 1097152 * 2 * 10,
       :volume_size => 1097152 * 2,
       :mass_fs_tests_parallel_runs => 3,
     },
 
     'debian-vm2.lambda.co.uk:spindle' => {
-      :metadata_dev => '/dev/vdb', # SSD
-      :data_dev => '/dev/vde',
+      :metadata_dev => '/dev/vdd', # Spindle
+      :data_dev => '/dev/vde',     # Spindle
       :data_size => 1097152 * 2 * 10,
       :volume_size => 1097152 * 2,
       :mass_fs_tests_parallel_runs => 3
