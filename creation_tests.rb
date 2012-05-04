@@ -107,6 +107,30 @@ class CreationTests < ThinpTestCase
       end
     end
   end
+
+  def test_remove_of_a_pool_on_a_suspended_metadata_dev_works
+    tvm = VM.new
+    tvm.add_allocation_volume(@data_dev, 0, dev_size(@data_dev))
+
+    data_size = 2097152
+    tvm.add_volume(linear_vol('metadata', 4096))
+    tvm.add_volume(linear_vol('data', data_size))
+
+    with_devs(tvm.table('metadata'),
+              tvm.table('data')) do |md, data|
+      wipe_device(md)
+
+      with_dev(Table.new(ThinPool.new(data_size, md, data, 128, 1))) do |pool|
+        with_new_thin(pool, @volume_size / 4, 0) {|thin| wipe_device(thin)}
+        STDERR.puts "wiped thin"
+        sleep(5)
+        md.suspend
+        STDERR.puts "suspended metadata dev"
+      end
+      STDERR.puts "removed pool"
+      md.resume
+    end
+  end
 end
 
 #----------------------------------------------------------------
