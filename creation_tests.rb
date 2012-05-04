@@ -1,4 +1,5 @@
 require 'config'
+require 'lib/blktrace'
 require 'lib/dm'
 require 'lib/log'
 require 'lib/process'
@@ -12,6 +13,7 @@ class CreationTests < ThinpTestCase
   include Tags
   include TinyVolumeManager
   include Utils
+  include BlkTrace
 
   def setup
     super
@@ -108,7 +110,7 @@ class CreationTests < ThinpTestCase
     end
   end
 
-  def test_remove_of_a_pool_on_a_suspended_metadata_dev_works
+  def test_flush_on_close
     tvm = VM.new
     tvm.add_allocation_volume(@data_dev, 0, dev_size(@data_dev))
 
@@ -121,14 +123,24 @@ class CreationTests < ThinpTestCase
       wipe_device(md)
 
       with_dev(Table.new(ThinPool.new(data_size, md, data, 128, 1))) do |pool|
-        with_new_thin(pool, @volume_size / 4, 0) {|thin| wipe_device(thin)}
-        STDERR.puts "wiped thin"
-        sleep(5)
-        md.suspend
-        STDERR.puts "suspended metadata dev"
+
+        traces = nil
+
+        with_new_thin(pool, @volume_size / 4, 0) do |thin|
+          traces, _ = blktrace(thin) do
+            wipe_device(thin)
+          end
+        end
+
+        found_flush = false
+        traces[0].each do |ev|
+          if ev.code.member?(:sync)
+            found_flush = true
+          end
+        end
+
+        assert(found_flush)
       end
-      STDERR.puts "removed pool"
-      md.resume
     end
   end
 end

@@ -10,20 +10,29 @@ module BlkTrace
     File.symlink?(path) ? File.readlink(path) : path
   end
 
-  def to_event_type(c)
-    case c
-    when 'D'
-      :discard
+  def to_event_type(cs)
+    r = Array.new
 
-    when 'R'
-      :read
+    cs.each_char do |c|
+      case c
+      when 'D'
+        r << :discard
 
-    when 'W'
-      :write
+      when 'R'
+        r << :read
 
-    else
-      raise RuntimeError, "Unknown blktrace event type: '#{c}'"
+      when 'W'
+        r << :write
+
+      when 'S'
+        r << :sync
+
+      else
+        raise RuntimeError, "Unknown blktrace event type: '#{c}'"
+      end
     end
+
+    r
   end
 
   def blkparse(dev)

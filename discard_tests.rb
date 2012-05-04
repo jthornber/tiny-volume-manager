@@ -220,8 +220,8 @@ class DiscardTests < ThinpTestCase
           discard(thin, 0, 1)
         end
 
-        assert(traces[0].member?(Event.new(:discard, 0, 128)))
-        assert(traces[1].member?(Event.new(:discard, 0, 128)))
+        assert(traces[0].member?(Event.new([:discard], 0, 128)))
+        assert(traces[1].member?(Event.new([:discard], 0, 128)))
       end
     end
 
@@ -238,8 +238,8 @@ class DiscardTests < ThinpTestCase
           discard(thin, 0, 1)
         end
 
-        assert(traces[0].member?(Event.new(:discard, 0, 128)))
-        assert(!traces[1].member?(Event.new(:discard, 0, 128)))
+        assert(traces[0].member?(Event.new([:discard], 0, 128)))
+        assert(!traces[1].member?(Event.new([:discard], 0, 128)))
       end
     end
 
@@ -252,7 +252,7 @@ class DiscardTests < ThinpTestCase
       traces, _ = blktrace(thin) do
         discard(thin, 0, 1)
       end
-      assert(traces[0].member?(Event.new(:discard, 0, 128)))
+      assert(traces[0].member?(Event.new([:discard], 0, 128)))
   end
 
   # we don't allow people to change their minds about top level
