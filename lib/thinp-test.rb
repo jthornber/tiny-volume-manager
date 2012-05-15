@@ -80,9 +80,10 @@ class ThinpTestCase < Test::Unit::TestCase
     # we set up a small linear device, made out of the metadata dev.
     # That is at most a 16th the size of the data dev.
     tvm = VM.new
-    tvm.add_allocation_volume(@metadata_dev, 0, dev_size(@metadata_dev))
+    md_size = dev_size(@metadata_dev)
+    tvm.add_allocation_volume(@metadata_dev, 0, md_size)
     
-    tvm.add_volume(linear_vol('cache', round_up(@size / 16, @data_block_size)))
+    tvm.add_volume(linear_vol('cache', [md_size, round_up(@size / 16, @data_block_size)].min))
     with_dev(tvm.table('cache')) do |cache|
       table = Table.new(Cache.new(dev_size(@data_dev), @data_dev, cache, @data_block_size))
       with_dev(table) {|cached_dev| yield(cached_dev)}
@@ -211,10 +212,11 @@ class ThinpTestCase < Test::Unit::TestCase
   end
 
   # Reads the metadata from an _inactive_ pool
-  def dump_metadata(dev)
+  def dump_metadata(dev, held_root = nil)
     metadata = nil
+    held_root_arg = held_root ? "-m #{held_root}" : ''
     Utils::with_temp_file('metadata_xml') do |file|
-      ProcessControl::run("thin_dump #{dev} > #{file.path}")
+      ProcessControl::run("thin_dump #{held_root_arg} #{dev} > #{file.path}")
       file.rewind
       yield(file.path)
     end

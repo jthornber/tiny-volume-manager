@@ -205,6 +205,7 @@ Options:
   {-h|--help}
   {-f|--format} {xml|human_readable}
   {-r|--repair}
+  {-m|--metadata-snap}
   {-V|--version}
 EOF
 
