@@ -4,7 +4,7 @@ require 'tempfile'
 # A hodge podge of functions that should probably find a better home.
 module Utils
   def round_up(n, d)
-    n += d
+    n += d - 1
     n -= n % d
     n
   end
