@@ -226,6 +226,32 @@ class ThinpTestCase < Test::Unit::TestCase
     ProcessControl::run("thin_restore -i #{xml_path} -o #{dev}")
   end
 
+  def read_held_root(pool, dev)
+    metadata = nil
+
+    status = PoolStatus.new(pool)
+    Utils::with_temp_file('metadata_xml') do |file|
+      ProcessControl::run("thin_dump -m #{status.held_root} #{dev} > #{file.path}")
+      file.rewind
+      metadata = read_xml(file)
+    end
+
+    metadata
+  end
+
+  def read_metadata(dev)
+    metadata = nil
+
+    Utils::with_temp_file('metadata_xml') do |file|
+      ProcessControl::run("thin_dump #{dev} > #{file.path}")
+      file.rewind
+      metadata = read_xml(file)
+    end
+
+    metadata
+  end
+
+
   private
   def get_deferred_io_count
     ProcessControl.run("cat /sys/module/dm_thin_pool/parameters/deferred_io_count").to_i
