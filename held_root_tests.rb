@@ -29,6 +29,8 @@ class HeldRootTests < ThinpTestCase
     assert_equal(nil, get_root(pool))
   end
 
+  #--------------------------------------------------------------
+
   def test_hold_release_cycle_empty_pool
     with_standard_pool(@size) do |pool|
       assert_root_unset(pool)
@@ -113,6 +115,8 @@ class HeldRootTests < ThinpTestCase
   end
 
   def test_held_dump
+    held_metadata = nil
+
     with_standard_pool(@size) do |pool|
       with_new_thin(pool, @volume_size, 0) do |thin|
         wipe_device(thin)
@@ -120,11 +124,23 @@ class HeldRootTests < ThinpTestCase
         pool.message(0, "reserve_metadata_snap")
         wipe_device(thin)          # forcing the held root and live metadata to diverge
 
-        status = PoolStatus.new(pool)
-        dump_metadata(@metadata_dev, status.held_root) do |xml|
+        held_metadata = read_held_root(pool, @metadata_dev)
 
-        end
+        pool.message(0, "release_metadata_snap")
       end
     end
+
+    final_metadata = read_metadata(@metadata_dev)
+
+    left, common, right = compare_thins(held_metadata, final_metadata, 0)
+    assert_equal([], common)
+    assert_equal(1, left.length)
+    assert_equal(1, right.length)
+    assert_equal(0, left[0].origin_begin)
+    assert_equal(0, right[0].origin_begin)
+
+    nr_blocks = @volume_size / @data_block_size
+    assert_equal(nr_blocks, left[0].length)
+    assert_equal(nr_blocks, right[0].length)
   end
 end
