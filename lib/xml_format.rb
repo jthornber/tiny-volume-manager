@@ -254,9 +254,9 @@ module XMLFormat
 
   # returns 3 arrays of mappings: unique to first arg, common, unique
   # to second arg
-  def compare_thins(md1, md2, dev_id)
-    m1 = get_device(md1, dev_id).mappings
-    m2 = get_device(md2, dev_id).mappings
+  def compare_devs(md_dev1, md_dev2)
+    m1 = md_dev1.mappings
+    m2 = md_dev2.mappings
 
     left = Array.new
     center = Array.new
@@ -275,6 +275,11 @@ module XMLFormat
 
     [left, center, right].each {|a| a.reject {|e| e.data_begin == nil}}
     [left, center, right]
+  end
+
+  def compare_thins(md1, md2, dev_id)
+    compare_devs(get_device(md1, dev_id),
+                 get_device(md2, dev_id))
   end
 end
 
