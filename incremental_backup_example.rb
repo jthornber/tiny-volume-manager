@@ -24,29 +24,6 @@ class IncrementalBackup
   def initialize
   end
 
-  def git_extract(dev, fs_type)
-    fs_type = :ext4
-
-    fs = FS::file_system(fs_type, dev)
-    fs.with_mount('./kernel_builds') do
-      Dir.chdir('./kernel_builds') do
-        repo = Git.new('linux')
-
-        repo.in_repo do
-          report_time("extract all versions") do
-            TAGS.each do |tag|
-              puts "Checking out #{tag} ..."
-              report_time("checking out #{tag}") do
-                repo.checkout(tag)
-                ProcessControl.run('sync')
-              end
-            end
-          end
-        end
-      end
-    end
-  end
-
   def show_mappings(ms)
     count = 0
     ms.each do |m|
