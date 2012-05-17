@@ -9,9 +9,7 @@ require 'test/unit'
 
 $checked_prerequisites = false
 
-#FIXME: rename this class, or perhaps split it into mix-ins?
-class ThinpTestCase < Test::Unit::TestCase
-  undef_method :default_test
+module ThinpTestMixin
   include ProcessControl
   include TinyVolumeManager
 
@@ -277,6 +275,12 @@ class ThinpTestCase < Test::Unit::TestCase
 
     $checked_prerequisites = true
   end
+end
+
+#FIXME: rename this class, or perhaps split it into mix-ins?
+class ThinpTestCase < Test::Unit::TestCase
+  undef_method :default_test
+  include ThinpTestMixin
 end
 
 #----------------------------------------------------------------
