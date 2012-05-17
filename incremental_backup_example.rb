@@ -99,11 +99,9 @@ class IncrementalBackup
               # taking a snap of it.  This forces an fs sync, among
               # other things.
               thin.pause do
-
                 # We create a snapshot for the initial full backup.  This snap
                 # is kept around to compare for incremental backups.
                 pool.message(0, "create_snap 1 0")
-
               end
 
               # backup this snapshot
