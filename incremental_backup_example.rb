@@ -91,7 +91,6 @@ class IncrementalBackup
 
         fs.with_mount('./kernel_builds') do
           Dir.chdir('./kernel_builds') do
-            puts "getting repo ..."
             repo = Git.clone('/root/linux-github', 'linux')
             Dir.chdir('linux') do
 
