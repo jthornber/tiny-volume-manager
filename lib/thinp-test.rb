@@ -65,9 +65,11 @@ module ThinpTestMixin
     zero = dflt(opts, :zero, true)
     discard = dflt(opts, :discard, true)
     discard_pass = dflt(opts, :discard_passdown, true)
+    read_only = dflt(opts, :read_only, false)
 
     table = Table.new(ThinPool.new(size, @metadata_dev, @data_dev,
-                                   @data_block_size, @low_water_mark, zero, discard, discard_pass))
+                                   @data_block_size, @low_water_mark,
+                                   zero, discard, discard_pass, read_only))
 
     @dm.with_dev(table) do |pool|
       yield(pool)
