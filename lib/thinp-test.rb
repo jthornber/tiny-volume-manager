@@ -251,6 +251,11 @@ module ThinpTestMixin
     metadata
   end
 
+  def reload_with_error_target(dev)
+    dev.pause do
+      dev.load(Table.new(Error.new(dev.active_table.size)))
+    end
+  end
 
   private
   def get_deferred_io_count
