@@ -105,6 +105,12 @@ class ReadOnlyTests < ThinpTestCase
           wipe_device(t1)
 
           reload_with_error_target(md)
+
+          # knock out the thin check on deactivation, the md device
+          # isn't accessible now. (Isn't Ruby great).
+          def pool.post_remove_check
+          end
+
           assert_raise(ExitError) do
             wipe_device(t2)
           end
@@ -114,7 +120,7 @@ class ReadOnlyTests < ThinpTestCase
           md.pause {md.load(md_table)}
 
           status = PoolStatus.new(pool)
-          # FIXME: check read-only in pool status
+          assert(status.options[:read_only]);
         end
       end
     end
