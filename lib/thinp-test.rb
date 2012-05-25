@@ -159,7 +159,7 @@ module ThinpTestMixin
 
   def with_mounts(fs, mount_points)
     if fs.length != mount_points.length
-      raise RuntimeError, "number of filesystems differs from number of mount points"
+      raise "number of filesystems differs from number of mount points"
     end
 
     mounted = Array.new

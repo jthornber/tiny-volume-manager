@@ -28,7 +28,7 @@ module BlkTrace
         r << :sync
 
       else
-        raise RuntimeError, "Unknown blktrace event type: '#{c}'"
+        raise "Unknown blktrace event type: '#{c}'"
       end
     end
 

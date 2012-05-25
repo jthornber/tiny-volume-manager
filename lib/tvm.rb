@@ -16,7 +16,7 @@ module TinyVolumeManager
 
     def allocate_segment(max_length)
       if @free_segments.size == 0
-        raise RuntimeError, "out of free space"
+        raise "out of free space"
       end
 
       s = @free_segments.shift
@@ -81,11 +81,11 @@ module TinyVolumeManager
       end
 
       def resize(allocator, new_length)
-        raise RuntimeError, "resize not implemented"
+        raise "resize not implemented"
       end
 
       def allocate(allocator)
-        raise RuntimeError, "allocate not implemented"
+        raise "allocate not implemented"
       end
     end
 
@@ -101,7 +101,7 @@ module TinyVolumeManager
         end
 
         if new_length < @length
-          raise RuntimeError, "reduce not implemented"
+          raise "reduce not implemented"
         end
 
         new_segs = allocator.allocate_segments(new_length - @length)
@@ -195,13 +195,13 @@ module TinyVolumeManager
     private
     def check_not_exist(name)
       if @volumes.member?(name)
-        raise RuntimeError, "Volume '#{name}' already exists"
+        raise "Volume '#{name}' already exists"
       end
     end
 
     def check_exists(name)
       unless @volumes.member?(name)
-        raise RuntimeError, "Volume '#{name}' doesn't exist"
+        raise "Volume '#{name}' doesn't exist"
       end
     end
   end

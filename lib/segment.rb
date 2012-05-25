@@ -165,13 +165,13 @@ module TinyVolumeManager
     # index or raises an exception.
     def alloc(policy)
       if @segs.size == 0
-        raise RuntimeError, "segments to choose from"
+        raise "segments to choose from"
       end
 
       index = policy.select(@segs)
 
       if index < 0 || index >= @segs.size
-        raise RuntimeError, "index out of bounds"
+        raise "index out of bounds"
       end
 
       s = @segs[index]

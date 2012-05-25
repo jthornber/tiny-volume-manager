@@ -55,7 +55,7 @@ class PoolStatus
   def initialize(pool)
     m = pool.status.match(/(\d+)\s(\d+)\/(\d+)\s(\d+)\/(\d+)\s(\S+)(\s.*)/)
     if m.nil?
-      raise RuntimeError, "couldn't get pool status"
+      raise "couldn't get pool status"
     end
 
     @transaction_id = m[1].to_i

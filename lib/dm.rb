@@ -163,7 +163,7 @@ class DMDev
     output = ProcessControl.run("dmsetup status -v #{@name}")
     m = output.match(/Event number:[ \t]*([0-9]+)/)
     if m.nil?
-      raise RuntimeError, "Couldn't find event number for dm device"
+      raise "Couldn't find event number for dm device"
     end
 
     m[1].to_i

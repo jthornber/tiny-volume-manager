@@ -61,7 +61,7 @@ module FS
 
   def FS.file_system(type, dev)
     unless FS_CLASSES.member?(type)
-      raise RuntimError, "unknown filesystem type '#{type}'"
+      raise "unknown filesystem type '#{type}'"
     end
 
     FS_CLASSES[type].new(dev)

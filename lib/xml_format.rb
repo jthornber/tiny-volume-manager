@@ -67,7 +67,7 @@ module XMLFormat
           attr[n]
 
         else
-          raise RuntimeError, "unknown field type"
+          raise "unknown field type"
         end
       end
     end
