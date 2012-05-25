@@ -14,6 +14,12 @@ class Target
   end
 end
 
+class Error < Target
+  def initialize(sector_count)
+    super('error', sector_count)
+  end
+end
+
 class Linear < Target
   def initialize(sector_count, dev, offset)
     super('linear', sector_count, dev, offset)
@@ -65,6 +71,10 @@ class Table
 
   def initialize(*targets)
     @targets = targets
+  end
+
+  def size
+    @targets.inject(0) {|tot, t| tot += t.sector_count}
   end
 
   def to_s()
