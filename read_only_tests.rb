@@ -85,4 +85,38 @@ class ReadOnlyTests < ThinpTestCase
       end
     end
   end
+
+  def test_commit_failure_causes_fallback
+    with_standard_pool(@size) do |pool|
+      with_new_thins(pool, @volume_size, 0, 1) do |t1, t2|
+      end
+    end
+
+    # Overlay the metadata dev with a linear mapping, so we can swap
+    # it for an error target in a bit.
+    tvm = VM.new
+    tvm.add_allocation_volume(@metadata_dev, 0, dev_size(@metadata_dev))
+    tvm.add_volume(linear_vol('metadata', dev_size(@metadata_dev)))
+
+    md_table = tvm.table('metadata')
+    with_dev(md_table) do |md|
+      with_dev(Table.new(ThinPool.new(@size, md, @data_dev, 128, 1))) do |pool|
+        with_thins(pool, @volume_size, 0, 1) do |t1, t2|
+          wipe_device(t1)
+
+          reload_with_error_target(md)
+          assert_raise(ExitError) do
+            wipe_device(t2)
+          end
+
+          # we have to put the md device back so that the automatic
+          # thin_check passes.
+          md.pause {md.load(md_table)}
+
+          status = PoolStatus.new(pool)
+          # FIXME: check read-only in pool status
+        end
+      end
+    end
+  end
 end
