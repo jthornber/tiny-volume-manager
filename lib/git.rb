@@ -12,6 +12,7 @@ class Git
   end
 
   def initialize(origin)
+    raise "not a git directory" unless Pathname.new("#{origin}/.git").exist?
     @origin = origin
   end
 
@@ -21,6 +22,10 @@ class Git
 
   def checkout(tag)
     system("git checkout #{tag}")
+  end
+
+  def delete
+    system("rm -rf #{origin}")
   end
 end
 
