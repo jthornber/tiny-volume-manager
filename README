@@ -13,6 +13,7 @@ And aio_stress (http://fsbench.filesystems.org/bench/aio-stress.c).
 
 And blktrace.
 
+And bonnie++.
 
 Running
 =======

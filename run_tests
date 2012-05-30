@@ -37,6 +37,7 @@ require 'restore_tests'
 require 'snapshot_tests'
 require 'transaction_id_tests'
 require 'immutable_target_tests'
+require 'fs_benchmark'
 
 #----------------------------------------------------------------
 

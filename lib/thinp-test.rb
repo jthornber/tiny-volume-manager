@@ -272,7 +272,7 @@ module ThinpTestMixin
     # Can we find thin_check?
     begin
       raise "wrong ruby version" unless RUBY_VERSION =~ /^1.8/
-      ['thin_check', 'thin_dump', 'thin_restore', 'dt', 'blktrace'].each do |cmd|
+      ['thin_check', 'thin_dump', 'thin_restore', 'dt', 'blktrace', 'bonnie++'].each do |cmd|
         check_in_path(cmd)
       end
     rescue
