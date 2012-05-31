@@ -114,14 +114,19 @@ class MetadataAnalysis
   # |pre| and |post| are the length in the lseg before and after the junction
   # FIXME: check this
   def ios_that_overlap_junction(pre, post, io_size, granularity)
-    r = io_size
+    pre /= granularity
+    post /= granularity
+    io_size /= granularity
+
+    intersections = io_size - 1
+    r = intersections
 
     if pre < io_size
-      r -= io_size - pre
+      r -= intersections - pre
     end
 
     if post < io_size
-      r -= io_size - post
+      r -= intersections - post
     end
 
     r
@@ -173,7 +178,7 @@ class MetadataAnalysis
     end
 
     (total_ios == 0) ? nil :
-      [total_seeks / total_ios, total_seek_distance / total_seeks]
+      [total_seeks / total_ios, total_seeks > 0 ? total_seek_distance / total_seeks : 0]
   end
 
   # assumes the pairs are sorted

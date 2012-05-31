@@ -21,7 +21,7 @@ ARGV.each do |path|
   File.open(path, 'r') do |file|
     md = read_xml(file)
     analysis = MetadataAnalysis.new(md)
-    analysis.block_length_histograms
+    #analysis.block_length_histograms
     analysis.fragmentations
   end
 end
