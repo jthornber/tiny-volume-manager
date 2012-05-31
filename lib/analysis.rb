@@ -49,7 +49,7 @@ class MetadataAnalysis
 
   private
 
-  GRANULARITY = 8
+  GRANULARITY = 2 * 4
   Unit = Struct.new(:factor, :abbrev)
 
   def segments_to_human(size)
@@ -58,7 +58,7 @@ class MetadataAnalysis
              Unit.new(2, 'k')]
 
     units.each do |u|
-      if size > u.factor
+      if size >= u.factor
         return "#{size / u.factor}#{u.abbrev}"
       end
     end
