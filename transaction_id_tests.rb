@@ -13,6 +13,10 @@ class TransactionIdTests < ThinpTestCase
   include Tags
   include Utils
 
+  def trans_id(pool)
+    PoolStatus.new(pool).transaction_id
+  end
+
   def test_initial_trans_id_is_zero
     with_standard_pool(@size) do |pool|
       assert_equal 0, trans_id(pool)
