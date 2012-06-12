@@ -8,7 +8,7 @@ require 'lib/fs'
 require 'lib/git'
 require 'lib/status'
 require 'lib/tags'
-require 'lib/thinp-test'
+require 'lib/thinp-mixin'
 require 'lib/xml_format'
 
 #----------------------------------------------------------------
@@ -130,4 +130,3 @@ end
 
 ib = IncrementalBackup.new
 ib.run
-exit(0)

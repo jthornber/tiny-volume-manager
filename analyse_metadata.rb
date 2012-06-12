@@ -8,7 +8,7 @@ require 'lib/fs'
 require 'lib/git'
 require 'lib/status'
 require 'lib/tags'
-require 'lib/thinp-test'
+require 'lib/thinp-mixin'
 require 'lib/xml_format'
 require 'lib/analysis'
 
@@ -25,7 +25,5 @@ ARGV.each do |path|
     analysis.fragmentations
   end
 end
-
-exit(0)
 
 #----------------------------------------------------------------
