@@ -60,15 +60,11 @@ module ThinpTestMixin
     size
   end
 
-  def dflt(h, k, d)
-    h.member?(k) ? h[k] : d
-  end
-
   def with_standard_pool(size, opts = Hash.new)
-    zero = dflt(opts, :zero, true)
-    discard = dflt(opts, :discard, true)
-    discard_pass = dflt(opts, :discard_passdown, true)
-    read_only = dflt(opts, :read_only, false)
+    zero = opts.fetch(:zero, true)
+    discard = opts.fetch(:discard, true)
+    discard_pass = opts.fetch(:discard_passdown, true)
+    read_only = opts.fetch(:read_only, false)
 
     table = Table.new(ThinPool.new(size, @metadata_dev, @data_dev,
                                    @data_block_size, @low_water_mark,
