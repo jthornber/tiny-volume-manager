@@ -1,20 +1,28 @@
 require 'lib/bufio'
 require 'lib/log'
+require 'lib/prerequisites-checker'
 require 'lib/process'
 require 'lib/tvm'
 require 'lib/utils'
 
 #----------------------------------------------------------------
 
-# FIXME: lift
-$checked_prerequisites = false
+$prereqs = Prerequisites.requirements do
+  require_in_path('thin_check',
+                  'thin_dump',
+                  'thin_restore',
+                  'dt',
+                  'blktrace',
+                  'bonnie++')
+  require_ruby_version /^1.8/
+end
 
 module ThinpTestMixin
   include ProcessControl
   include TinyVolumeManager
 
   def setup
-    check_prereqs()
+    check_prereqs
 
     config = Config.get_config
     @metadata_dev = config[:metadata_dev]
@@ -262,25 +270,14 @@ module ThinpTestMixin
     ProcessControl.run("cat /sys/module/dm_thin_pool/parameters/deferred_io_count").to_i
   end
 
-  def check_in_path(cmd)
-    ProcessControl.run("which #{cmd}")
-  end
-
   def check_prereqs
-    return if $checked_prerequisites
-
-    # Can we find thin_check?
     begin
-      raise "wrong ruby version" unless RUBY_VERSION =~ /^1.8/
-      ['thin_check', 'thin_dump', 'thin_restore', 'dt', 'blktrace', 'bonnie++'].each do |cmd|
-        check_in_path(cmd)
-      end
-    rescue
-      STDERR.puts "Missing prerequisites, please check the README"
+      $prereqs.check
+    rescue => e
+      STDERR.puts e
+      STDERR.puts "Missing prerequisites, please see the README"
       exit(1)
     end
-
-    $checked_prerequisites = true
   end
 end
 
