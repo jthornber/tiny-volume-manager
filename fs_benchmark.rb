@@ -134,8 +134,6 @@ class FSBench < ThinpTestCase
   end
 
   def test_git_extract_rolling_snap
-    @data_block_size = 1024
-
     dir = Dir.pwd
     n = 0
 
