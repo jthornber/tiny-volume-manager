@@ -1,3 +1,4 @@
+require 'lib/benchmarking'
 require 'lib/bufio'
 require 'lib/log'
 require 'lib/prerequisites-checker'
@@ -18,6 +19,7 @@ $prereqs = Prerequisites.requirements do
 end
 
 module ThinpTestMixin
+  include Benchmarking
   include ProcessControl
   include TinyVolumeManager
 
@@ -184,17 +186,6 @@ module ThinpTestMixin
 
       yield
     end
-  end
-
-  def time_block
-    start_time = Time.now
-    yield
-    return Time.now - start_time
-  end
-
-  def report_time(desc, &block)
-    elapsed = time_block(&block)
-    info "Elapsed #{elapsed}: #{desc}"
   end
 
   def trans_id(pool)
