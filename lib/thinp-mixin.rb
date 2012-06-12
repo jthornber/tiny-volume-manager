@@ -188,10 +188,6 @@ module ThinpTestMixin
     end
   end
 
-  def set_trans_id(pool, old, new)
-    pool.message(0, "set_transaction_id #{old} #{new}")
-  end
-
   def count_deferred_ios(&block)
     b = get_deferred_io_count
     block.call

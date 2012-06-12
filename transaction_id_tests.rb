@@ -17,6 +17,10 @@ class TransactionIdTests < ThinpTestCase
     PoolStatus.new(pool).transaction_id
   end
 
+  def set_trans_id(pool, old, new)
+    pool.message(0, "set_transaction_id #{old} #{new}")
+  end
+
   def test_initial_trans_id_is_zero
     with_standard_pool(@size) do |pool|
       assert_equal 0, trans_id(pool)
