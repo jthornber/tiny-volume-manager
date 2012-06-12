@@ -30,24 +30,17 @@ module ThinpTestMixin
     @metadata_dev = config[:metadata_dev]
     @data_dev = config[:data_dev]
 
-    @data_block_size = config[:data_block_size]
-    @data_block_size = 128 if @data_block_size.nil?
+    @data_block_size = config.fetch(:data_block_size, 128)
 
-    @size = config[:data_size]
-    @size = 20971520 if @size.nil?
+    @size = config.fetch(:data_size, 20971520)
     @size /= @data_block_size
     @size *= @data_block_size
 
-    @volume_size = config[:volume_size]
-    @volume_size = 2097152 if @volume_size.nil?
+    @volume_size = config.fetch(:volume_size, 2097152)
 
     @tiny_size = @data_block_size
-
-    @low_water_mark = config[:low_water_mark]
-    @low_water_mark = 5 if @low_water_mark.nil?
-
-    @mass_fs_tests_parallel_runs = config[:mass_fs_tests_parallel_runs]
-    @mass_fs_tests_parallel_runs = 128 if @mass_fs_tests_parallel_runs.nil?
+    @low_water_mark = config.fetch(:low_water_mark, 5)
+    @mass_fs_tests_parallel_runs = config.fetch(:mass_fs_tests_parallel_runs, 128)
 
     @dm = DMInterface.new
 
