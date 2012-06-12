@@ -14,22 +14,23 @@ class Target
   end
 end
 
-class Error < Target
+class ErrorTarget < Target
   def initialize(sector_count)
     super('error', sector_count)
   end
 end
 
-class Linear < Target
+class LinearTarget < Target
   def initialize(sector_count, dev, offset)
     super('linear', sector_count, dev, offset)
   end
 end
 
-class ThinPool < Target
+class ThinPoolTarget < Target
   attr_accessor :metadata_dev
 
-  def initialize(sector_count, metadata_dev, data_dev, block_size, low_water_mark, zero = true, discard = true, discard_pass = true, read_only = false)
+  def initialize(sector_count, metadata_dev, data_dev, block_size, low_water_mark,
+                 zero = true, discard = true, discard_pass = true, read_only = false)
     extra_opts = Array.new
 
     extra_opts.instance_eval do
@@ -48,7 +49,7 @@ class ThinPool < Target
   end
 end
 
-class Thin < Target
+class ThinTarget < Target
   def initialize(sector_count, pool, id, origin = nil)
     if origin
       super('thin', sector_count, pool.path, id, origin)
@@ -58,7 +59,7 @@ class Thin < Target
   end
 end
 
-class Cache < Target
+class CacheTarget < Target
   def initialize(sector_count, origin_dev, cache_dev, block_size)
     super('cache', sector_count, origin_dev, cache_dev, block_size);
   end

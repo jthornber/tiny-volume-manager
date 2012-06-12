@@ -47,8 +47,8 @@ class CreationTests < ThinpTestCase
     data_block_size = 524288
     volume_size = 524288
     lwm = 5
-    table = Table.new(ThinPool.new(size, @metadata_dev, @data_dev,
-                                   data_block_size, lwm))
+    table = Table.new(ThinPoolTarget.new(size, @metadata_dev, @data_dev,
+                                         data_block_size, lwm))
     @dm.with_dev(table) do |pool|
       with_new_thin(pool, volume_size, 0) {|thin| dt_device(thin)}
     end
@@ -57,26 +57,26 @@ class CreationTests < ThinpTestCase
   tag :thinp_target, :quick
 
   def test_non_power_of_2_data_block_size_fails
-    table = Table.new(ThinPool.new(@size, @metadata_dev, @data_dev,
-                                   @data_block_size + 57, @low_water_mark))
+    table = Table.new(ThinPoolTarget.new(@size, @metadata_dev, @data_dev,
+                                         @data_block_size + 57, @low_water_mark))
     assert_bad_table(table)
   end
 
   def test_too_small_data_block_size_fails
-    table = Table.new(ThinPool.new(@size, @metadata_dev, @data_dev,
-                                   64, @low_water_mark))
+    table = Table.new(ThinPoolTarget.new(@size, @metadata_dev, @data_dev,
+                                         64, @low_water_mark))
     assert_bad_table(table)
   end
 
   def test_too_large_data_block_size_fails
-    table = Table.new(ThinPool.new(@size, @metadata_dev, @data_dev,
-                                   2**21 + 1, @low_water_mark))
+    table = Table.new(ThinPoolTarget.new(@size, @metadata_dev, @data_dev,
+                                         2**21 + 1, @low_water_mark))
     assert_bad_table(table)
   end
 
   def test_largest_data_block_size_succeeds
-    table = Table.new(ThinPool.new(@size, @metadata_dev, @data_dev,
-                                   2**21, @low_water_mark))
+    table = Table.new(ThinPoolTarget.new(@size, @metadata_dev, @data_dev,
+                                         2**21, @low_water_mark))
     @dm.with_dev(table) {|pool| {}}
   end
 
@@ -103,7 +103,7 @@ class CreationTests < ThinpTestCase
               tvm.table('data')) do |md, data|
       wipe_device(md)
       assert_raise(ExitError) do
-        with_dev(Table.new(ThinPool.new(data_size, md, data, 128, 1))) do |pool|
+        with_dev(Table.new(ThinPoolTarget.new(data_size, md, data, 128, 1))) do |pool|
           # shouldn't get here
         end
       end
@@ -122,7 +122,7 @@ class CreationTests < ThinpTestCase
               tvm.table('data')) do |md, data|
       wipe_device(md)
 
-      with_dev(Table.new(ThinPool.new(data_size, md, data, 128, 1))) do |pool|
+      with_dev(Table.new(ThinPoolTarget.new(data_size, md, data, 128, 1))) do |pool|
 
         traces = nil
 

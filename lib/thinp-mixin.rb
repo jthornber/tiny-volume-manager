@@ -83,17 +83,17 @@ module ThinpTestMixin
     discard_pass = opts.fetch(:discard_passdown, true)
     read_only = opts.fetch(:read_only, false)
 
-    Table.new(ThinPool.new(size, @metadata_dev, @data_dev,
-                           @data_block_size, @low_water_mark,
-                           zero, discard, discard_pass, read_only))
+    Table.new(ThinPoolTarget.new(size, @metadata_dev, @data_dev,
+                                 @data_block_size, @low_water_mark,
+                                 zero, discard, discard_pass, read_only))
   end
 
   def standard_linear_table
-    Table.new(Linear.new(@size, @data_dev, 0))
+    Table.new(LinearTarget.new(@size, @data_dev, 0))
   end
 
   def thin_table(pool, size, id, opts = Hash.new)
-    Table.new(Thin.new(size, pool, id, opts[:origin]))
+    Table.new(ThinTarget.new(size, pool, id, opts[:origin]))
   end
 
   #--------------------------------
@@ -115,7 +115,7 @@ module ThinpTestMixin
     
     tvm.add_volume(linear_vol('cache', [md_size, round_up(@size / 16, @data_block_size)].min))
     with_dev(tvm.table('cache')) do |cache|
-      table = Table.new(Cache.new(dev_size(@data_dev), @data_dev, cache, @data_block_size))
+      table = Table.new(CacheTarget.new(dev_size(@data_dev), @data_dev, cache, @data_block_size))
       with_dev(table, &block)
     end
   end
@@ -201,7 +201,7 @@ module ThinpTestMixin
 
   def reload_with_error_target(dev)
     dev.pause do
-      dev.load(Table.new(Error.new(dev.active_table.size)))
+      dev.load(Table.new(ErrorTarget.new(dev.active_table.size)))
     end
   end
 

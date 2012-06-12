@@ -19,7 +19,7 @@ class BasicTests < ThinpTestCase
   tag :thinp_target
 
   def test_overwrite_a_linear_device
-    linear_table = Table.new(Linear.new(@volume_size, @data_dev, 0))
+    linear_table = Table.new(LinearTarget.new(@volume_size, @data_dev, 0))
     @dm.with_dev(linear_table) {|linear_dev| dt_device(linear_dev)}
   end
 

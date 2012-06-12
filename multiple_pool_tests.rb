@@ -62,8 +62,8 @@ class MultiplePoolTests < ThinpTestCase
       wipe_device(md_1, 8)
       wipe_device(md_2, 8)
 
-      with_devs(Table.new(ThinPool.new(data_size, md_1, data_1, @block_size, 1)),
-                Table.new(ThinPool.new(data_size, md_2, data_2, @block_size, 1))) do |pool1, pool2|
+      with_devs(Table.new(ThinPoolTarget.new(data_size, md_1, data_1, @block_size, 1)),
+                Table.new(ThinPoolTarget.new(data_size, md_2, data_2, @block_size, 1))) do |pool1, pool2|
 
         with_new_thin(pool1, data_size, 0) do |thin1|
           with_new_thin(pool2, data_size, 0) do |thin2|
@@ -93,7 +93,7 @@ class MultiplePoolTests < ThinpTestCase
       # zero the metadata so we get a fresh pool
       wipe_device(md, 8)
 
-      with_devs(Table.new(ThinPool.new(data_size, md, data, @block_size, 1))) do |pool|
+      with_devs(Table.new(ThinPoolTarget.new(data_size, md, data, @block_size, 1))) do |pool|
         with_new_thin(pool, data_size, 0) {|thin| yield(thin)}
       end
     end

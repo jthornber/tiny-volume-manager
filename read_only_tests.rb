@@ -100,7 +100,7 @@ class ReadOnlyTests < ThinpTestCase
 
     md_table = tvm.table('metadata')
     with_dev(md_table) do |md|
-      with_dev(Table.new(ThinPool.new(@size, md, @data_dev, 128, 1))) do |pool|
+      with_dev(Table.new(ThinPoolTarget.new(@size, md, @data_dev, 128, 1))) do |pool|
         with_thins(pool, @volume_size, 0, 1) do |t1, t2|
           wipe_device(t1)
 

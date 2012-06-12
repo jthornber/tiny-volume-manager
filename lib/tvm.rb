@@ -118,7 +118,7 @@ module TinyVolumeManager
 
       private
       def self.segs_to_targets(segs)
-        segs.map {|s| Linear.new(s.length, s.dev, s.offset)}
+        segs.map {|s| LinearTarget.new(s.length, s.dev, s.offset)}
       end
     end
   end

@@ -260,16 +260,16 @@ class DiscardTests < ThinpTestCase
   def test_change_discard_with_reload_fails
     with_standard_pool(@size, :discard => true) do |pool|
       assert_raise(ExitError) do
-        table = Table.new(ThinPool.new(@size, @metadata_dev, @data_dev,
-                                       @data_block_size, @low_water_mark, false, false, false))
+        table = Table.new(ThinPoolTarget.new(@size, @metadata_dev, @data_dev,
+                                             @data_block_size, @low_water_mark, false, false, false))
         pool.load(table)
       end
     end
 
     with_standard_pool(@size, :discard => false) do |pool|
       assert_raise(ExitError) do
-        table = Table.new(ThinPool.new(@size, @metadata_dev, @data_dev,
-                                       @data_block_size, @low_water_mark, false, true, false))
+        table = Table.new(ThinPoolTarget.new(@size, @metadata_dev, @data_dev,
+                                             @data_block_size, @low_water_mark, false, true, false))
         pool.load(table)
       end
     end
@@ -289,10 +289,10 @@ class DiscardTests < ThinpTestCase
       wipe_device(md1, 8)
       wipe_device(md2, 8)
 
-      t1 = Table.new(ThinPool.new(@volume_size, md1, @data_dev, @data_block_size, 0, true, levels[:lower], levels[:lower_passdown]))
+      t1 = Table.new(ThinPoolTarget.new(@volume_size, md1, @data_dev, @data_block_size, 0, true, levels[:lower], levels[:lower_passdown]))
       @dm.with_dev(t1) do |lower_pool|
         with_new_thin(lower_pool, @volume_size, 0) do |lower_thin|
-          t2 = Table.new(ThinPool.new(@volume_size, md2, lower_thin, @data_block_size, 0, true, levels[:upper], levels[:upper_passdown]))
+          t2 = Table.new(ThinPoolTarget.new(@volume_size, md2, lower_thin, @data_block_size, 0, true, levels[:upper], levels[:upper_passdown]))
           @dm.with_dev(t2) do |upper_pool|
             with_new_thin(upper_pool, @volume_size, 0) do |upper_thin|
               block.call(lower_pool, lower_thin, upper_pool, upper_thin)

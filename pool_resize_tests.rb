@@ -22,8 +22,8 @@ class PoolResizeTests < ThinpTestCase
   tag :thinp_target
 
   def test_reload_no_io
-    table = Table.new(ThinPool.new(@size, @metadata_dev, @data_dev,
-                                   @data_block_size, @low_water_mark))
+    table = Table.new(ThinPoolTarget.new(@size, @metadata_dev, @data_dev,
+                                         @data_block_size, @low_water_mark))
 
     @dm.with_dev(table) do |pool|
       pool.load(table)
@@ -32,8 +32,8 @@ class PoolResizeTests < ThinpTestCase
   end
 
   def test_reload_io
-    table = Table.new(ThinPool.new(20971520, @metadata_dev, @data_dev,
-                                   @data_block_size, @low_water_mark))
+    table = Table.new(ThinPoolTarget.new(20971520, @metadata_dev, @data_dev,
+                                         @data_block_size, @low_water_mark))
 
     @dm.with_dev(table) do |pool|
       with_new_thin(pool, @volume_size, 0) do |thin|
@@ -50,8 +50,8 @@ class PoolResizeTests < ThinpTestCase
     target_step = @size / 8
     with_standard_pool(target_step) do |pool|
       2.upto(8) do |n|
-        table = Table.new(ThinPool.new(n * target_step, @metadata_dev, @data_dev,
-                                       @data_block_size, @low_water_mark))
+        table = Table.new(ThinPoolTarget.new(n * target_step, @metadata_dev, @data_dev,
+                                             @data_block_size, @low_water_mark))
         pool.load(table)
         pool.resume
       end
@@ -73,8 +73,8 @@ class PoolResizeTests < ThinpTestCase
             status.used_data_blocks >= status.total_data_blocks - @low_water_mark
           end
 
-          table = Table.new(ThinPool.new(i * target_step, @metadata_dev, @data_dev,
-                                         @data_block_size, @low_water_mark))
+          table = Table.new(ThinPoolTarget.new(i * target_step, @metadata_dev, @data_dev,
+                                               @data_block_size, @low_water_mark))
           pool.load(table)
           pool.resume
         end
@@ -119,8 +119,8 @@ class PoolResizeTests < ThinpTestCase
           opened = true
         ensure
           # resize the pool so the wipe can complete.
-          table = Table.new(ThinPool.new(256, @metadata_dev, @data_dev,
-                                         @data_block_size, @low_water_mark))
+          table = Table.new(ThinPoolTarget.new(256, @metadata_dev, @data_dev,
+                                               @data_block_size, @low_water_mark))
           pool.load(table)
           pool.resume
 
@@ -162,8 +162,8 @@ class PoolResizeTests < ThinpTestCase
         pool.info
 
         # Resize the pool so the format can complete
-        table = Table.new(ThinPool.new(@size, @metadata_dev, @data_dev,
-                                       @data_block_size, @low_water_mark))
+        table = Table.new(ThinPoolTarget.new(@size, @metadata_dev, @data_dev,
+                                             @data_block_size, @low_water_mark))
         pool.load(table)
         pool.resume
       end

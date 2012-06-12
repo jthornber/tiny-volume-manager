@@ -32,7 +32,7 @@ class ExternalOriginTests < ThinpTestCase
       dt_device(origin)
 
       wipe_device(@metadata_dev, 8)
-      pool_table = Table.new(ThinPool.new(@volume_size, @metadata_dev, data, @data_block_size, 0))
+      pool_table = Table.new(ThinPoolTarget.new(@volume_size, @metadata_dev, data, @data_block_size, 0))
       with_devs(pool_table) do |pool|
         with_new_thin(pool, @volume_size, 0, :origin => origin) do |thin|
           verify_device(thin, origin)

@@ -12,7 +12,7 @@ include Utils
 SIZE = 20971520
 
 def fsck_linux(dm, pool, dev_id)
-  thin_table = Table.new(Thin.new(SIZE / 4, pool, dev_id))
+  thin_table = Table.new(ThinTarget.new(SIZE / 4, pool, dev_id))
 
   dm.with_dev(thin_table) do |thin|
     thin_fs = FS::file_system(:ext4, thin)
@@ -34,8 +34,8 @@ data_block_size = 128
 low_water_mark = 1024
 dm = DMInterface.new
 
-table = Table.new(ThinPool.new(SIZE, metadata_dev, data_dev,
-                               data_block_size, low_water_mark))
+table = Table.new(ThinPoolTarget.new(SIZE, metadata_dev, data_dev,
+                                     data_block_size, low_water_mark))
 
 dm.with_dev(table) do |pool|
   0.upto(3) do |dev_id|
