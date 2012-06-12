@@ -60,7 +60,7 @@ module ThinpTestMixin
     size
   end
 
-  def with_standard_pool(size, opts = Hash.new)
+  def with_standard_pool(size, opts = Hash.new, &block)
     zero = opts.fetch(:zero, true)
     discard = opts.fetch(:discard, true)
     discard_pass = opts.fetch(:discard_passdown, true)
@@ -70,9 +70,7 @@ module ThinpTestMixin
                                    @data_block_size, @low_water_mark,
                                    zero, discard, discard_pass, read_only))
 
-    @dm.with_dev(table) do |pool|
-      yield(pool)
-    end
+    @dm.with_dev(table, &block)
   end
 
   def with_standard_cache()
