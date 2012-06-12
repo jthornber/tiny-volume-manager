@@ -62,17 +62,48 @@ module ThinpTestMixin
     size
   end
 
-  def with_standard_pool(size, opts = Hash.new, &block)
+  #--------------------------------
+
+  # low level dm handling
+  def with_dev(table, &block)
+    @dm.with_dev(table, &block)
+  end
+
+  def with_devs(*tables, &block)
+    @dm.with_devs(*tables, &block)
+  end
+
+  #--------------------------------
+
+  # table generation
+
+  def standard_pool_table(size, opts = Hash.new)
     zero = opts.fetch(:zero, true)
     discard = opts.fetch(:discard, true)
     discard_pass = opts.fetch(:discard_passdown, true)
     read_only = opts.fetch(:read_only, false)
 
-    table = Table.new(ThinPool.new(size, @metadata_dev, @data_dev,
-                                   @data_block_size, @low_water_mark,
-                                   zero, discard, discard_pass, read_only))
+    Table.new(ThinPool.new(size, @metadata_dev, @data_dev,
+                           @data_block_size, @low_water_mark,
+                           zero, discard, discard_pass, read_only))
+  end
 
-    @dm.with_dev(table, &block)
+  def standard_linear_table
+    Table.new(Linear.new(@size, @data_dev, 0))
+  end
+
+  def thin_table(pool, size, id, opts = Hash.new)
+    Table.new(Thin.new(size, pool, id, opts[:origin]))
+  end
+
+  #--------------------------------
+
+  def with_standard_pool(size, opts = Hash.new, &block)
+    with_dev(standard_pool_table(size, opts), &block)
+  end
+
+  def with_standard_linear(&block)
+    with_dev(standard_linear_table, &block)
   end
 
   def with_standard_cache(&block)
@@ -89,22 +120,8 @@ module ThinpTestMixin
     end
   end
 
-  def with_standard_linear(&block)
-    table = Table.new(Linear.new(@size, @data_dev, 0))
-    with_dev(table, &block)
-  end
-
-  def with_dev(table, &block)
-    @dm.with_dev(table, &block)
-  end
-
-  def with_devs(*tables, &block)
-    @dm.with_devs(*tables, &block)
-  end
-
   def with_thin(pool, size, id, opts = Hash.new, &block)
-    table = Table.new(Thin.new(size, pool, id, opts[:origin]))
-    @dm.with_dev(table, &block)
+    @dm.with_dev(thin_table(pool, size, id, opts), &block)
   end
 
   def with_new_thin(pool, size, id, opts = Hash.new, &block)
@@ -113,7 +130,7 @@ module ThinpTestMixin
   end
 
   def with_thins(pool, size, *ids, &block)
-    tables = ids.map {|id| Table.new(Thin.new(size, pool, id))}
+    tables = ids.map {|id| thin_table(pool, size, id)}
     @dm.with_devs(*tables, &block)
   end
 
@@ -125,6 +142,7 @@ module ThinpTestMixin
     with_thins(pool, size, *ids, &block)
   end
 
+  # FIXME: simplify by lifting the pause
   def with_new_snap(pool, size, id, origin, thin = nil, &block)
     if thin.nil?
         pool.message(0, "create_snap #{id} #{origin}")
