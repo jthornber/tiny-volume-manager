@@ -1,21 +1,10 @@
 require 'lib/process'
+require 'lib/math-utils'
 require 'tempfile'
 
 # A hodge podge of functions that should probably find a better home.
 module Utils
-  def round_up(n, d)
-    n += d - 1
-    n -= n % d
-    n
-  end
-
-  def div_up(n, d)
-    (n + (d - 1)) / d
-  end
-
-  def round_down(n, d)
-    round_up(n, d) - d
-  end
+  include MathUtils
 
   def dev_size(dev_or_path)
     ProcessControl.system("102400", "blockdev --getsz #{dev_or_path}").chomp.to_i
