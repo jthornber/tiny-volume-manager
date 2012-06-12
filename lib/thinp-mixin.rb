@@ -73,7 +73,7 @@ module ThinpTestMixin
     @dm.with_dev(table, &block)
   end
 
-  def with_standard_cache()
+  def with_standard_cache(&block)
     # we set up a small linear device, made out of the metadata dev.
     # That is at most a 16th the size of the data dev.
     tvm = VM.new
@@ -83,13 +83,13 @@ module ThinpTestMixin
     tvm.add_volume(linear_vol('cache', [md_size, round_up(@size / 16, @data_block_size)].min))
     with_dev(tvm.table('cache')) do |cache|
       table = Table.new(Cache.new(dev_size(@data_dev), @data_dev, cache, @data_block_size))
-      with_dev(table) {|cached_dev| yield(cached_dev)}
+      with_dev(table, &block)
     end
   end
 
-  def with_standard_linear()
+  def with_standard_linear(&block)
     table = Table.new(Linear.new(@size, @data_dev, 0))
-    with_dev(table) {|linear| yield(linear)}
+    with_dev(table, &block)
   end
 
   def with_dev(table, &block)
@@ -100,10 +100,9 @@ module ThinpTestMixin
     @dm.with_devs(*tables, &block)
   end
 
-  def with_thin(pool, size, id, opts = Hash.new)
-    @dm.with_dev(Table.new(Thin.new(size, pool, id, opts[:origin]))) do |thin|
-      yield(thin)
-    end
+  def with_thin(pool, size, id, opts = Hash.new, &block)
+    table = Table.new(Thin.new(size, pool, id, opts[:origin]))
+    @dm.with_dev(table, &block)
   end
 
   def with_new_thin(pool, size, id, opts = Hash.new, &block)
