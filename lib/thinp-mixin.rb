@@ -142,7 +142,6 @@ module ThinpTestMixin
     with_thins(pool, size, *ids, &block)
   end
 
-  # FIXME: simplify by lifting the pause
   def with_new_snap(pool, size, id, origin, thin = nil, &block)
     if thin.nil?
         pool.message(0, "create_snap #{id} #{origin}")
