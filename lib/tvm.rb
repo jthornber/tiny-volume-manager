@@ -9,33 +9,25 @@ module TinyVolumeManager
   # FIXME: define in terms of Segment
   DevSegment = Struct.new(:dev, :offset, :length)
 
+  # FIXME: should this be for public consumption, or always hidden
+  # behind TVM?
   class Allocator
     def initialize
       @free_segments = Array.new
     end
 
-    def allocate_segment(max_length)
-      if @free_segments.size == 0
-        raise "out of free space"
-      end
+    def allocate_segments(target_size, segment_predicate = nil)
+      segments = segment_predicate.nil? ? @free_segments : @free_segments.find_all(&segment_predicate)
 
-      s = @free_segments.shift
-      if s.length > max_length
-        @free_segments.unshift(DevSegment.new(s.dev, s.offset + max_length, s.length - max_length))
-        s.length = max_length
-      end
-      s
-    end
-
-    def allocate_segments(target_size)
       release = lambda {|segs| release_segments(*segs)}
 
       protect(Array.new, release) do |result|
         while target_size > 0
-          s = allocate_segment(target_size)
+          s, segments = allocate_segment(target_size, segments)
           target_size = target_size - s.length
           result << s
         end
+        @free_segments = segments
         result
       end
     end
@@ -64,6 +56,20 @@ module TinyVolumeManager
     def free_space
       @free_segments.inject(0) {|sum, s| sum + s.length}
     end
+
+    private
+    def allocate_segment(max_length, segments)
+      if segments.size == 0
+        raise "out of free space"
+      end
+
+      s = segments.shift
+      if s.length > max_length
+        segments.unshift(DevSegment.new(s.dev, s.offset + max_length, s.length - max_length))
+        s.length = max_length
+      end
+      [s, segments]
+    end
   end
 
   #----------------------------------------------------------------
@@ -90,8 +96,8 @@ module TinyVolumeManager
     end
 
     class LinearVolume < Volume
-      def initialize(n, l)
-        super(n, l)
+      def initialize(name, length)
+        super(name, length)
       end
 
       def resize(allocator, new_length)
@@ -124,8 +130,8 @@ module TinyVolumeManager
   end
 
   # Use these functions rather than explicitly instancing Volumes
-  def linear_vol(n, l)
-    Details::LinearVolume.new(n, l)
+  def linear_vol(name, length)
+    Details::LinearVolume.new(name, length)
   end
 
   #----------------------------------------------------------------
