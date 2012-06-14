@@ -78,7 +78,7 @@ module Metadata
     has_many :segments
 
     def to_s
-      "Volume: '#{self.name}', '#{self.uuid}'"
+      "'#{self.name}': '#{self.uuid}'"
     end
   end
 
@@ -88,7 +88,7 @@ module Metadata
     belongs_to :target, :polymorphic => true
 
     def to_s
-      "Segment: #{self.volume.name} #{self.offset} #{self.length}"
+      "#{self.volume.name} [#{self.offset} #{self.length}]"
     end
   end
 
