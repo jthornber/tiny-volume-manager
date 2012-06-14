@@ -4,12 +4,82 @@ require 'pp'
 
 #----------------------------------------------------------------
 
+class MetadataRender
+  include Metadata
+
+  def initialize
+    @indent = 0
+  end
+
+  def display_metadata
+    Volume.find(:all).each do |v|
+      emit v
+      indent {display_segments(v.segments)}
+    end
+  end
+
+  def display_segments(ss)
+    ss.each do |s|
+      emit s
+      emit s.target unless s.target.nil?
+      indent {display_segments(s.children)} if s.children
+    end
+  end
+
+  private
+  INDENT = 4
+
+  def indent
+    @indent += INDENT
+    yield
+    @indent -= INDENT
+  end
+
+  def emit(str)
+    puts "#{' ' * @indent}#{str}"
+  end
+end
+
+#----------------------------------------------------------------
+
 class TVMMetadataTests < Test::Unit::TestCase
   include Metadata
 
-  def test_create_store
-    MetadataStore.new(':memory:')
+  DB_FILE = './metadata.db'
+  CONNECTION_PARAMS = {
+    :adapter => 'sqlite3',
+    :database => DB_FILE
+  }
 
+  def setup
+    File.delete(DB_FILE)
+    open_metadata
+    super
+  end
+
+  def teardown
+    close_metadata
+  end
+
+  def close_metadata
+    @metadata.close
+  end
+
+  def open_metadata
+    @metadata = MetadataStore.new(CONNECTION_PARAMS)
+  end
+
+  def reopen_metadata
+    close_metadata
+    open_metadata
+  end
+
+  def display_metadata
+    r = MetadataRender.new
+    r.display_metadata
+  end
+
+  def test_create_store
     extent_size = 8196
 
     # Add a physical volumes
@@ -34,30 +104,11 @@ class TVMMetadataTests < Test::Unit::TestCase
     ubuntu_root.segments << lv_seg
 
     # Underneath the logical segment are some physical segments
-    null = IdentityTarget.new
     pv_seg = lv_seg.children.create(:offset => 0,
                                     :length => 9536 * extent_size)
-    pv_seg.target = null
-    pp pv_seg
     pv2.segments << pv_seg
 
-    pp pv_seg.root
-
-#    s = Segment.new do |s|
-#      s.offset = 0
-#      s.length = 234234823
-#    end
-
-#    pv.segments << s
-#    pv.save!
-
-#    l = LinearTarget.new do |l|
-#      l.offset = 0
-#      l.segment = s
-#    end
-
-#    lv.linear_targets << l
-#    lv.save!
+    display_metadata
   end
 end
 
