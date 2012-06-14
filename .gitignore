@@ -4,3 +4,4 @@
 *.result
 *.yaml
 *blktrace*
+metadata.db
