@@ -27,13 +27,17 @@ class TVMMetadataTests < Test::Unit::TestCase
                                 :uuid => 'NWavSx-2cPb-vk8n-387g-OWsZ-884y-tw0Lwy')
 
     # This is a logical segment
+    stripe = StripedTarget.new(:nr_stripes => 1)
     lv_seg = Segment.create(:offset => 0,
                             :length => 9536 * extent_size)
+    lv_seg.target = stripe
     ubuntu_root.segments << lv_seg
 
     # Underneath the logical segment are some physical segments
+    null = IdentityTarget.new
     pv_seg = lv_seg.children.create(:offset => 0,
                                     :length => 9536 * extent_size)
+    pv_seg.target = null
     pp pv_seg
     pv2.segments << pv_seg
 

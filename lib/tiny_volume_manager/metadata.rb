@@ -48,23 +48,18 @@ module Metadata
           t.column :length, :integer
           t.column :volume_id, :integer
           t.column :parent_id, :integer
+          t.column :target_id, :integer
+          t.column :target_type, :string
+        end
+        
+        # ie. a portion of a physical volume
+        create_table :identity_targets do |t|
+          # no data
         end
 
-#        create_table :linear_segments do |t|
-#          t.column :segment_id, :integer
-#          t.column :child_segment_id, :integer
-#        end
-
-#        create_table :striped_segments do |t|
-#          t.column :segment_id, :integer
-#        end
-
-#        create_table :stripes do |t|
-#          t.column :stripe_nr, :integer
-#          t.column :striped_segment_id, :integer
-#          t.column :segment_id, :integer
-#        end
-
+        create_table :striped_targets do |t|
+          t.column :nr_stripes, :integer
+        end
       end
     end    
   end
@@ -76,12 +71,16 @@ module Metadata
   class Segment < Base
     belongs_to :volume
     acts_as_tree :order => :offset
+    belongs_to :target, :polymorphic => true
   end
 
-#  class LinearSegment < Base
-#    belongs_to :segment
-#    belongs_to :segment, :foreign_key => :child_segment_id
-#  end
+  class IdentityTarget < Base
+    has_one :segment, :as => :target
+  end
+
+  class StripedTarget < Base
+    has_one :segment, :as => :target
+  end
 end
 
 #----------------------------------------------------------------
