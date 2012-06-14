@@ -16,6 +16,8 @@ class MetadataRender
       emit v
       indent {display_segments(v.segments)}
     end
+
+    display_free_space
   end
 
   def display_segments(ss)
@@ -23,6 +25,15 @@ class MetadataRender
       emit s
       emit s.target unless s.target.nil?
       indent {display_segments(s.children)} if s.children
+    end
+  end
+
+  def display_free_space
+    emit "free space:"
+    indent do
+      Segment.find(:all, :conditions => "parent_id IS NULL and target_id IS NULL").each do |s|
+        emit s
+      end
     end
   end
 
@@ -37,6 +48,19 @@ class MetadataRender
 
   def emit(str)
     puts "#{' ' * @indent}#{str}"
+  end
+end
+
+class VolumeGroup
+  include Metadata
+
+  def add_pv(name, uuid, length)
+    pv = Volume.create(:name => name, :uuid => uuid)
+
+    # This segment represents free space because it has no parent
+    # segment or associated target.
+    pv.segments.create(:offset => 0, :length => length)
+    pv
   end
 end
 
@@ -82,15 +106,10 @@ class TVMMetadataTests < Test::Unit::TestCase
   def test_create_store
     extent_size = 8196
 
-    # Add a physical volumes
-    pv0 = Volume.create(:name => 'pv0',
-                        :uuid => 'KBMvbK-ZKHF-giLJ-MEqp-dgb7-j0r7-Q8iC0U')
-
-    pv1 = Volume.create(:name => 'pv1',
-                        :uuid => 'KeR3R0-dQd8-CCnb-1iS7-ndev-1sLW-tT9fTF')
-
-    pv2 = Volume.create(:name => 'pv2',
-                        :uuid => 'goKzR9-znn6-v0d6-cOfj-8fe7-Lflf-7f0Rwt')
+    vg = VolumeGroup.new
+    pv0 = vg.add_pv('pv0', 'KBMvbK-ZKHF-giLJ-MEqp-dgb7-j0r7-Q8iC0U', 93458 * extent_size)
+    pv1 = vg.add_pv('pv1', 'KeR3R0-dQd8-CCnb-1iS7-ndev-1sLW-tT9fTF', 476931 * extent_size)
+    pv2 = vg.add_pv('pv2', 'goKzR9-znn6-v0d6-cOfj-8fe7-Lflf-7f0Rwt', 28618 * extent_size)
 
     # Logical volumes
     ubuntu_root = Volume.create(:name => 'ubuntu_root',
