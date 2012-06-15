@@ -5,7 +5,6 @@ require 'lib/prelude'
 #----------------------------------------------------------------
 
 module TinyVolumeManager
-
   # FIXME: define in terms of Segment
   DevSegment = Struct.new(:dev, :offset, :length)
 
@@ -124,7 +123,7 @@ module TinyVolumeManager
 
       private
       def self.segs_to_targets(segs)
-        segs.map {|s| LinearTarget.new(s.length, s.dev, s.offset)}
+        segs.map {|s| DM::LinearTarget.new(s.length, s.dev, s.offset)}
       end
     end
   end
