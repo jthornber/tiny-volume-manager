@@ -4,7 +4,7 @@ require 'active_record'
 # I'm having trouble with the gem version, so copied file to debug.
 # Possibly because I'm using the Debian packaged version of gem?
 require 'lib/acts_as_tree'
-require 'lib/dm'
+require 'lib/device-mapper/dm'
 require 'logger'
 
 #----------------------------------------------------------------
