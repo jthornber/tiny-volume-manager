@@ -1,6 +1,8 @@
+require 'lib/dm'
 require 'lib/tiny_volume_manager/metadata'
 require 'test/unit'
 require 'pp'
+require 'set'
 
 #----------------------------------------------------------------
 
@@ -15,6 +17,7 @@ class MetadataRender
     Volume.find(:all).each do |v|
       emit v
       indent {display_segments(v.segments)}
+      emit ''
     end
 
     display_free_space
@@ -51,7 +54,57 @@ class MetadataRender
   end
 end
 
-class VolumeGroup
+module VolumeActivation
+  class ActivationAccumulator
+    def initialize
+      @seen = Set.new
+      @order = Array.new
+    end
+
+    def push(volume)
+      unless @seen.member?(volume.id)
+        @seen.add(volume.id)
+        @order << volume
+        return true
+      end
+
+      return false
+    end
+
+    def results
+      @order.reverse
+    end
+  end
+
+  def activate(volume)
+    volumes = walk_dependencies(volume)
+    tables = volumes.map do |v|
+      segs = v.segments.find_all {|s| !s.target.nil?}
+      DM::Table.new(*segs.map {|s| s.target.to_dm})
+    end
+    pp tables
+    tables
+  end
+
+  private
+  def walk_dependencies(volume, acc = ActivationAccumulator.new)
+    return unless acc.push(volume)
+
+    volume.segments.each do |s|
+      if s.target
+        s.target.deps.each {|dep| walk_dependencies(dep, acc)}
+      end
+
+      s.children.each do |c|
+        walk_dependencies(c.volume, acc)
+      end
+    end
+
+    acc.results
+  end
+end
+
+module VolumeCreation
   include Metadata
 
   def add_pv(name, uuid, length)
@@ -62,6 +115,42 @@ class VolumeGroup
     pv.segments.create(:offset => 0, :length => length)
     pv
   end
+
+  def create_pool(name, metadata_dev, data_dev)
+    lv = Volume.create(:name => name, :uuid => generate_uuid)
+
+    seg = Segment.new(:offset => 0, :length => data_dev.length)
+    seg.target = PoolTarget.new(:metadata_id => metadata_dev.id,
+                                :data_id => data_dev.id,
+                                :block_size => 128,
+                                :low_water_mark => 0,
+                                :block_zeroing => true,
+                                :discard => true,
+                                :discard_passdown => true)
+    lv.segments << seg
+    lv
+  end
+
+  def create_thin(name, pool, dev_id, length)
+    lv = Volume.create(:name => name, :uuid => generate_uuid)
+
+    seg = Segment.new(:offset => 0, :length => length)
+    seg.target = ThinTarget.new(:pool_id => pool.id,
+                                :dev_id => dev_id)
+    lv.segments << seg
+    lv
+  end
+
+  private
+  def generate_uuid
+    "blah-blah-blah"
+  end
+end
+
+class VolumeGroup
+  include Metadata
+  include VolumeActivation
+  include VolumeCreation
 end
 
 #----------------------------------------------------------------
@@ -112,22 +201,28 @@ class TVMMetadataTests < Test::Unit::TestCase
     pv2 = vg.add_pv('pv2', 'goKzR9-znn6-v0d6-cOfj-8fe7-Lflf-7f0Rwt', 28618 * extent_size)
 
     # Logical volumes
-    ubuntu_root = Volume.create(:name => 'ubuntu_root',
-                                :uuid => 'NWavSx-2cPb-vk8n-387g-OWsZ-884y-tw0Lwy')
+    pool = vg.create_pool('pool0', pv0, pv1)
+    thin0 = vg.create_thin('vm1', pool, 101, 12345)
+    thin1 = vg.create_thin('vm2', pool, 1000, 898723)
 
-    # This is a logical segment
-    stripe = StripedTarget.new(:nr_stripes => 1)
-    lv_seg = Segment.create(:offset => 0,
-                            :length => 9536 * extent_size)
-    lv_seg.target = stripe
-    ubuntu_root.segments << lv_seg
+    vg.activate(thin0)
 
-    # Underneath the logical segment are some physical segments
-    pv_seg = lv_seg.children.create(:offset => 0,
-                                    :length => 9536 * extent_size)
-    pv2.segments << pv_seg
+    # ubuntu_root = Volume.create(:name => 'ubuntu_root',
+    #                             :uuid => 'NWavSx-2cPb-vk8n-387g-OWsZ-884y-tw0Lwy')
 
-    display_metadata
+    # # This is a logical segment
+    # stripe = StripedTarget.new(:nr_stripes => 1)
+    # lv_seg = Segment.create(:offset => 0,
+    #                         :length => 9536 * extent_size)
+    # lv_seg.target = stripe
+    # ubuntu_root.segments << lv_seg
+
+    # # Underneath the logical segment are some physical segments
+    # pv_seg = lv_seg.children.create(:offset => 0,
+    #                                 :length => 9536 * extent_size)
+    # pv2.segments << pv_seg
+
+    # display_metadata
   end
 end
 
