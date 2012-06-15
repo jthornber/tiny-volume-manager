@@ -1,4 +1,3 @@
-require 'lib/dm'
 require 'lib/tiny_volume_manager/metadata'
 require 'test/unit'
 require 'pp'
@@ -79,10 +78,12 @@ module VolumeActivation
 
   def activate(volume)
     volumes = walk_dependencies(volume)
+
     tables = volumes.map do |v|
       segs = v.segments.find_all {|s| !s.target.nil?}
       DM::Table.new(*segs.map {|s| s.target.to_dm})
     end
+
     pp tables
     tables
   end

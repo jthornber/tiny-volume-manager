@@ -1,5 +1,4 @@
 require 'config'
-require 'lib/dm'
 require 'lib/git'
 require 'lib/log'
 require 'lib/utils'

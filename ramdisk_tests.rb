@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
 require 'config'
-require 'lib/dm'
 require 'lib/log'
 require 'lib/utils'
 require 'lib/fs'

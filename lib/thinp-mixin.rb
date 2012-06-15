@@ -1,6 +1,6 @@
 require 'lib/benchmarking'
 require 'lib/bufio'
-require 'lib/dm'
+require 'lib/device-mapper/dm'
 require 'lib/log'
 require 'lib/metadata-utils'
 require 'lib/prerequisites-checker'

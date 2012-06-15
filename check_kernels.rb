@@ -1,6 +1,6 @@
 require 'config'
 require 'lib/log'
-require 'lib/dm'
+require 'lib/device-mapper/dm'
 require 'lib/process'
 require 'lib/fs'
 require 'lib/utils'

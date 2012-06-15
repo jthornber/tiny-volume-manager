@@ -1,7 +1,6 @@
 #!/usr/bin/env ruby
 
 require 'config'
-require 'lib/dm'
 require 'lib/log'
 require 'lib/utils'
 require 'lib/fs'

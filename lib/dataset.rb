@@ -1,6 +1,5 @@
 require 'config'
 require 'lib/dataset'
-require 'lib/dm'
 require 'lib/fs'
 require 'lib/log'
 require 'lib/process'
