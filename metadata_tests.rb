@@ -9,7 +9,8 @@ require 'set'
 class MetadataRender
   include Metadata
 
-  def initialize
+  def initialize(out_stream)
+    @out = out_stream
     @indent = 0
   end
 
@@ -50,7 +51,7 @@ class MetadataRender
   end
 
   def emit(str)
-    puts "#{' ' * @indent}#{str}"
+    @out.puts "#{' ' * @indent}#{str}"
   end
 end
 
@@ -188,7 +189,7 @@ class TVMMetadataTests < Test::Unit::TestCase
   end
 
   def display_metadata
-    r = MetadataRender.new
+    r = MetadataRender.new(STDOUT)
     r.display_metadata
   end
 
@@ -222,7 +223,7 @@ class TVMMetadataTests < Test::Unit::TestCase
     #                                 :length => 9536 * extent_size)
     # pv2.segments << pv_seg
 
-    # display_metadata
+    display_metadata
   end
 end
 
