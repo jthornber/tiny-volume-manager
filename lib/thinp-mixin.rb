@@ -1,5 +1,6 @@
 require 'lib/benchmarking'
 require 'lib/bufio'
+require 'lib/dm'
 require 'lib/log'
 require 'lib/metadata-utils'
 require 'lib/prerequisites-checker'
@@ -20,6 +21,7 @@ $prereqs = Prerequisites.requirements do
 end
 
 module ThinpTestMixin
+  include DM
   include Benchmarking
   include MetadataUtils
   include ProcessControl

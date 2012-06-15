@@ -4,265 +4,267 @@ require 'lib/utils'
 
 #----------------------------------------------------------------
 
-class Target
-  attr_accessor :type, :args, :sector_count
+module DM
+  class Target
+    attr_accessor :type, :args, :sector_count
 
-  def initialize(t, sector_count, *args)
-    @type = t
-    @sector_count = sector_count
-    @args = args
-  end
-end
-
-class ErrorTarget < Target
-  def initialize(sector_count)
-    super('error', sector_count)
-  end
-end
-
-class LinearTarget < Target
-  def initialize(sector_count, dev, offset)
-    super('linear', sector_count, dev, offset)
-  end
-end
-
-class ThinPoolTarget < Target
-  attr_accessor :metadata_dev
-
-  def initialize(sector_count, metadata_dev, data_dev, block_size, low_water_mark,
-                 zero = true, discard = true, discard_pass = true, read_only = false)
-    extra_opts = Array.new
-
-    extra_opts.instance_eval do
-      push :skip_block_zeroing unless zero
-      push :ignore_discard unless discard
-      push :no_discard_passdown unless discard_pass
-      push :read_only if read_only
-    end
-
-    super('thin-pool', sector_count, metadata_dev, data_dev, block_size, low_water_mark, extra_opts.length, *extra_opts)
-    @metadata_dev = metadata_dev
-  end
-
-  def post_remove_check
-    ProcessControl.run("thin_check #{@metadata_dev}")
-  end
-end
-
-class ThinTarget < Target
-  def initialize(sector_count, pool, id, origin = nil)
-    if origin
-      super('thin', sector_count, pool.path, id, origin)
-    else
-      super('thin', sector_count, pool.path, id)
+    def initialize(t, sector_count, *args)
+      @type = t
+      @sector_count = sector_count
+      @args = args
     end
   end
-end
 
-class CacheTarget < Target
-  def initialize(sector_count, origin_dev, cache_dev, block_size)
-    super('cache', sector_count, origin_dev, cache_dev, block_size);
-  end
-end
-
-#----------------------------------------------------------------
-
-class Table
-  attr_accessor :targets
-
-  def initialize(*targets)
-    @targets = targets
+  class ErrorTarget < Target
+    def initialize(sector_count)
+      super('error', sector_count)
+    end
   end
 
-  def size
-    @targets.inject(0) {|tot, t| tot += t.sector_count}
+  class LinearTarget < Target
+    def initialize(sector_count, dev, offset)
+      super('linear', sector_count, dev, offset)
+    end
   end
 
-  def to_s()
-    start_sector = 0
+  class ThinPoolTarget < Target
+    attr_accessor :metadata_dev
 
-    @targets.map do |t|
-      r = "#{start_sector} #{start_sector + t.sector_count} #{t.type} #{t.args.join(' ')}"
-      start_sector += t.sector_count
-      r
-    end.join("\n")
-  end
+    def initialize(sector_count, metadata_dev, data_dev, block_size, low_water_mark,
+                   zero = true, discard = true, discard_pass = true, read_only = false)
+      extra_opts = Array.new
 
-  def to_embed_
-    start_sector = 0
+      extra_opts.instance_eval do
+        push :skip_block_zeroing unless zero
+        push :ignore_discard unless discard
+        push :no_discard_passdown unless discard_pass
+        push :read_only if read_only
+      end
 
-    @targets.map do |t|
-      r = "#{start_sector} #{start_sector + t.sector_count} #{t.type} #{t.args.join(' ')}"
-      start_sector += t.sector_count
-      r
-    end.join("; ")
-  end
-
-  def to_embed
-    "<<table:#{to_embed_}>>"
-  end
-end
-
-class DMDev
-  attr_accessor :name
-  attr_reader :interface, :active_table
-
-  def initialize(name, interface)
-    @name = name
-    @interface = interface
-  end
-
-  def path()
-    "/dev/mapper/#{name}"
-  end
-
-  def load(table)
-    Utils::with_temp_file('dm-table') do |f|
-      debug "writing table: #{table.to_embed}"
-      f.puts table.to_s
-      f.flush
-      ProcessControl.run("dmsetup load #{@name} #{f.path}")
+      super('thin-pool', sector_count, metadata_dev, data_dev, block_size, low_water_mark, extra_opts.length, *extra_opts)
+      @metadata_dev = metadata_dev
     end
 
-    @active_table = table
+    def post_remove_check
+      ProcessControl.run("thin_check #{@metadata_dev}")
+    end
   end
 
-  def suspend
-    ProcessControl.run("dmsetup suspend #{@name}")
-  end
-
-  def pause(&block)
-    suspend
-    bracket_(method(:resume), &block)
-  end
-
-  def resume()
-    ProcessControl.run("dmsetup resume #{@name}")
-  end
-
-  def remove()
-    Utils.retry_if_fails(5.0) do
-      if File.exists?("/dev/mapper/" + @name)
-        ProcessControl.run("dmsetup remove #{@name}")
+  class ThinTarget < Target
+    def initialize(sector_count, pool, id, origin = nil)
+      if origin
+        super('thin', sector_count, pool, id, origin)
+      else
+        super('thin', sector_count, pool, id)
       end
     end
   end
 
-  def message(sector, *args)
-    ProcessControl.run("dmsetup message #{path} #{sector} #{args.join(' ')}")
+  class CacheTarget < Target
+    def initialize(sector_count, origin_dev, cache_dev, block_size)
+      super('cache', sector_count, origin_dev, cache_dev, block_size);
+    end
   end
 
-  def status
-    ProcessControl.run("dmsetup status #{@name}")
-  end
+  #----------------------------------------------------------------
 
-  def info
-    ProcessControl.run("dmsetup info #{@name}")
-  end
+  class Table
+    attr_accessor :targets
 
-  def event_nr
-    output = ProcessControl.run("dmsetup status -v #{@name}")
-    m = output.match(/Event number:[ \t]*([0-9]+)/)
-    if m.nil?
-      raise "Couldn't find event number for dm device"
+    def initialize(*targets)
+      @targets = targets
     end
 
-    m[1].to_i
+    def size
+      @targets.inject(0) {|tot, t| tot += t.sector_count}
+    end
+
+    def to_s()
+      start_sector = 0
+
+      @targets.map do |t|
+        r = "#{start_sector} #{start_sector + t.sector_count} #{t.type} #{t.args.join(' ')}"
+        start_sector += t.sector_count
+        r
+      end.join("\n")
+    end
+
+    def to_embed_
+      start_sector = 0
+
+      @targets.map do |t|
+        r = "#{start_sector} #{start_sector + t.sector_count} #{t.type} #{t.args.join(' ')}"
+        start_sector += t.sector_count
+        r
+      end.join("; ")
+    end
+
+    def to_embed
+      "<<table:#{to_embed_}>>"
+    end
   end
 
-  def event_tracker(&condition)
-    DMEventTracker.new(event_nr, self)
-  end
+  class DMDev
+    attr_accessor :name
+    attr_reader :interface, :active_table
 
-  def post_remove_check
-    @active_table.targets.each do |target|
-      if target.public_methods.member?('post_remove_check')
-        target.post_remove_check
+    def initialize(name, interface)
+      @name = name
+      @interface = interface
+    end
+
+    def path()
+      "/dev/mapper/#{name}"
+    end
+
+    def load(table)
+      Utils::with_temp_file('dm-table') do |f|
+        debug "writing table: #{table.to_embed}"
+        f.puts table.to_s
+        f.flush
+        ProcessControl.run("dmsetup load #{@name} #{f.path}")
       end
+
+      @active_table = table
     end
-  end
 
-  def to_s()
-    path
-  end
-
-  # discards bytes delimited by b (begin, inclusive) and e (end,
-  # non-inclusive).  b and e are given in 512 byte sectors.
-  BLKDISCARD = 4727
-
-  def discard(b, e)
-    File.open(path, File::RDWR | File::NONBLOCK) do |ctrl|
-      ctrl.ioctl(BLKDISCARD, [b * 512, e * 512].pack('QQ'))
+    def suspend
+      ProcessControl.run("dmsetup suspend #{@name}")
     end
-  end
-end
 
-class DMEventTracker
-  attr_reader :event_nr, :device
-
-  def initialize(n, d)
-    @event_nr = n
-    @device = d
-  end
-
-  # Wait for an event _since_ this one.  Updates event nr to reflect
-  # the new number.
-  def wait(&condition)
-    until condition.call
-      ProcessControl.run("dmsetup wait #{@device.name} #{@event_nr}")
-      @event_nr = @device.event_nr
+    def pause(&block)
+      suspend
+      bracket_(method(:resume), &block)
     end
-  end
-end
 
-class DMInterface
-  def with_dev(table = nil, &block)
-    bracket(create(table),
-            lambda {|dev| dev.remove; dev.post_remove_check},
-            &block)
-  end
+    def resume()
+      ProcessControl.run("dmsetup resume #{@name}")
+    end
 
-  def with_devs(*tables, &block)
-    release = lambda do |devs|
-      devs.each do |dev|
-        begin
-          dev.remove
-          dev.post_remove_check
-        rescue
+    def remove()
+      Utils.retry_if_fails(5.0) do
+        if File.exists?("/dev/mapper/" + @name)
+          ProcessControl.run("dmsetup remove #{@name}")
         end
       end
     end
 
-    bracket(Array.new, release) do |devs|
-      tables.each do |table|
-        devs << create(table)
+    def message(sector, *args)
+      ProcessControl.run("dmsetup message #{path} #{sector} #{args.join(' ')}")
+    end
+
+    def status
+      ProcessControl.run("dmsetup status #{@name}")
+    end
+
+    def info
+      ProcessControl.run("dmsetup info #{@name}")
+    end
+
+    def event_nr
+      output = ProcessControl.run("dmsetup status -v #{@name}")
+      m = output.match(/Event number:[ \t]*([0-9]+)/)
+      if m.nil?
+        raise "Couldn't find event number for dm device"
       end
 
-      block.call(*devs)
+      m[1].to_i
+    end
+
+    def event_tracker(&condition)
+      DMEventTracker.new(event_nr, self)
+    end
+
+    def post_remove_check
+      @active_table.targets.each do |target|
+        if target.public_methods.member?('post_remove_check')
+          target.post_remove_check
+        end
+      end
+    end
+
+    def to_s()
+      path
+    end
+
+    # discards bytes delimited by b (begin, inclusive) and e (end,
+    # non-inclusive).  b and e are given in 512 byte sectors.
+    BLKDISCARD = 4727
+
+    def discard(b, e)
+      File.open(path, File::RDWR | File::NONBLOCK) do |ctrl|
+        ctrl.ioctl(BLKDISCARD, [b * 512, e * 512].pack('QQ'))
+      end
     end
   end
 
-  def mk_dev(table = nil)
-    create(table)
-  end
+  class DMEventTracker
+    attr_reader :event_nr, :device
 
-private
-  def create(table = nil)
-    name = create_name
-    ProcessControl.run("dmsetup create #{name} --notable")
-    protect_(lambda {ProcessControl.run("dmsetup remove #{name}")}) do
-      dev = DMDev.new(name, self)
-      unless table.nil?
-        dev.load table
-        dev.resume
+    def initialize(n, d)
+      @event_nr = n
+      @device = d
+    end
+
+    # Wait for an event _since_ this one.  Updates event nr to reflect
+    # the new number.
+    def wait(&condition)
+      until condition.call
+        ProcessControl.run("dmsetup wait #{@device.name} #{@event_nr}")
+        @event_nr = @device.event_nr
       end
-      dev
     end
   end
 
-  def create_name()
-    # fixme: check this device doesn't already exist
-    "test-dev-#{rand(1000000)}"
+  class DMInterface
+    def with_dev(table = nil, &block)
+      bracket(create(table),
+              lambda {|dev| dev.remove; dev.post_remove_check},
+              &block)
+    end
+
+    def with_devs(*tables, &block)
+      release = lambda do |devs|
+        devs.each do |dev|
+          begin
+            dev.remove
+            dev.post_remove_check
+          rescue
+          end
+        end
+      end
+
+      bracket(Array.new, release) do |devs|
+        tables.each do |table|
+          devs << create(table)
+        end
+
+        block.call(*devs)
+      end
+    end
+
+    def mk_dev(table = nil)
+      create(table)
+    end
+
+    private
+    def create(table = nil)
+      name = create_name
+      ProcessControl.run("dmsetup create #{name} --notable")
+      protect_(lambda {ProcessControl.run("dmsetup remove #{name}")}) do
+        dev = DMDev.new(name, self)
+        unless table.nil?
+          dev.load table
+          dev.resume
+        end
+        dev
+      end
+    end
+
+    def create_name()
+      # fixme: check this device doesn't already exist
+      "test-dev-#{rand(1000000)}"
+    end
   end
 end
 
