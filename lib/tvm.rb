@@ -194,7 +194,7 @@ module TinyVolumeManager
     end
 
     def table(name)
-      Table.new(*targets(name))
+      DM::Table.new(*targets(name))
     end
 
     private
