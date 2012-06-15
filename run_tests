@@ -12,34 +12,6 @@ require 'test/unit/ui/testrunnermediator'
 require 'test/unit/ui/testrunnerutilities'
 require 'yaml'
 
-# library test suites
-require 'tests/infrastructure/prelude_tests'
-require 'tests/infrastructure/process_tests'
-require 'tests/infrastructure/segment_tests'
-require 'tests/infrastructure/tvm_tests'
-require 'tests/infrastructure/xml_format_tests'
-require 'tests/infrastructure/math_tests'
-
-# thinp test suites
-require 'tests/thin-provisioning/basic_tests'
-require 'tests/thin-provisioning/creation_tests'
-require 'tests/thin-provisioning/deletion_tests'
-require 'tests/thin-provisioning/discard_tests'
-require 'tests/thin-provisioning/external_origin_tests'
-require 'tests/thin-provisioning/held_root_tests'
-require 'tests/thin-provisioning/mkfs_tests'
-require 'tests/thin-provisioning/multiple_pool_tests'
-require 'tests/thin-provisioning/pool_resize_tests'
-require 'tests/thin-provisioning/read_only_tests'
-require 'tests/thin-provisioning/restore_tests'
-require 'tests/thin-provisioning/snapshot_tests'
-require 'tests/thin-provisioning/transaction_id_tests'
-require 'tests/thin-provisioning/immutable_target_tests'
-require 'tests/thin-provisioning/fs_benchmark'
-
-# cache target suite
-require 'tests/cache/cache_tests'
-
 #----------------------------------------------------------------
 
 # based on the console test runner
@@ -242,6 +214,11 @@ def options
       $profile = p
     end
 
+    o.on('-s', '--suite=TEST_SUITE', String,
+         "Selects a test suite.") do |s|
+      $suite = s
+    end
+
     o.on('-t', '--testcase=TESTCASE', String,
          "Runs tests in TestCases matching TESTCASE (patterns may be used).") do |n|
       n = (%r{\A/(.*)/\Z} =~ n ? Regexp.new($1) : n)
@@ -284,8 +261,11 @@ def options
   end
 end
 
+#----------------------------------------------------------------
+
 $filters = []
 $profile = nil
+$suite = nil
 
 def process_args(args = ARGV)
   begin
@@ -302,6 +282,17 @@ end
 
 process_args
 
+if $suite.nil?
+  STDERR.puts "please specify a test suite, eg, '--suite suites/infrastructure'"
+  exit(1)
+end
+
+unless $suite =~ /^suites\//
+  $suite = "suites/#{$suite}"
+end
+
+require $suite
+
 c = Test::Unit::Collector::ObjectSpace.new
 c.filter = $filters
 suite = c.collect($0.sub(/\.rb\Z/, ''))
@@ -310,3 +301,5 @@ runner = Test::Unit::UI::ThinTestRunner.new(suite, Test::Unit::UI::VERBOSE)
 runner.start
 
 `./generate_reports`
+
+#----------------------------------------------------------------
