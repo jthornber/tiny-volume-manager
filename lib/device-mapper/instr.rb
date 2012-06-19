@@ -1,5 +1,7 @@
 require 'set'
 
+#----------------------------------------------------------------
+
 # FIXME: add instructions for input and output.  Input should include
 # a timeout.
 
@@ -25,7 +27,6 @@ module DM
         @args.each(&block)
       end
     end
-
 
     class Program
       attr_accessor :instrs, :strings
@@ -296,7 +297,7 @@ module DM
     def compile(mir)
       instrs = mir.compile
 
-      prog = Program.new
+      prog = LowLevel::Program.new
 
       instrs.each do |i|
         i.args.map! {|a| prog.add_string(a.to_s)}
@@ -650,3 +651,5 @@ module DM
     end
   end
 end
+
+#----------------------------------------------------------------
