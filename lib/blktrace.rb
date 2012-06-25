@@ -58,9 +58,8 @@ module BlkTrace
     flags = ''
     devs.each_index {|i| flags += "-d #{devs[i]} "}
     child = ProcessControl::Child.new(consumer, "blktrace #{flags}")
-    sleep 0.5                     # FIXME: how can we avoid this race?
+    sleep 0.1                     # FIXME: how can we avoid this race?
     r = block.call
-    sleep 0.5
     child.interrupt
 
     results = devs.map {|d| blkparse(d)}
