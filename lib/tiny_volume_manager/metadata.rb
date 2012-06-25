@@ -88,6 +88,10 @@ module Metadata
         last.offset + last.length
       end
     end
+
+    def is_pv?
+      segments.all? {|s| s.target.nil?}
+    end
   end
 
   class Segment < Base
@@ -123,7 +127,7 @@ module Metadata
       []
     end
 
-    def to_dm
+    def to_dm_target
       if nr_stripes == 1
         if children.length != 1
           raise "incorrect number of child segments for a linear target"
@@ -152,10 +156,10 @@ module Metadata
       [self.metadata_dev, self.data_dev]
     end
 
-    def to_dm
+    def to_dm_target
       DM::ThinPoolTarget.new(0, #length,
-                             uuid_to_path(metadata_dev.uuid),
-                             uuid_to_path(data_dev.uuid),
+                             metadata_dev.name,
+                             data_dev.name,
                              block_size,
                              low_water_mark,
                              block_zeroing,
@@ -178,8 +182,8 @@ module Metadata
       [pool]
     end
 
-    def to_dm
-      DM::ThinTarget.new(0, uuid_to_path(pool.uuid), dev_id)
+    def to_dm_target
+      DM::ThinTarget.new(0, "/dev/mapper/#{pool.name}", dev_id)
     end
   end
 end

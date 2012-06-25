@@ -7,6 +7,7 @@ class IndentTests < Test::Unit::TestCase
 blah
     foo
         bar
+    tttt
 hux
 EOF
 
@@ -17,7 +18,12 @@ EOF
     e.emit "blah"
     e.indent do
       e.emit "foo"
-      e.indent {e.emit "bar"}
+      e.indent do
+        e.emit "bar"
+        e.undent do
+          e.emit 'tttt'
+        end
+      end
     end
     e.emit "hux"
 

@@ -18,7 +18,17 @@ module StringUtils
       end
     end
 
-    def emit(str)
+    def undent
+      @indent -= @step
+
+      begin
+        yield
+      ensure
+        @indent += @step
+      end
+    end
+
+    def emit(str = '')
       @out.puts "#{' ' * @indent}#{str}"
     end
   end

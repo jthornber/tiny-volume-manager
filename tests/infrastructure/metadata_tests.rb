@@ -1,3 +1,4 @@
+require 'lib/device-mapper/instr'
 require 'lib/tiny_volume_manager/metadata'
 require 'test/unit'
 require 'pp'
@@ -55,6 +56,9 @@ class MetadataRender
 end
 
 module VolumeActivation
+  include DM::LowLevel
+  include DM::MediumLevel
+
   class ActivationAccumulator
     def initialize
       @seen = Set.new
@@ -76,16 +80,55 @@ module VolumeActivation
     end
   end
 
-  def activate(volume)
-    volumes = walk_dependencies(volume)
+  # FIXME: move to HIR
+  class ReversableOp
+    attr_accessor :forwards, :backwards
 
-    tables = volumes.map do |v|
-      segs = v.segments.find_all {|s| !s.target.nil?}
-      DM::Table.new(*segs.map {|s| s.target.to_dm})
+    def initialize(forwards_mir, backwards_mir)
+      @forwards = forwards_mir
+      @backwards = backwards_mir
     end
 
-    pp tables
-    tables
+    def compile
+      [@forwards, @backwards]
+    end
+  end
+
+  class SequenceReversableOp
+    def initialize(*steps)
+      @steps = steps
+    end
+
+    def compile
+      @steps.reverse.inject do |acc, instr|
+        compile2(instr, acc)
+      end
+    end
+
+    private
+    def compile2(first, second)
+      f1, b1 = first.compile
+      f2, b2 = second.compile
+
+      [Sequence.new(f1, f2, OnFail.new(b1)),
+       Sequence.new(b2, b1)]
+    end
+  end
+
+  def activate(volume)
+    volumes = walk_dependencies(volume).reject(&:is_pv?)
+
+    instrs = volumes.map do |v|
+      segs = v.segments.find_all {|s| !s.target.nil?}
+      table = DM::Table.new(*segs.map {|s| s.target.to_dm_target})
+
+      ReversableOp.new(BasicBlock.new([create(v.name),
+                                       load(v.name, table)]),
+                       BasicBlock.new([remove(v.name)]))
+    end
+
+    prog = SequenceReversableOp.new(instrs)
+    compile(prog.compile[0]).pp
   end
 
   private
@@ -198,9 +241,9 @@ class TVMMetadataTests < Test::Unit::TestCase
     extent_size = 8196
 
     vg = VolumeGroup.new
-    pv0 = vg.add_pv('pv0', 'KBMvbK-ZKHF-giLJ-MEqp-dgb7-j0r7-Q8iC0U', 93458 * extent_size)
-    pv1 = vg.add_pv('pv1', 'KeR3R0-dQd8-CCnb-1iS7-ndev-1sLW-tT9fTF', 476931 * extent_size)
-    pv2 = vg.add_pv('pv2', 'goKzR9-znn6-v0d6-cOfj-8fe7-Lflf-7f0Rwt', 28618 * extent_size)
+    pv0 = vg.add_pv('/dev/vdc', 'KBMvbK-ZKHF-giLJ-MEqp-dgb7-j0r7-Q8iC0U', 93458 * extent_size)
+    pv1 = vg.add_pv('/dev/vdd', 'KeR3R0-dQd8-CCnb-1iS7-ndev-1sLW-tT9fTF', 476931 * extent_size)
+    pv2 = vg.add_pv('/dev/vde', 'goKzR9-znn6-v0d6-cOfj-8fe7-Lflf-7f0Rwt', 28618 * extent_size)
 
     # Logical volumes
     pool = vg.create_pool('pool0', pv0, pv1)
@@ -224,7 +267,7 @@ class TVMMetadataTests < Test::Unit::TestCase
     #                                 :length => 9536 * extent_size)
     # pv2.segments << pv_seg
 
-    display_metadata
+    #display_metadata
   end
 end
 
