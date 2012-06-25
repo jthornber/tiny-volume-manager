@@ -10,6 +10,9 @@ require 'lib/thinp-test'
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # These tests rely on fsync_dev issuing a REQ_FLUSH to the device.
 # Which it does in the thin-dev tree, but not vanilla Linux.
+#
+# Also the periodic commit *may* interfere if the system is very
+# heavily loaded.
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 # We track which thin devices have change and only commit metadata,
