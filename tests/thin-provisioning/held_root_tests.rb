@@ -68,20 +68,6 @@ class HeldRootTests < ThinpTestCase
     end
   end
 
-  def test_held_root_changes
-    with_standard_pool(@size) do |pool|
-      with_new_thin(pool, @volume_size, 0) do |thin|
-        wipe_device(thin, 4)
-        pool.message(0, "reserve_metadata_snap")
-        root1 = get_root(pool)
-        wipe_device(thin, 8)
-        pool.message(0, "release_metadata_snap")
-        pool.message(0, "reserve_metadata_snap")
-        assert(root1 != get_root(pool))
-      end
-    end
-  end
-
   def time_wipe(desc, dev)
     report_time(desc) do
       wipe_device(dev)
