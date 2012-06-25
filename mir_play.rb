@@ -1,4 +1,4 @@
-require 'lib/instr'
+require 'lib/device-mapper/instr'
 require 'pp'
 
 #----------------------------------------------------------------
