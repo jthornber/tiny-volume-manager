@@ -8,9 +8,6 @@ require 'lib/thinp-test'
 #----------------------------------------------------------------
 
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-# These tests rely on fsync_dev issuing a REQ_FLUSH to the device.
-# Which it does in the thin-dev tree, but not vanilla Linux.
-#
 # Also the periodic commit *may* interfere if the system is very
 # heavily loaded.
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -37,16 +34,24 @@ class FlushTriggersCommitTests < ThinpTestCase
     flunk("unexpected commit") if committed?(&block)
   end
 
+  def flush(dev)
+    File.open(dev.path, "w") do |file|
+      file.fsync
+    end
+  end
+
   def do_commit_checks(dev)
     # Force a block to be provisioned
     assert_commit do
       wipe_device(dev, @data_block_size)
+      flush(dev)
     end
 
     # the first block is provisioned now, so there shouldn't be a
     # subsequent commit.
     assert_no_commit do
       wipe_device(dev, @data_block_size)
+      flush(dev)
     end
   end
 
@@ -69,15 +74,19 @@ class FlushTriggersCommitTests < ThinpTestCase
       with_new_thins(pool, @volume_size, 0, 1) do |thin1, thin2|
         wipe_device(thin1, @data_block_size)
         wipe_device(thin2, @data_block_size)
+        flush(thin1)
+        flush(thin2)
 
         assert_commit do
           thin1.discard(0, @data_block_size)
+          flush(thin1)
         end
 
         do_commit_checks(thin1)
 
         assert_no_commit do
           wipe_device(thin2, @data_block_size)
+          flush(thin2)
         end
       end
     end    
