@@ -21,37 +21,41 @@ class FlushTriggersCommitTests < ThinpTestCase
   include Utils
   include BlkTrace
 
-  def committed?(&block)
-    traces, _ = blktrace(@metadata_dev, &block)
-    traces[0].member?(Event.new([:write], 0, 8))
-  end
-
-  def assert_commit(&block)
-    flunk("expected commit") unless committed?(&block)
-  end
-
-  def assert_no_commit(&block)
-    flunk("unexpected commit") if committed?(&block)
-  end
-
   def flush(dev)
     File.open(dev.path, "w") do |file|
       file.fsync
     end
   end
 
+  def committed?(dev, &block)
+    flush(dev)
+
+    traces, _ = blktrace(@metadata_dev) do
+      block.call
+      flush(dev)
+    end
+
+    traces[0].member?(Event.new([:write], 0, 8))
+  end
+
+  def assert_commit(dev, &block)
+    flunk("expected commit") unless committed?(dev, &block)
+  end
+
+  def assert_no_commit(dev, &block)
+    flunk("unexpected commit") if committed?(dev, &block)
+  end
+
   def do_commit_checks(dev)
     # Force a block to be provisioned
-    assert_commit do
+    assert_commit(dev) do
       wipe_device(dev, @data_block_size)
-      flush(dev)
     end
 
     # the first block is provisioned now, so there shouldn't be a
     # subsequent commit.
-    assert_no_commit do
+    assert_no_commit(dev) do
       wipe_device(dev, @data_block_size)
-      flush(dev)
     end
   end
 
@@ -74,19 +78,15 @@ class FlushTriggersCommitTests < ThinpTestCase
       with_new_thins(pool, @volume_size, 0, 1) do |thin1, thin2|
         wipe_device(thin1, @data_block_size)
         wipe_device(thin2, @data_block_size)
-        flush(thin1)
-        flush(thin2)
 
-        assert_commit do
+        assert_commit(thin1) do
           thin1.discard(0, @data_block_size)
-          flush(thin1)
         end
 
         do_commit_checks(thin1)
 
-        assert_no_commit do
+        assert_no_commit(thin2) do
           wipe_device(thin2, @data_block_size)
-          flush(thin2)
         end
       end
     end    
