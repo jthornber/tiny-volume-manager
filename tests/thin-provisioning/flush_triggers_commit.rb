@@ -8,7 +8,7 @@ require 'lib/thinp-test'
 #----------------------------------------------------------------
 
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-# Also the periodic commit *may* interfere if the system is very
+# The periodic commit *may* interfere if the system is very
 # heavily loaded.
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
