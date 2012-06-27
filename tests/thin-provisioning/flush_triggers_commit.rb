@@ -12,10 +12,10 @@ require 'lib/thinp-test'
 # heavily loaded.
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-# We track which thin devices have change and only commit metadata,
-# triggered by a REQ_FLUSH or REQ_FUA, iff it has changed.  These
-# tests use blktrace on the metadata dev to spot the superblock being
-# rewritten in these cases.
+# The kernel tracks which thin devices have changed and only commit
+# metadata, triggered by a REQ_FLUSH or REQ_FUA, iff it has changed.
+# These tests use blktrace on the metadata dev to spot the superblock
+# being rewritten in these cases.
 class FlushTriggersCommitTests < ThinpTestCase
   include Utils
   include BlkTrace
@@ -88,6 +88,6 @@ class FlushTriggersCommitTests < ThinpTestCase
           wipe_device(thin2, @data_block_size)
         end
       end
-    end    
+    end
   end
 end
