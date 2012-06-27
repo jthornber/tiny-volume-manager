@@ -17,7 +17,6 @@ require 'lib/thinp-test'
 # tests use blktrace on the metadata dev to spot the superblock being
 # rewritten in these cases.
 class FlushTriggersCommitTests < ThinpTestCase
-  include TinyVolumeManager
   include Utils
   include BlkTrace
 
