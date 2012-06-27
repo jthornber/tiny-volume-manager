@@ -125,6 +125,7 @@ module DM
         ProcessControl.run("dmsetup load #{@name} #{f.path}")
       end
 
+      # FIXME: not active yet!
       @active_table = table
     end
 
