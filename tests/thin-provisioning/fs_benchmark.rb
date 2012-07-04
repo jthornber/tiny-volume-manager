@@ -104,11 +104,11 @@ class FSBench < ThinpTestCase
   end
 
   def test_bonnie_raw_device
-    raw_test(&:bonnie)
+    raw_test {bonnie}
   end
 
   def test_bonnie_thin
-    thin_test(&:bonnie)
+    thin_test {bonnie}
   end
 
   def test_bonnie_rolling_snap
