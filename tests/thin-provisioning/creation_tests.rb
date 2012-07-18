@@ -109,7 +109,8 @@ class CreationTests < ThinpTestCase
     end
   end
 
-  def test_flush_on_close
+  # This is _not_ how linux behaves
+  def _test_flush_on_close
     tvm = VM.new
     tvm.add_allocation_volume(@data_dev, 0, dev_size(@data_dev))
 
