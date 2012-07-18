@@ -127,6 +127,33 @@ class DiscardTests < ThinpTestCase
     end
   end
 
+  # If a block is shared we can unmap the block, but must not pass the
+  # discard down to the underlying device.
+  def test_discard_to_a_shared_block_doesnt_get_passed_down
+    with_standard_pool(@size) do |pool|
+      with_new_thin(pool, @volume_size, 0) do |thin|
+        wipe_device(thin, @data_block_size)
+
+        assert_used_blocks(pool, 1)
+
+        with_new_snap(pool, @volume_size, 1, 0, thin) do |snap|
+          assert_used_blocks(pool, 1)
+          traces, _ = blktrace(thin, snap, @data_dev) do
+            thin.discard(0, @data_block_size)
+          end
+
+          thin_trace, snap_trace, data_trace = traces
+          event = Event.new([:discard], 0, 128)
+          assert(thin_trace.member?(event))
+          assert(!snap_trace.member?(event))
+          assert(!data_trace.member?(event))
+
+          assert_used_blocks(pool, 1)
+        end
+      end
+    end
+  end
+
   def test_discard_partial_blocks
     with_standard_pool(@size) do |pool|
       with_new_thin(pool, @volume_size, 0) do |thin|
