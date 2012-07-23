@@ -83,7 +83,7 @@ module DM
       start_sector = 0
 
       @targets.map do |t|
-        r = "#{start_sector} #{start_sector + t.sector_count} #{t.type} #{t.args.join(' ')}"
+        r = "#{start_sector} #{t.sector_count} #{t.type} #{t.args.join(' ')}"
         start_sector += t.sector_count
         r
       end.join("\n")
@@ -93,7 +93,7 @@ module DM
       start_sector = 0
 
       @targets.map do |t|
-        r = "#{start_sector} #{start_sector + t.sector_count} #{t.type} #{t.args.join(' ')}"
+        r = "#{start_sector} #{t.sector_count} #{t.type} #{t.args.join(' ')}"
         start_sector += t.sector_count
         r
       end.join("; ")
@@ -156,6 +156,10 @@ module DM
 
     def status
       ProcessControl.run("dmsetup status #{@name}")
+    end
+
+    def table
+      ProcessControl.run("dmsetup table #{@name}")
     end
 
     def info
