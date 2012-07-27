@@ -14,7 +14,7 @@ class CacheTests < ThinpTestCase
 
   def setup
     super
-    @data_block_size = 128
+    @data_block_size = 2048
   end
 
   def _test_dt_works
@@ -72,11 +72,49 @@ class CacheTests < ThinpTestCase
     end
   end
 
-  def test_git_extract_cache
-    do_git_prepare(@data_dev, :ext4)
+  def do_format(dev, fs_type)
+    fs = FS::file_system(fs_type, dev)
 
+    report_time("formatting") do
+      fs.format
+    end
+
+    report_time("mount/umount/fsck") do
+      fs.with_mount('./test_fs') do
+      end
+    end
+  end
+
+  def do_bonnie(dev, fs_type)
+    fs = FS::file_system(fs_type, dev)
+    fs.format
+    fs.with_mount('./test_fs') do
+      Dir.chdir('./test_fs') do
+        report_time("bonnie++") do
+          ProcessControl::run("bonnie++ -d . -u root -s 1024")
+        end
+      end
+    end
+  end
+
+  def test_git_extract_cache
     with_standard_cache do |cache|
+      do_git_prepare(cache, :ext4)
       do_git_extract(cache, :ext4)
+    end
+  end
+
+  def test_cache_sizing_effect
+    meg = 2048
+    cache_sizes = [256, 512, 768, 1024, 1280, 1536, 1792, 2048]
+
+    cache_sizes.each do |size|
+      with_standard_cache(size * meg) do |cache|
+        report_time("extract_log_test with cache size #{size}M") do
+          do_git_prepare(cache, :ext4)
+          do_git_extract(cache, :ext4)
+        end
+      end
     end
   end
 
@@ -84,6 +122,30 @@ class CacheTests < ThinpTestCase
     with_standard_linear do |linear|
       do_git_prepare(linear, :ext4)
       do_git_extract(linear, :ext4)
+    end
+  end
+
+  def test_format_linear
+    with_standard_linear do |linear|
+      do_format(linear, :ext4)
+    end
+  end
+
+  def test_format_cache
+    with_standard_cache do |cache|
+      do_format(cache, :ext4)
+    end
+  end
+
+  def test_bonnie_linear
+    with_standard_linear do |linear|
+      do_bonnie(linear, :ext4)
+    end
+  end
+
+  def test_bonnie_cache
+    with_standard_cache do |cache|
+      do_bonnie(cache, :ext4)
     end
   end
 end
