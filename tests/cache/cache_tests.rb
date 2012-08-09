@@ -41,7 +41,7 @@ class CacheTests < ThinpTestCase
     STDERR.puts "formatting ..."
     fs.format
 
-    fs.with_mount('./kernel_builds') do
+    fs.with_mount('./kernel_builds', :discard => true) do
       Dir.chdir('./kernel_builds') do
         STDERR.puts "getting repo ..."
         repo = Git.clone('/root/linux-github', 'linux')
@@ -53,7 +53,7 @@ class CacheTests < ThinpTestCase
     fs_type = :ext4
 
     fs = FS::file_system(fs_type, dev)
-    fs.with_mount('./kernel_builds') do
+    fs.with_mount('./kernel_builds', :discard => true) do
       Dir.chdir('./kernel_builds') do
         repo = Git.new('linux')
 
@@ -80,7 +80,7 @@ class CacheTests < ThinpTestCase
     end
 
     report_time("mount/umount/fsck") do
-      fs.with_mount('./test_fs') do
+      fs.with_mount('./test_fs', :discard => true) do
       end
     end
   end
@@ -88,7 +88,7 @@ class CacheTests < ThinpTestCase
   def do_bonnie(dev, fs_type)
     fs = FS::file_system(fs_type, dev)
     fs.format
-    fs.with_mount('./test_fs') do
+    fs.with_mount('./test_fs', :discard => true) do
       Dir.chdir('./test_fs') do
         report_time("bonnie++") do
           ProcessControl::run("bonnie++ -d . -u root -s 1024")
