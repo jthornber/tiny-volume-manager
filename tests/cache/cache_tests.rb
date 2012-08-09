@@ -18,13 +18,13 @@ class CacheTests < ThinpTestCase
   end
 
   def _test_dt_works
-    with_standard_cache do |cache|
+    with_standard_cache(:format => true) do |cache|
       dt_device(cache)
     end
   end
 
   def _test_dd_benchmark
-    with_standard_cache do |cache|
+    with_standard_cache(:format => true) do |cache|
       wipe_device(cache)
     end
   end
@@ -98,7 +98,7 @@ class CacheTests < ThinpTestCase
   end
 
   def test_git_extract_cache
-    with_standard_cache do |cache|
+    with_standard_cache(:format => true) do |cache|
       do_git_prepare(cache, :ext4)
       do_git_extract(cache, :ext4)
     end
@@ -109,7 +109,8 @@ class CacheTests < ThinpTestCase
     cache_sizes = [256, 512, 768, 1024, 1280, 1536, 1792, 2048]
 
     cache_sizes.each do |size|
-      with_standard_cache(size * meg) do |cache|
+      with_standard_cache(:cache_size => size * meg,
+                          :format => true) do |cache|
         report_time("extract_log_test with cache size #{size}M") do
           do_git_prepare(cache, :ext4)
           do_git_extract(cache, :ext4)
@@ -132,7 +133,7 @@ class CacheTests < ThinpTestCase
   end
 
   def test_format_cache
-    with_standard_cache do |cache|
+    with_standard_cache(:format => true) do |cache|
       do_format(cache, :ext4)
     end
   end
@@ -144,8 +145,24 @@ class CacheTests < ThinpTestCase
   end
 
   def test_bonnie_cache
-    with_standard_cache do |cache|
+    with_standard_cache(:format => true) do |cache|
       do_bonnie(cache, :ext4)
+    end
+  end
+
+  # Checks we can remount an fs
+  def test_metadata_persists
+    with_standard_cache(:format => true) do |cache|
+      fs = FS::file_system(:ext4, cache)
+      fs.format
+      fs.with_mount('./test_fs') do
+      end
+    end
+
+    with_standard_cache do |cache|
+      fs = FS::file_system(:ext4, cache)
+      fs.with_mount('./test_fs') do
+      end
     end
   end
 end

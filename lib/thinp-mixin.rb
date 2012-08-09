@@ -108,22 +108,29 @@ module ThinpTestMixin
     with_dev(standard_linear_table, &block)
   end
 
-  def with_standard_cache(cache_size = 2048 * 1024, &block)
+  def with_standard_cache(opts = Hash.new, &block)
+    cache_size = opts.fetch(:cache_size, 2048 * 1024)
+    format = opts.fetch(:format, false)
+
     # we set up a small linear device, made out of the metadata dev.
     # That is at most a 8th the size of the data dev.
     tvm = VM.new
-    md_size = dev_size(@metadata_dev)
-    tvm.add_allocation_volume(@metadata_dev, 0, md_size)
+    ssd_size = dev_size(@metadata_dev)
+    tvm.add_allocation_volume(@metadata_dev, 0, ssd_size)
     
-    if (md_size < cache_size)
-      raise "insufficient space on metadata_device for cache"
-    end
+    tvm.add_volume(linear_vol('md', 4 * 2048))
+    with_dev(tvm.table('md')) do |md|
+      wipe_device(md, 8) if (format)
 
-    one_gig = 2048 * 1400 # fixme: no it's not
-    tvm.add_volume(linear_vol('cache', cache_size))
-    with_dev(tvm.table('cache')) do |cache|
-      table = Table.new(CacheTarget.new(dev_size(@data_dev), @data_dev, cache, @data_block_size))
-      with_dev(table, &block)
+      if (tvm.free_space < cache_size)
+        raise "insufficient space on metadata_device for cache"
+      end
+
+      tvm.add_volume(linear_vol('cache', cache_size))
+      with_dev(tvm.table('cache')) do |cache|
+        table = Table.new(CacheTarget.new(dev_size(@data_dev), md, @data_dev, cache, @data_block_size))
+        with_dev(table, &block)
+      end
     end
   end
 
