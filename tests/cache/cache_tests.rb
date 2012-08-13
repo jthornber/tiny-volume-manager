@@ -165,4 +165,11 @@ class CacheTests < ThinpTestCase
       end
     end
   end
+
+  def test_unknown_policy_fails
+    assert_raise(ExitError) do
+      with_standard_cache(:format => true, :policy => 'time_traveller') do |cache|
+      end
+    end
+  end
 end
