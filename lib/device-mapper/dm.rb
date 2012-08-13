@@ -62,7 +62,7 @@ module DM
 
   class CacheTarget < Target
     def initialize(sector_count, metadata_dev, origin_dev, cache_dev, block_size)
-      super('cache', sector_count, metadata_dev, origin_dev, cache_dev, block_size);
+      super('cache', sector_count, metadata_dev, origin_dev, cache_dev, block_size, 'arc');
     end
   end
 
