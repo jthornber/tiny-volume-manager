@@ -84,9 +84,10 @@ module ThinpTestMixin
     discard = opts.fetch(:discard, true)
     discard_pass = opts.fetch(:discard_passdown, true)
     read_only = opts.fetch(:read_only, false)
+    block_size = opts.fetch(:block_size, @data_block_size)
 
     Table.new(ThinPoolTarget.new(size, @metadata_dev, @data_dev,
-                                 @data_block_size, @low_water_mark,
+                                 block_size, @low_water_mark,
                                  zero, discard, discard_pass, read_only))
   end
 
