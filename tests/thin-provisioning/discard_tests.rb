@@ -20,7 +20,6 @@ class DiscardTests < ThinpTestCase
 
   def setup
     super
-    @data_block_size = 128
     @blocks_per_dev = div_up(@volume_size, @data_block_size)
     @volume_size = @blocks_per_dev * @data_block_size # we want whole blocks for these tests
   end
@@ -143,7 +142,7 @@ class DiscardTests < ThinpTestCase
           end
 
           thin_trace, snap_trace, data_trace = traces
-          event = Event.new([:discard], 0, 128)
+          event = Event.new([:discard], 0, @data_block_size)
           assert(thin_trace.member?(event))
           assert(!snap_trace.member?(event))
           assert(!data_trace.member?(event))
@@ -246,8 +245,8 @@ class DiscardTests < ThinpTestCase
           discard(thin, 0, 1)
         end
 
-        assert(traces[0].member?(Event.new([:discard], 0, 128)))
-        assert(traces[1].member?(Event.new([:discard], 0, 128)))
+        assert(traces[0].member?(Event.new([:discard], 0, @data_block_size)))
+        assert(traces[1].member?(Event.new([:discard], 0, @data_block_size)))
       end
     end
 
@@ -264,8 +263,8 @@ class DiscardTests < ThinpTestCase
           discard(thin, 0, 1)
         end
 
-        assert(traces[0].member?(Event.new([:discard], 0, 128)))
-        assert(!traces[1].member?(Event.new([:discard], 0, 128)))
+        assert(traces[0].member?(Event.new([:discard], 0, @data_block_size)))
+        assert(!traces[1].member?(Event.new([:discard], 0, @data_block_size)))
       end
     end
 
@@ -278,7 +277,7 @@ class DiscardTests < ThinpTestCase
       traces, _ = blktrace(thin) do
         discard(thin, 0, 1)
       end
-      assert(traces[0].member?(Event.new([:discard], 0, 128)))
+      assert(traces[0].member?(Event.new([:discard], 0, @data_block_size)))
   end
 
   # we don't allow people to change their minds about top level
