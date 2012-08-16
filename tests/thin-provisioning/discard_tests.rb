@@ -11,8 +11,7 @@ require 'set'
 
 #----------------------------------------------------------------
 
-class DiscardTests < ThinpTestCase
-  include Tags
+module DiscardMixin
   include Utils
   include XMLFormat
   include BlkTrace
@@ -81,6 +80,12 @@ class DiscardTests < ThinpTestCase
   def assert_used_blocks(pool, count)
     assert_equal(count, used_data_blocks(pool))
   end
+end
+
+#----------------------------------------------------------------
+
+class DiscardQuickTests < ThinpTestCase
+  include DiscardMixin
 
   def test_discard_empty_device
     with_standard_pool(@size) do |pool|
@@ -167,6 +172,88 @@ class DiscardTests < ThinpTestCase
     assert_fully_mapped(md, 0)
   end
 
+  def test_disable_discard
+    with_standard_pool(@size, :discard => false) do |pool|
+      with_new_thin(pool, @volume_size, 0) do |thin|
+        wipe_device(thin, 4)
+
+        assert_raise(Errno::EOPNOTSUPP) do
+          thin.discard(0, @data_block_size)
+        end
+      end
+    end
+  end
+
+  def test_enable_passdown
+    with_standard_pool(@size, :discard_passdown => true) do |pool|
+      with_new_thin(pool, @volume_size, 0) do |thin|
+        wipe_device(thin, 8)
+
+        traces, _ = blktrace(thin, @data_dev) do
+          discard(thin, 0, 1)
+        end
+
+        assert(traces[0].member?(Event.new([:discard], 0, @data_block_size)))
+        assert(traces[1].member?(Event.new([:discard], 0, @data_block_size)))
+      end
+    end
+
+    md = read_metadata
+    assert_no_mappings(md, 0)
+  end
+
+  def _test_disable_passdown
+    with_standard_pool(@size, :discard_passdown => false) do |pool|
+      with_new_thin(pool, @volume_size, 0) do |thin|
+        wipe_device(thin, 8)
+
+        traces, _ = blktrace(thin, @data_dev) do
+          discard(thin, 0, 1)
+        end
+
+        assert(traces[0].member?(Event.new([:discard], 0, @data_block_size)))
+        assert(!traces[1].member?(Event.new([:discard], 0, @data_block_size)))
+      end
+    end
+
+    md = read_metadata
+    assert_no_mappings(md, 0)
+  end
+
+  def check_discard_thin_working(thin)
+      wipe_device(thin, 8)
+      traces, _ = blktrace(thin) do
+        discard(thin, 0, 1)
+      end
+      assert(traces[0].member?(Event.new([:discard], 0, @data_block_size)))
+  end
+
+  # we don't allow people to change their minds about top level
+  # discard support.
+  def test_change_discard_with_reload_fails
+    with_standard_pool(@size, :discard => true) do |pool|
+      assert_raise(ExitError) do
+        table = Table.new(ThinPoolTarget.new(@size, @metadata_dev, @data_dev,
+                                             @data_block_size, @low_water_mark, false, false, false))
+        pool.load(table)
+      end
+    end
+
+    with_standard_pool(@size, :discard => false) do |pool|
+      assert_raise(ExitError) do
+        table = Table.new(ThinPoolTarget.new(@size, @metadata_dev, @data_dev,
+                                             @data_block_size, @low_water_mark, false, true, false))
+        pool.load(table)
+      end
+    end
+  end
+end
+
+#----------------------------------------------------------------
+
+class DiscardSlowTests < ThinpTestCase
+  include DiscardMixin
+
   def test_discard_alternate_blocks
     with_standard_pool(@size) do |pool|
       with_new_thin(pool, @volume_size, 0) do |thin|
@@ -222,82 +309,6 @@ class DiscardTests < ThinpTestCase
 
   def test_discard_random_sectors
     do_discard_random_sectors(10 * 60)
-  end
-
-  def test_disable_discard
-    with_standard_pool(@size, :discard => false) do |pool|
-      with_new_thin(pool, @volume_size, 0) do |thin|
-        wipe_device(thin, 4)
-
-        assert_raise(Errno::EOPNOTSUPP) do
-          thin.discard(0, @data_block_size)
-        end
-      end
-    end
-  end
-
-  def test_enable_passdown
-    with_standard_pool(@size, :discard_passdown => true) do |pool|
-      with_new_thin(pool, @volume_size, 0) do |thin|
-        wipe_device(thin, 8)
-
-        traces, _ = blktrace(thin, @data_dev) do
-          discard(thin, 0, 1)
-        end
-
-        assert(traces[0].member?(Event.new([:discard], 0, @data_block_size)))
-        assert(traces[1].member?(Event.new([:discard], 0, @data_block_size)))
-      end
-    end
-
-    md = read_metadata
-    assert_no_mappings(md, 0)
-  end
-
-  def test_disable_passdown
-    with_standard_pool(@size, :discard_passdown => false) do |pool|
-      with_new_thin(pool, @volume_size, 0) do |thin|
-        wipe_device(thin, 8)
-
-        traces, _ = blktrace(thin, @data_dev) do
-          discard(thin, 0, 1)
-        end
-
-        assert(traces[0].member?(Event.new([:discard], 0, @data_block_size)))
-        assert(!traces[1].member?(Event.new([:discard], 0, @data_block_size)))
-      end
-    end
-
-    md = read_metadata
-    assert_no_mappings(md, 0)
-  end
-
-  def check_discard_thin_working(thin)
-      wipe_device(thin, 8)
-      traces, _ = blktrace(thin) do
-        discard(thin, 0, 1)
-      end
-      assert(traces[0].member?(Event.new([:discard], 0, @data_block_size)))
-  end
-
-  # we don't allow people to change their minds about top level
-  # discard support.
-  def test_change_discard_with_reload_fails
-    with_standard_pool(@size, :discard => true) do |pool|
-      assert_raise(ExitError) do
-        table = Table.new(ThinPoolTarget.new(@size, @metadata_dev, @data_dev,
-                                             @data_block_size, @low_water_mark, false, false, false))
-        pool.load(table)
-      end
-    end
-
-    with_standard_pool(@size, :discard => false) do |pool|
-      assert_raise(ExitError) do
-        table = Table.new(ThinPoolTarget.new(@size, @metadata_dev, @data_dev,
-                                             @data_block_size, @low_water_mark, false, true, false))
-        pool.load(table)
-      end
-    end
   end
 
   def with_stacked_pools(levels, &block)
@@ -446,3 +457,5 @@ class DiscardTests < ThinpTestCase
     do_discard_test(:xfs)
   end
 end
+
+#----------------------------------------------------------------
