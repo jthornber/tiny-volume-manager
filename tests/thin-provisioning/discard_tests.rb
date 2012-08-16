@@ -80,6 +80,13 @@ module DiscardMixin
   def assert_used_blocks(pool, count)
     assert_equal(count, used_data_blocks(pool))
   end
+
+  def discard(thin, b, len)
+    b_sectors = b * @data_block_size
+    len_sectors = len * @data_block_size
+
+    thin.discard(b_sectors, [len_sectors, @volume_size - b_sectors].min)
+  end
 end
 
 #----------------------------------------------------------------
@@ -269,13 +276,6 @@ class DiscardSlowTests < ThinpTestCase
 
     md = read_metadata
     check_provisioned_blocks(md, 0, @blocks_per_dev) {|b| b.odd?}
-  end
-
-  def discard(thin, b, len)
-    b_sectors = b * @data_block_size
-    len_sectors = len * @data_block_size
-
-    thin.discard(b_sectors, [len_sectors, @volume_size - b_sectors].min)
   end
 
   def do_discard_random_sectors(duration)
