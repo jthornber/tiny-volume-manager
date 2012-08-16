@@ -66,6 +66,14 @@ module DM
     end
   end
 
+  class FakeDiscardTarget < Target
+    def initialize(sector_count, dev, offset, granularity, max_discard,
+                   no_discard_support = false, discard_zeroes = false)
+      super('fake-discard', sector_count, dev, offset, granularity,
+            max_discard, no_discard_support, discard_zeroes)
+    end
+  end
+
   #----------------------------------------------------------------
 
   class Table
