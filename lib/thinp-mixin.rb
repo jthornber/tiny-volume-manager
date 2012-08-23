@@ -91,12 +91,38 @@ module ThinpTestMixin
                                  zero, discard, discard_pass, read_only))
   end
 
+  def custom_data_pool_table(data_dev, size, opts = Hash.new)
+    zero = opts.fetch(:zero, true)
+    discard = opts.fetch(:discard, true)
+    discard_pass = opts.fetch(:discard_passdown, true)
+    read_only = opts.fetch(:read_only, false)
+    block_size = opts.fetch(:block_size, @data_block_size)
+
+    Table.new(ThinPoolTarget.new(size, @metadata_dev, data_dev,
+                                 block_size, @low_water_mark,
+                                 zero, discard, discard_pass, read_only))
+  end
+
+
   def standard_linear_table
     Table.new(LinearTarget.new(dev_size(@data_dev), @data_dev, 0))
   end
 
   def thin_table(pool, size, id, opts = Hash.new)
     Table.new(ThinTarget.new(size, pool, id, opts[:origin]))
+  end
+
+  def fake_discard_table(opts = Hash.new)
+    dev = opts.fetch(:dev, @data_dev)
+    offset = opts.fetch(:offset, 0)
+    granularity = opts.fetch(:granularity, @data_block_size)
+    size = opts.fetch(:size, dev_size(@data_dev) - offset)
+    max_discard_sectors = opts.fetch(:max_discard_sectors, @data_block_size)
+    discard_support = opts.fetch(:discard_support, true)
+    discard_zeroes = opts.fetch(:discard_zeroes, false)
+
+    Table.new(FakeDiscardTarget.new(size, dev, offset, granularity, max_discard_sectors,
+                                    !discard_support, discard_zeroes))
   end
 
   #--------------------------------
@@ -135,6 +161,23 @@ module ThinpTestMixin
                                           block_size, policy))
         with_dev(table, &block)
       end
+    end
+  end
+
+  def with_fake_discard(opts = Hash.new, &block)
+    @dm.with_dev(fake_discard_table(opts), &block)
+  end
+
+  def with_fake_discard_pool_table(size,
+                                   granularity, max_discard,
+                                   pool_opts = Hash.new,
+                                   fd_opts = Hash.new, &block)
+
+    # create fakediscard data dev
+    fd_table = Table.new(FakeDiscardTarget.new(@volume_size, @data_dev, 0,
+                                               granularity, max_discard))
+    with_dev(fd_table) do |fd_data_dev|
+      with_dev(custom_data_pool_table(fd_data_dev, size), &block)
     end
   end
 

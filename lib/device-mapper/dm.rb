@@ -69,8 +69,15 @@ module DM
   class FakeDiscardTarget < Target
     def initialize(sector_count, dev, offset, granularity, max_discard,
                    no_discard_support = false, discard_zeroes = false)
+      extra_opts = Array.new
+
+      extra_opts.instance_eval do
+        push :no_discard_support if no_discard_support
+        push :discard_zeroes_data if discard_zeroes
+      end
+
       super('fake-discard', sector_count, dev, offset, granularity,
-            max_discard, no_discard_support, discard_zeroes)
+            max_discard, extra_opts.length, *extra_opts)
     end
   end
 

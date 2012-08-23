@@ -98,7 +98,9 @@ class CacheTests < ThinpTestCase
   end
 
   def test_git_extract_cache
-    with_standard_cache(:format => true, :block_size => 512) do |cache|
+    meg = 2048
+
+    with_standard_cache(:format => true, :block_size => 512, :policy => 'lru') do |cache|
       do_git_prepare(cache, :ext4)
       do_git_extract(cache, :ext4)
     end
@@ -106,7 +108,7 @@ class CacheTests < ThinpTestCase
 
   def test_cache_sizing_effect
     meg = 2048
-    cache_sizes = [256, 512, 768, 1024, 1280, 1536, 1792, 2048]
+    cache_sizes = [256, 512, 768, 1024, 1280, 1536]
 
     cache_sizes.each do |size|
       with_standard_cache(:cache_size => size * meg,
@@ -134,7 +136,7 @@ class CacheTests < ThinpTestCase
   end
 
   def test_format_cache
-    with_standard_cache(:format => true) do |cache|
+    with_standard_cache(:format => true, :policy => 'lru') do |cache|
       do_format(cache, :ext4)
     end
   end
@@ -146,7 +148,7 @@ class CacheTests < ThinpTestCase
   end
 
   def test_bonnie_cache
-    with_standard_cache(:format => true) do |cache|
+    with_standard_cache(:format => true, :block_size => 512) do |cache|
       do_bonnie(cache, :ext4)
     end
   end
