@@ -1,4 +1,5 @@
 # Edit this file to add your setup
+require 'pp'
 
 module Config
   # You can now configure different profiles for a machine.  Add the
@@ -71,13 +72,25 @@ module Config
 
   }
 
+  def Config.hostname_list
+    CONFIGS.keys.map {|name| name.gsub(/:.*/, '')}
+  end
+
   def Config.get_config
     host = `hostname --fqdn`.chomp
-    if CONFIGS.has_key?(host)
-      host = "#{host}:#{$profile}" if $profile
-      CONFIGS[host]
-    else
+
+    unless hostname_list.member?(host)
       raise RuntimeError, "unknown host, set up your config in config.rb"
     end
+
+    if $profile
+      host = "#{host}:#{$profile}"
+
+      unless CONFIGS.has_key?(host)
+        raise RuntimeError, "unknown profile '#{$profile}'"
+      end
+    end
+
+    CONFIGS[host]
   end
 end
