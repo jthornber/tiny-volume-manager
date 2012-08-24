@@ -64,6 +64,7 @@ class CacheTests < ThinpTestCase
               report_time("checking out #{tag}") do
                 repo.checkout(tag)
                 ProcessControl.run('sync')
+                ProcessControl.run('echo 3 > /proc/sys/vm/drop_caches')
               end
             end
           end
