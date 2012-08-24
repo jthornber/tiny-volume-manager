@@ -100,7 +100,7 @@ class CacheTests < ThinpTestCase
   def test_git_extract_cache
     meg = 2048
 
-    with_standard_cache(:format => true, :block_size => 512, :policy => 'lru') do |cache|
+    with_standard_cache(:format => true, :block_size => 512) do |cache|
       do_git_prepare(cache, :ext4)
       do_git_extract(cache, :ext4)
     end
