@@ -487,15 +487,8 @@ end
 class FakeDiscardTests < ThinpTestCase
   include DiscardMixin
 
-  # FIXME: establish pool dev with fake-discard target for @data_dev
-
-  def _test_hello_world
-    #fd_table = Table.new(FakeDiscardTarget.new(@volume_size, @data_dev, 0,
-    #                                           granularity = 128,
-    #                                           max_discard = 256))
-    # @dm.with_dev(fd_table) {|fake_dev| read_device_to_null(fake_dev)}
-
-    with_fake_discard_pool_table(@size, 128, 512) do |pool|
+  def test_hello_world
+    with_fake_discard_pool_table(@size, :granularity => 128, :max_discard_sectors => 512) do |pool|
       with_new_thin(pool, @volume_size, 0) do |thin|
         check_discard_thin_working(thin)
       end

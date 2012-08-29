@@ -168,16 +168,12 @@ module ThinpTestMixin
     @dm.with_dev(fake_discard_table(opts), &block)
   end
 
-  def with_fake_discard_pool_table(size,
-                                   granularity, max_discard,
-                                   pool_opts = Hash.new,
-                                   fd_opts = Hash.new, &block)
+  def with_fake_discard_pool_table(size, fd_opts = Hash.new,
+                                   pool_opts = Hash.new, &block)
 
-    # create fakediscard data dev
-    fd_table = Table.new(FakeDiscardTarget.new(@volume_size, @data_dev, 0,
-                                               granularity, max_discard))
-    with_dev(fd_table) do |fd_data_dev|
-      with_dev(custom_data_pool_table(fd_data_dev, size), &block)
+    # create pool with a fakediscard data dev
+    with_dev(fake_discard_table(fd_opts)) do |fd_data_dev|
+      with_dev(custom_data_pool_table(fd_data_dev, size, pool_opts), &block)
     end
   end
 
