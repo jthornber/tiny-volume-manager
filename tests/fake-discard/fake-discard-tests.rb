@@ -17,6 +17,7 @@ class FakeDiscardTests < ThinpTestCase
 
   def setup
     super
+    @data_block_size = 256 # granularity defaults to @data_block_size
   end
 
   def assert_not_supported(opts)
@@ -25,10 +26,6 @@ class FakeDiscardTests < ThinpTestCase
         dev.discard(0, @data_block_size)
       end
     end
-  end
-
-  def assert_discard(traces, start_sector, length)
-      assert(traces[0].member?(Event.new([:discard], start_sector, length)))
   end
 
   def test_disable_discard
@@ -45,24 +42,29 @@ class FakeDiscardTests < ThinpTestCase
     end
   end
 
+  def verify_discard(dev, start, len)
+        traces, _ = blktrace(dev) do
+          dev.discard(start, len)
+        end
+        assert_discards(traces[0], start, len)
+  end
+
   def test_granularity
     [64, 128, 1024].each do |gran|
       with_fake_discard(:granularity => gran, :max_discard_sectors => 128 * gran) do |dev|
-        traces, _ = blktrace(dev) do
-          dev.discard(0, gran * 3)
-        end
-
-        assert_discard(traces, 0, gran * 3)
-
-        traces, _ = blktrace(dev) do
-          dev.discard(gran - 1, gran * 3)
-        end
-
-        pp traces
-        assert_discard(traces, gran, gran * 2)
+        verify_discard(dev, 0, gran * 3)
+        verify_discard(dev, gran - 1, gran * 3)
       end
-
-      
     end
   end
+
+  def test_granularity_equals_max_discard
+    [64, 128, 1024].each do |gran|
+      with_fake_discard(:granularity => gran, :max_discard_sectors => gran) do |dev|
+        verify_discard(dev, 0, gran * 3)
+        verify_discard(dev, gran - 1, gran * 3)
+      end
+    end
+  end
+
 end
