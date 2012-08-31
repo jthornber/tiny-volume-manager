@@ -510,7 +510,7 @@ class FakeDiscardTests < ThinpTestCase
 
         assert_equal(fd_dev.queue_limit(:discard_granularity),
                      pool.queue_limit(:discard_granularity))
-        assert_equal(pool.queue_limit(:discard_max_bytes), pool_bs*512)
+        assert_equal(pool.queue_limit(:discard_max_bytes), pool_bs * 512)
 
         # verify discard passdown is still enabled
         check_discard_passdown_enabled(pool, fd_dev)
@@ -518,8 +518,17 @@ class FakeDiscardTests < ThinpTestCase
     end
   end
 
-  def _test_granularity_is_factor_of_np2_blocksize_with_no_passdown
+  def test_granularity_is_factor_of_np2_blocksize_with_no_passdown
     # e.g. blocksize = 384k, discard_granularity = 128k
+    pool_bs = 768
+    with_fake_discard(:granularity => 128, :max_discard_sectors => pool_bs) do |fd_dev|
+      with_custom_data_pool(fd_dev, @size, :discard_passdown => false,
+                            :block_size => pool_bs) do |pool|
+
+        assert_equal(pool.queue_limit(:discard_granularity), 256 * 512)
+        assert_equal(pool.queue_limit(:discard_max_bytes), pool_bs * 512)
+      end
+    end
   end
 
   def _test_max_discard_and_granularity_match_pow2_block_size_with_no_passdown
