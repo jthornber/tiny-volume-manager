@@ -103,7 +103,6 @@ module ThinpTestMixin
                                  zero, discard, discard_pass, read_only))
   end
 
-
   def standard_linear_table
     Table.new(LinearTarget.new(dev_size(@data_dev), @data_dev, 0))
   end
@@ -129,6 +128,10 @@ module ThinpTestMixin
 
   def with_standard_pool(size, opts = Hash.new, &block)
     with_dev(standard_pool_table(size, opts), &block)
+  end
+
+  def with_custom_data_pool(data_dev, size, opts = Hash.new, &block)
+    with_dev(custom_data_pool_table(data_dev, size, opts), &block)
   end
 
   def with_standard_linear(&block)
@@ -165,16 +168,7 @@ module ThinpTestMixin
   end
 
   def with_fake_discard(opts = Hash.new, &block)
-    @dm.with_dev(fake_discard_table(opts), &block)
-  end
-
-  def with_fake_discard_pool_table(size, fd_opts = Hash.new,
-                                   pool_opts = Hash.new, &block)
-
-    # create pool with a fakediscard data dev
-    with_dev(fake_discard_table(fd_opts)) do |fd_data_dev|
-      with_dev(custom_data_pool_table(fd_data_dev, size, pool_opts), &block)
-    end
+    with_dev(fake_discard_table(opts), &block)
   end
 
   def with_thin(pool, size, id, opts = Hash.new, &block)

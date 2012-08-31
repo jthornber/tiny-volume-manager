@@ -106,6 +106,19 @@ module DiscardMixin
     end
   end
 
+  def check_discard_passdown_enabled(pool, data_dev)
+    with_new_thin(pool, @volume_size, 0) do |thin|
+      wipe_device(thin, 8)
+
+      traces, _ = blktrace(thin, data_dev) do
+        discard(thin, 0, 1)
+      end
+
+      assert(traces[0].member?(Event.new([:discard], 0, @data_block_size)))
+      assert(traces[1].member?(Event.new([:discard], 0, @data_block_size)))
+    end
+  end
+
   def check_discard_thin_working(thin)
       wipe_device(thin, 8)
       traces, _ = blktrace(thin) do
@@ -225,16 +238,7 @@ class DiscardQuickTests < ThinpTestCase
 
   def test_enable_passdown
     with_standard_pool(@size, :discard_passdown => true) do |pool|
-      with_new_thin(pool, @volume_size, 0) do |thin|
-        wipe_device(thin, 8)
-
-        traces, _ = blktrace(thin, @data_dev) do
-          discard(thin, 0, 1)
-        end
-
-        assert(traces[0].member?(Event.new([:discard], 0, @data_block_size)))
-        assert(traces[1].member?(Event.new([:discard], 0, @data_block_size)))
-      end
+      check_discard_passdown_enabled(pool, @data_dev)
     end
 
     md = read_metadata
@@ -487,12 +491,51 @@ end
 class FakeDiscardTests < ThinpTestCase
   include DiscardMixin
 
-  def test_hello_world
-    with_fake_discard_pool_table(@size, :granularity => 128, :max_discard_sectors => 512) do |pool|
-      with_new_thin(pool, @volume_size, 0) do |thin|
-        check_discard_thin_working(thin)
+  def test_fake_discard_hello_world
+    with_fake_discard(:granularity => 128, :max_discard_sectors => 512) do |fd_dev|
+      with_custom_data_pool(fd_dev, @size) do |pool|
+        with_new_thin(pool, @volume_size, 0) do |thin|
+          check_discard_thin_working(thin)
+        end
       end
     end
+  end
+
+  def test_pool_discard_granularity_matches_data_dev
+    # when discard_passdown is enabled
+    pool_bs = 512
+    with_fake_discard(:granularity => 128, :max_discard_sectors => pool_bs) do |fd_dev|
+      with_custom_data_pool(fd_dev, @size, :discard_passdown => true,
+                            :block_size => pool_bs) do |pool|
+
+        assert_equal(fd_dev.queue_limit(:discard_granularity),
+                     pool.queue_limit(:discard_granularity))
+        assert_equal(pool.queue_limit(:discard_max_bytes), pool_bs*512)
+
+        # verify discard passdown is still enabled
+        check_discard_passdown_enabled(pool, fd_dev)
+      end
+    end
+  end
+
+  def _test_granularity_is_factor_of_np2_blocksize_with_no_passdown
+    # e.g. blocksize = 384k, discard_granularity = 128k
+  end
+
+  def _test_max_discard_and_granularity_match_pow2_block_size_with_no_passdown
+
+  end
+
+  def _test_max_discards_smaller_than_block_size_disables_passdown
+
+  end
+
+  def _test_discard_granularity_larger_than_block_size_disables_passdown
+
+  end
+
+  def _test_discard_granularity_not_factor_of_block_size_disables_passdown
+
   end
 
 end
