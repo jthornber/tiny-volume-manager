@@ -501,7 +501,7 @@ class FakeDiscardTests < ThinpTestCase
     end
   end
 
-  def test_pool_discard_granularity_matches_data_dev
+  def test_fake_discard_pool_granularity_matches_data_dev
     # when discard_passdown is enabled
     pool_bs = 512
     with_fake_discard(:granularity => 128, :max_discard_sectors => pool_bs) do |fd_dev|
@@ -518,7 +518,7 @@ class FakeDiscardTests < ThinpTestCase
     end
   end
 
-  def test_granularity_is_factor_of_np2_blocksize_with_no_passdown
+  def test_fake_discard_pool_granularity_is_factor_of_np2_blocksize_no_passdown
     # e.g. blocksize = 384k, discard_granularity = 128k
     pool_bs = 768
     with_fake_discard(:granularity => 128, :max_discard_sectors => pool_bs) do |fd_dev|
@@ -531,19 +531,19 @@ class FakeDiscardTests < ThinpTestCase
     end
   end
 
-  def _test_max_discard_and_granularity_match_pow2_block_size_with_no_passdown
+  def _test_fake_discard_pool_max_and_granularity_match_pow2_block_size_no_passdown
 
   end
 
-  def _test_max_discards_smaller_than_block_size_disables_passdown
+  def _test_fake_discard_data_max_smaller_than_block_size_disables_passdown
 
   end
 
-  def _test_discard_granularity_larger_than_block_size_disables_passdown
+  def _test_fake_discard_data_granularity_larger_than_block_size_disables_passdown
 
   end
 
-  def _test_discard_granularity_not_factor_of_block_size_disables_passdown
+  def _test_fake_discard_data_granularity_not_factor_of_block_size_disables_passdown
 
   end
 
