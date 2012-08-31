@@ -524,6 +524,8 @@ class FakeDiscardTests < ThinpTestCase
 
   def test_fake_discard_pool_granularity_is_factor_of_np2_blocksize_no_passdown
     # e.g. blocksize = 384k, discard_granularity = 128k
+    # tests data dev's granularity of 64k is ignored and that largest_power_factor
+    # adjusts granularity, to 128k
     pool_bs = 768
     with_fake_discard(:granularity => 128, :max_discard_sectors => pool_bs) do |fd_dev|
       with_custom_data_pool(fd_dev, @size, :discard_passdown => false,
@@ -536,7 +538,6 @@ class FakeDiscardTests < ThinpTestCase
   end
 
   def test_fake_discard_pool_max_and_granularity_match_pow2_block_size_no_passdown
-    # e.g. blocksize = 384k, discard_granularity = 128k
     pool_bs = 512
     with_fake_discard(:granularity => 128, :max_discard_sectors => 768) do |fd_dev|
       with_custom_data_pool(fd_dev, @size, :discard_passdown => false,
