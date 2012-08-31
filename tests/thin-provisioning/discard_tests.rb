@@ -120,10 +120,16 @@ end
 class DiscardQuickTests < ThinpTestCase
   include DiscardMixin
 
-  DiscardMixin::define_test_over_bs(:discard_empty_device, 128, 192)  do |block_size, volume_size|
-    with_standard_pool(@size, :block_size => block_size) do |pool|
-      with_new_thin(pool, volume_size, 0) do |thin|
-        thin.discard(0, volume_size)
+  def test_discard_empty_device
+    with_standard_pool(@size) do |pool|
+      with_new_thin(pool, @volume_size, 0) do |thin|
+        thin.discard(0, @volume_size)
+
+#  DiscardMixin::define_test_over_bs(:discard_empty_device, 128, 192)  do |block_size, volume_size|
+#    with_standard_pool(@size, :block_size => block_size) do |pool|
+#      with_new_thin(pool, volume_size, 0) do |thin|
+#        thin.discard(0, volume_size)
+
         assert_used_blocks(pool, 0)
       end
     end
@@ -483,7 +489,7 @@ class FakeDiscardTests < ThinpTestCase
 
   # FIXME: establish pool dev with fake-discard target for @data_dev
 
-  def test_hello_world
+  def _test_hello_world
     #fd_table = Table.new(FakeDiscardTarget.new(@volume_size, @data_dev, 0,
     #                                           granularity = 128,
     #                                           max_discard = 256))
