@@ -572,8 +572,18 @@ class FakeDiscardTests < ThinpTestCase
     end
   end
 
-  def _test_fake_discard_data_granularity_not_factor_of_block_size_disables_passdown
-
+  def test_fake_discard_data_granularity_not_factor_of_block_size_disables_passdown
+    # e.g. blocksize = 384k, discard_granularity = 256k
+    # (this also tests largest_power_factor adjusts granularity, to 128k)
+    pool_bs = 768
+    with_fake_discard(:granularity => 512, :max_discard_sectors => 512) do |fd_dev|
+      with_custom_data_pool(fd_dev, @size, :discard_passdown => true,
+                            :block_size => pool_bs) do |pool|
+        assert_equal(pool.queue_limit(:discard_granularity), 256 * 512)
+        assert_equal(pool.queue_limit(:discard_max_bytes), pool_bs * 512)
+        check_discard_passdown_disabled(pool, fd_dev)
+      end
+    end
   end
 
 end
