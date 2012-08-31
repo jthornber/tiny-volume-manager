@@ -114,8 +114,8 @@ module DiscardMixin
         discard(thin, 0, 1)
       end
 
-      assert(traces[0].member?(Event.new([:discard], 0, @data_block_size)))
-      assert(traces[1].member?(Event.new([:discard], 0, @data_block_size)))
+      assert_discards(traces[0], 0,  @data_block_size)
+      assert_discards(traces[1], 0,  @data_block_size)
     end
   end
 
@@ -127,8 +127,8 @@ module DiscardMixin
         discard(thin, 0, 1)
       end
 
-      assert(traces[0].member?(Event.new([:discard], 0, @data_block_size)))
-      assert(!traces[1].member?(Event.new([:discard], 0, @data_block_size)))
+      assert_discards(traces[0], 0,  @data_block_size)
+      assert(traces[1].empty?)
     end
   end
 
@@ -137,7 +137,7 @@ module DiscardMixin
       traces, _ = blktrace(thin) do
         discard(thin, 0, 1)
       end
-      assert(traces[0].member?(Event.new([:discard], 0, @data_block_size)))
+      assert_discards(traces[0], 0,  @data_block_size)
   end
 end
 
@@ -560,8 +560,16 @@ class FakeDiscardTests < ThinpTestCase
     end
   end
 
-  def _test_fake_discard_data_granularity_larger_than_block_size_disables_passdown
-
+  def test_fake_discard_data_granularity_larger_than_block_size_disables_passdown
+    pool_bs = 256
+    with_fake_discard(:granularity => 512, :max_discard_sectors => 512) do |fd_dev|
+      with_custom_data_pool(fd_dev, @size, :discard_passdown => true,
+                            :block_size => pool_bs) do |pool|
+        assert_equal(pool.queue_limit(:discard_granularity), pool_bs * 512)
+        assert_equal(pool.queue_limit(:discard_max_bytes), pool_bs * 512)
+        check_discard_passdown_disabled(pool, fd_dev)
+      end
+    end
   end
 
   def _test_fake_discard_data_granularity_not_factor_of_block_size_disables_passdown
