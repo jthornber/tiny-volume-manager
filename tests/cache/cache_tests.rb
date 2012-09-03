@@ -49,7 +49,7 @@ class CacheTests < ThinpTestCase
     end
   end
 
-  def do_git_extract(dev, fs_type)
+  def do_git_extract(dev, fs_type, tags = TAGS)
     fs_type = :ext4
 
     fs = FS::file_system(fs_type, dev)
@@ -59,7 +59,7 @@ class CacheTests < ThinpTestCase
 
         repo.in_repo do
           report_time("extract all versions") do
-            TAGS.each do |tag|
+            tags.each do |tag|
               STDERR.puts "Checking out #{tag} ..."
               report_time("checking out #{tag}") do
                 repo.checkout(tag)
@@ -95,6 +95,15 @@ class CacheTests < ThinpTestCase
           ProcessControl::run("bonnie++ -d . -u root -s 1024")
         end
       end
+    end
+  end
+
+  def test_git_extract_cache_quick
+    meg = 2048
+
+    with_standard_cache(:format => true, :block_size => 512) do |cache|
+      do_git_prepare(cache, :ext4)
+      do_git_extract(cache, :ext4, TAGS[0..5])
     end
   end
 
