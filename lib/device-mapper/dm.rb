@@ -183,11 +183,8 @@ module DM
     end
 
     def dm_name
-      info_output = info
-      m = info_output.match(/Major, minor:[ \t]*253, ([0-9]+)/)
-      if m.nil?
-        raise "Couldn't find minor number for dm device"
-      end
+      m = /Major, minor:\s*\d+, (\d+)/.match(info)
+      raise "Couldn't find minor number for dm device" unless m
 
       "dm-#{m[1]}"
     end
@@ -228,11 +225,9 @@ module DM
       end
     end
 
-    def queue_limit(limit)
-      queue_limits = QueueLimits.new
-      queue_limits.get_queue_limit(dm_name, limit)
+    def queue_limits
+      QueueLimits.new(dm_name)
     end
-
   end
 
   class DMEventTracker

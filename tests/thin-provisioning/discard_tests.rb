@@ -512,9 +512,9 @@ class FakeDiscardTests < ThinpTestCase
       with_custom_data_pool(fd_dev, @size, :discard_passdown => true,
                             :block_size => pool_bs) do |pool|
 
-        assert_equal(fd_dev.queue_limit(:discard_granularity),
-                     pool.queue_limit(:discard_granularity))
-        assert_equal(pool.queue_limit(:discard_max_bytes), pool_bs * 512)
+        assert_equal(fd_dev.queue_limits.discard_granularity,
+                     pool.queue_limits.discard_granularity)
+        assert_equal(pool.queue_limits.discard_max_bytes, pool_bs * 512)
 
         # verify discard passdown is still enabled
         check_discard_passdown_enabled(pool, fd_dev)
@@ -530,8 +530,8 @@ class FakeDiscardTests < ThinpTestCase
     with_fake_discard(:granularity => 128, :max_discard_sectors => pool_bs) do |fd_dev|
       with_custom_data_pool(fd_dev, @size, :discard_passdown => false,
                             :block_size => pool_bs) do |pool|
-        assert_equal(pool.queue_limit(:discard_granularity), 256 * 512)
-        assert_equal(pool.queue_limit(:discard_max_bytes), pool_bs * 512)
+        assert_equal(pool.queue_limits.discard_granularity, 256 * 512)
+        assert_equal(pool.queue_limits.discard_max_bytes, pool_bs * 512)
         check_discard_passdown_disabled(pool, fd_dev)
       end
     end
@@ -542,8 +542,8 @@ class FakeDiscardTests < ThinpTestCase
     with_fake_discard(:granularity => 128, :max_discard_sectors => 768) do |fd_dev|
       with_custom_data_pool(fd_dev, @size, :discard_passdown => false,
                             :block_size => pool_bs) do |pool|
-        assert_equal(pool.queue_limit(:discard_granularity), pool_bs * 512)
-        assert_equal(pool.queue_limit(:discard_max_bytes), pool_bs * 512)
+        assert_equal(pool.queue_limits.discard_granularity, pool_bs * 512)
+        assert_equal(pool.queue_limits.discard_max_bytes, pool_bs * 512)
         check_discard_passdown_disabled(pool, fd_dev)
       end
     end
@@ -554,8 +554,8 @@ class FakeDiscardTests < ThinpTestCase
     with_fake_discard(:granularity => 128, :max_discard_sectors => 256) do |fd_dev|
       with_custom_data_pool(fd_dev, @size, :discard_passdown => true,
                             :block_size => pool_bs) do |pool|
-        assert_equal(pool.queue_limit(:discard_granularity), pool_bs * 512)
-        assert_equal(pool.queue_limit(:discard_max_bytes), pool_bs * 512)
+        assert_equal(pool.queue_limits.discard_granularity, pool_bs * 512)
+        assert_equal(pool.queue_limits.discard_max_bytes, pool_bs * 512)
         check_discard_passdown_disabled(pool, fd_dev)
       end
     end
@@ -566,8 +566,8 @@ class FakeDiscardTests < ThinpTestCase
     with_fake_discard(:granularity => 512, :max_discard_sectors => 512) do |fd_dev|
       with_custom_data_pool(fd_dev, @size, :discard_passdown => true,
                             :block_size => pool_bs) do |pool|
-        assert_equal(pool.queue_limit(:discard_granularity), pool_bs * 512)
-        assert_equal(pool.queue_limit(:discard_max_bytes), pool_bs * 512)
+        assert_equal(pool.queue_limits.discard_granularity, pool_bs * 512)
+        assert_equal(pool.queue_limits.discard_max_bytes, pool_bs * 512)
         check_discard_passdown_disabled(pool, fd_dev)
       end
     end
@@ -580,8 +580,8 @@ class FakeDiscardTests < ThinpTestCase
     with_fake_discard(:granularity => 512, :max_discard_sectors => 512) do |fd_dev|
       with_custom_data_pool(fd_dev, @size, :discard_passdown => true,
                             :block_size => pool_bs) do |pool|
-        assert_equal(pool.queue_limit(:discard_granularity), 256 * 512)
-        assert_equal(pool.queue_limit(:discard_max_bytes), pool_bs * 512)
+        assert_equal(pool.queue_limits.discard_granularity, 256 * 512)
+        assert_equal(pool.queue_limits.discard_max_bytes, pool_bs * 512)
         check_discard_passdown_disabled(pool, fd_dev)
       end
     end
