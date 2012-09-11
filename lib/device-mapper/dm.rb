@@ -1,6 +1,7 @@
 require 'lib/log'
 require 'lib/process'
 require 'lib/utils'
+require 'lib/queue_limits'
 
 #----------------------------------------------------------------
 
@@ -181,6 +182,16 @@ module DM
       ProcessControl.run("dmsetup info #{@name}")
     end
 
+    def dm_name
+      info_output = info
+      m = info_output.match(/Major, minor:[ \t]*253, ([0-9]+)/)
+      if m.nil?
+        raise "Couldn't find minor number for dm device"
+      end
+
+      "dm-#{m[1]}"
+    end
+
     def event_nr
       output = ProcessControl.run("dmsetup status -v #{@name}")
       m = output.match(/Event number:[ \t]*([0-9]+)/)
@@ -216,6 +227,12 @@ module DM
         ctrl.ioctl(BLKDISCARD, [b * 512, e * 512].pack('QQ'))
       end
     end
+
+    def queue_limit(limit)
+      queue_limits = QueueLimits.new
+      queue_limits.get_queue_limit(dm_name, limit)
+    end
+
   end
 
   class DMEventTracker
