@@ -3,9 +3,11 @@ require 'lib/log'
 #----------------------------------------------------------------
 
 module Benchmarking
-  def report_time(desc, &block)
+  def report_time(desc, *extra_out, &block)
     elapsed = time_block(&block)
-    info "Elapsed #{elapsed}: #{desc}"
+    msg = "Elapsed #{elapsed}: #{desc}"
+    info msg
+    extra_out.each {|stream| stream.puts msg}
   end
   
   #--------------------------------
