@@ -143,6 +143,7 @@ module ThinpTestMixin
     block_size = opts.fetch(:block_size, @data_block_size)
     format = opts.fetch(:format, false)
     policy = opts.fetch(:policy, 'arc')
+    data_size = opts.fetch(:data_size, dev_size(@data_dev))
 
     # we set up a small linear device, made out of the metadata dev.
     # That is at most a 8th the size of the data dev.
@@ -160,7 +161,7 @@ module ThinpTestMixin
 
       tvm.add_volume(linear_vol('cache', cache_size))
       with_dev(tvm.table('cache')) do |cache|
-        table = Table.new(CacheTarget.new(dev_size(@data_dev), md, @data_dev, cache,
+        table = Table.new(CacheTarget.new(data_size, md, @data_dev, cache,
                                           block_size, policy))
         with_dev(table, &block)
       end
