@@ -93,4 +93,45 @@ module Utils
       yield
     end
   end
+
+  def _ten_to_str(num_to_str, n)
+    r = []
+
+    if (n <= 20)
+      r << num_to_str[n] + " "
+    else
+      ten = n / 10 * 10
+      one = n - ten
+      r << num_to_str[one] + " " if one > 0
+      r << num_to_str[ten] + " "
+    end
+
+    r.reverse
+  end
+
+  def number_to_string(v)
+    mill = 0
+    r = []
+    # Hash mapping from numbers to respective word. eg. 1000000 => 'million'
+    num_to_str = {}
+    %w|zero one two three four five six seven eight nine ten eleven
+       twelve thirteen fourteen fifteen sixteen seventeen eighteen
+       nineteen|.each_with_index { |word, i| num_to_str[i] = word }
+    %w|zero ten twenty thirty forty fifty sixty seventy eighty
+       ninety hundred |.each_with_index { |word, i| num_to_str[i*10] = word }
+    %w|one thousand million billion trillion|.each_with_index { |word, i| num_to_str[10**(i*3)] = word }
+
+    while v > 0
+      tenth = (" " + v.to_s)[-2..-1].to_i
+      hundreds = ("  " + v.to_s)[-3..-3].to_i
+      r << num_to_str[10 ** (mill * 3)] + " " if mill > 0 && tenth + hundreds > 0
+      r << _ten_to_str(num_to_str, tenth) if tenth > 0
+      ( r << num_to_str[100] + " "; r << num_to_str[hundreds] + " ") if hundreds > 0
+      v /= 1000
+      mill += 1
+    end
+
+    r.reverse.to_s.chop
+  end
+
 end

@@ -60,14 +60,16 @@ module Config
 
 
     'a4.ww.redhat.com' =>
-    { :metadata_dev => '/dev/tst/metadata',
+    { :metadata_dev => '/dev/tst/cache',
       :metadata_size => 32768,
-      :data_dev => '/dev/tst/pool',
-      :data_size => 419463168,
+      :data_dev => '/dev/tst/dual_spindle_linear_sde+sdf',
+      :data_size => 283115520,
       :volume_size => 70377, # 2097152,
       :data_block_size => 524288,
       :low_water_mark => 5,
-      :mass_fs_tests_parallel_runs => 128
+      :mass_fs_tests_parallel_runs => 128,
+      :cache_policies => %w|mq q2|
+      # :cache_policies => %w|mq multiqueue q2 twoqueue fifo filo lru mru lfu mfu|
     }
 
   }
