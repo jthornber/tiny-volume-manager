@@ -103,8 +103,9 @@ module ThinpTestMixin
                                  zero, discard, discard_pass, read_only))
   end
 
-  def standard_linear_table
-    Table.new(LinearTarget.new(dev_size(@data_dev), @data_dev, 0))
+  def standard_linear_table(opts = Hash.new)
+    data_size = opts.fetch(:data_size, dev_size(@data_dev))
+    Table.new(LinearTarget.new(data_size, @data_dev, 0))
   end
 
   def thin_table(pool, size, id, opts = Hash.new)
@@ -134,15 +135,15 @@ module ThinpTestMixin
     with_dev(custom_data_pool_table(data_dev, size, opts), &block)
   end
 
-  def with_standard_linear(&block)
-    with_dev(standard_linear_table, &block)
+  def with_standard_linear(opts = Hash.new, &block)
+    with_dev(standard_linear_table(opts), &block)
   end
 
   def with_standard_cache(opts = Hash.new, &block)
     cache_size = opts.fetch(:cache_size, 2048 * 1024)
     block_size = opts.fetch(:block_size, @data_block_size)
     format = opts.fetch(:format, false)
-    policy = opts.fetch(:policy, 'arc')
+    policy = opts.fetch(:policy, 'default')
     data_size = opts.fetch(:data_size, dev_size(@data_dev))
 
     # we set up a small linear device, made out of the metadata dev.
