@@ -117,18 +117,87 @@ class CacheTests < ThinpTestCase
     end
   end
 
-  def test_git_extract_cache_quick
-    meg = 2048
+  def do_git_extract_cache_quick(format = nil, block_size = nil, policy = nil, meg = nil)
+    format = true if format.nil?
+    block_size = 512 if block_size.nil?
+    policy = 'mq' if policy.nil?
+    meg = 2048 if meg.nil?
 
     with_standard_cache(:cache_size => 1024 * meg,
-                        :format => true,
-                        :block_size => 512,
-                        :policy => 'mq'
-                        #:data_size => 1400 * meg
-                        ) do |cache|
+                        :format => format,
+                        :block_size => block_size,
+                        :policy => policy) do |cache|
       do_git_prepare(cache, :ext4)
       do_git_extract(cache, :ext4, TAGS[0..5])
     end
+  end
+
+  def test_git_extract_cache_quick
+    do_git_extract_cache_quick(nil, nil, 'mq', 2048)
+  end
+
+  def test_git_extract_cache_quick_multiqueue
+    do_git_extract_cache_quick(nil, nil, 'multiqueue')
+  end
+
+  def test_git_extract_cache_quick_multiqueue_ws
+    do_git_extract_cache_quick(nil, nil, 'multiqueue_ws')
+  end
+
+  def test_git_extract_cache_quick_q2
+    do_git_extract_cache_quick(nil, nil, 'q2')
+  end
+
+  def test_git_extract_cache_quick_twoqueue
+    do_git_extract_cache_quick(nil, nil, 'twoqueue')
+  end
+
+  def test_git_extract_cache_quick_fifo
+    do_git_extract_cache_quick(nil, nil, 'fifo')
+  end
+
+  def test_git_extract_cache_quick_filo
+    do_git_extract_cache_quick(nil, nil, 'filo')
+  end
+
+  def test_git_extract_cache_quick_lru
+    do_git_extract_cache_quick(nil, nil, 'lru')
+  end
+
+  def test_git_extract_cache_quick_mru
+    do_git_extract_cache_quick(nil, nil, 'mru')
+  end
+
+  def test_git_extract_cache_quick_lfu
+    do_git_extract_cache_quick(nil, nil, 'lfu')
+  end
+
+  def test_git_extract_cache_quick_mfu
+    do_git_extract_cache_quick(nil, nil, 'mfu')
+  end
+
+  def test_git_extract_cache_quick_lfu_ws
+    do_git_extract_cache_quick(nil, nil, 'lfu_ws')
+  end
+
+  def test_git_extract_cache_quick_mfu_ws
+    do_git_extract_cache_quick(nil, nil, 'mfu_ws')
+  end
+
+  def test_git_extract_cache_quick_random
+    do_git_extract_cache_quick(nil, nil, 'random')
+  end
+
+  def test_git_extract_cache_quick_mq
+    do_git_extract_cache_quick(nil, nil, 'mq')
+  end
+
+  def test_git_extract_cache_quick_mkfs
+    do_git_extract_cache_quick(nil, nil, 'mkfs')
+  end
+
+  def test_git_extract_cache_quick_debug_mq
+    do_git_extract_cache_quick(nil, nil, 'debug')
   end
 
   def test_git_extract_cache
