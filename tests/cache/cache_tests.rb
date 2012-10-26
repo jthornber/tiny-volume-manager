@@ -5,6 +5,7 @@ require 'lib/utils'
 require 'lib/fs'
 require 'lib/tags'
 require 'lib/thinp-test'
+require 'lib/cache-test'
 
 require 'pp'
 
@@ -351,7 +352,7 @@ class CacheTests < ThinpTestCase
       tid.join
     end
   end
-  
+
   def test_dt_cache
     with_standard_cache(:format => true, :policy => 'mq') do |cache|
       dt_device(cache)
@@ -362,6 +363,36 @@ class CacheTests < ThinpTestCase
     assert_raise(ExitError) do
       with_standard_cache(:format => true,
                           :policy => 'time_traveller') do |cache|
+      end
+    end
+  end
+
+  def wait_for_all_clean(cache)
+    cache.event_tracker.wait do
+      status = CacheStatus.new(cache)
+      status.nr_dirty == 0
+    end
+  end
+
+  def test_writeback_policy
+    with_standard_cache(:format => true) do |cache|
+      table = cache.active_table
+
+      do_git_prepare(cache, :ext4)
+
+      cache.pause do
+        table.targets[0].args[4] = 'writeback'
+        cache.load(table)
+      end
+
+      wait_for_all_clean
+    end
+
+    # We should be able to use the origin directly now
+    with_standard_linear do |origin|
+      fs = FS::file_system(:ext4, origin)
+      fs.with_mount('./kernel_builds', :discard => true) do
+        # triggers fsck
       end
     end
   end
