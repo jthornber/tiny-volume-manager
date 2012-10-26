@@ -24,7 +24,7 @@ class FSBench < ThinpTestCase
   end
 
   def bonnie(dir = '.')
-    ProcessControl::run("bonnie++ -d #{dir} -u root -s 2048")
+    ProcessControl::run("bonnie++ -d #{dir} -r 0 -u root -s 2048")
   end
 
   TAGS = %w(v2.6.12 v2.6.18 v2.6.22 v2.6.26 v2.6.30 v2.6.34 v2.6.37 v3.2)
