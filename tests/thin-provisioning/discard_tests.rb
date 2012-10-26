@@ -108,7 +108,7 @@ module DiscardMixin
 
   def check_discard_passdown_enabled(pool, data_dev)
     with_new_thin(pool, @volume_size, 0) do |thin|
-      wipe_device(thin, 8)
+      wipe_device(thin, @data_block_size)
 
       traces, _ = blktrace(thin, data_dev) do
         discard(thin, 0, 1)
@@ -121,7 +121,7 @@ module DiscardMixin
 
   def check_discard_passdown_disabled(pool, data_dev)
     with_new_thin(pool, @volume_size, 0) do |thin|
-      wipe_device(thin, 8)
+      wipe_device(thin, @data_block_size)
 
       traces, _ = blktrace(thin, data_dev) do
         discard(thin, 0, 1)
@@ -133,7 +133,7 @@ module DiscardMixin
   end
 
   def check_discard_thin_working(thin)
-      wipe_device(thin, 8)
+      wipe_device(thin, @data_block_size)
       traces, _ = blktrace(thin) do
         discard(thin, 0, 1)
       end
@@ -508,6 +508,7 @@ class FakeDiscardTests < ThinpTestCase
   def test_fake_discard_pool_granularity_matches_data_dev
     # when discard_passdown is enabled
     pool_bs = 512
+    @data_block_size = pool_bs
     with_fake_discard(:granularity => 128, :max_discard_sectors => pool_bs) do |fd_dev|
       with_custom_data_pool(fd_dev, @size, :discard_passdown => true,
                             :block_size => pool_bs) do |pool|
@@ -527,6 +528,7 @@ class FakeDiscardTests < ThinpTestCase
     # tests data dev's granularity of 64k is ignored and that largest_power_factor
     # adjusts granularity, to 128k
     pool_bs = 768
+    @data_block_size = pool_bs
     with_fake_discard(:granularity => 128, :max_discard_sectors => pool_bs) do |fd_dev|
       with_custom_data_pool(fd_dev, @size, :discard_passdown => false,
                             :block_size => pool_bs) do |pool|
@@ -539,6 +541,7 @@ class FakeDiscardTests < ThinpTestCase
 
   def test_fake_discard_pool_max_and_granularity_match_pow2_block_size_no_passdown
     pool_bs = 512
+    @data_block_size = pool_bs
     with_fake_discard(:granularity => 128, :max_discard_sectors => 768) do |fd_dev|
       with_custom_data_pool(fd_dev, @size, :discard_passdown => false,
                             :block_size => pool_bs) do |pool|
@@ -551,6 +554,7 @@ class FakeDiscardTests < ThinpTestCase
 
   def test_fake_discard_data_max_smaller_than_block_size_disables_passdown
     pool_bs = 512
+    @data_block_size = pool_bs
     with_fake_discard(:granularity => 128, :max_discard_sectors => 256) do |fd_dev|
       with_custom_data_pool(fd_dev, @size, :discard_passdown => true,
                             :block_size => pool_bs) do |pool|
@@ -563,6 +567,7 @@ class FakeDiscardTests < ThinpTestCase
 
   def test_fake_discard_data_granularity_larger_than_block_size_disables_passdown
     pool_bs = 256
+    @data_block_size = pool_bs
     with_fake_discard(:granularity => 512, :max_discard_sectors => 512) do |fd_dev|
       with_custom_data_pool(fd_dev, @size, :discard_passdown => true,
                             :block_size => pool_bs) do |pool|
@@ -577,6 +582,7 @@ class FakeDiscardTests < ThinpTestCase
     # e.g. blocksize = 384k, discard_granularity = 256k
     # (this also tests largest_power_factor adjusts granularity, to 128k)
     pool_bs = 768
+    @data_block_size = pool_bs
     with_fake_discard(:granularity => 512, :max_discard_sectors => 512) do |fd_dev|
       with_custom_data_pool(fd_dev, @size, :discard_passdown => true,
                             :block_size => pool_bs) do |pool|
