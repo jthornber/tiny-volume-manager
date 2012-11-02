@@ -5,7 +5,7 @@ require 'lib/utils'
 require 'lib/fs'
 require 'lib/tags'
 require 'lib/thinp-test'
-require 'lib/cache-test'
+require 'lib/cache-status'
 
 require 'pp'
 

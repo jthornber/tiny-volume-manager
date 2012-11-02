@@ -3,7 +3,7 @@ require 'lib/log'
 #----------------------------------------------------------------
 
 class CacheStatus
-  attr_reader :read_hits, :read_misses, :write_hits, :write_misses,
+  attr_reader :read_hits, :read_misses, :write_hits, :write_misses
   attr_reader :demotions, :promotions, :residency, :nr_dirty
 
   def initialize(cache_dev)
@@ -12,9 +12,6 @@ class CacheStatus
     if m.nil?
       raise "couldn't parse cache status"
     else
-      attr_reader :read_hits, :read_misses, :write_hits, :write_misses,
-      attr_reader :demotions, :promotions, :residency, :nr_dirty
-
       @read_hits = m[1].to_i
       @read_misses = m[2].to_i
       @write_hits = m[3].to_i
