@@ -54,7 +54,10 @@ module BlkTrace
 
     start = events[0].start_sector
     len = 0
-    events.each { |event| len += event.len_sector }
+    events.each do |event|
+      start = event.start_sector if event.start_sector < start
+      len += event.len_sector
+    end
 
     assert(start_sector == start)
     assert(length == len)

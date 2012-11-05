@@ -53,7 +53,7 @@ class PoolStatus
     m = status.match(/(\d+)\s(\d+)\/(\d+)\s(\d+)\/(\d+)\s(\S+)(\s.*)/)
     if m.nil?
       # it's possible the pool's fallen back to failure mode
-      if status.match(/\s*fail\s*/)
+      if status.match(/\s*Fail\s*/)
         @fail = true
       else
         raise "couldn't get pool status"
