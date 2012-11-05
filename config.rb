@@ -1,5 +1,4 @@
 # Edit this file to add your setup
-require 'pp'
 
 module Config
   # You can now configure different profiles for a machine.  Add the
@@ -10,13 +9,13 @@ module Config
 
   CONFIGS = {
     # ejt's machines
-    'debian-vm2.lambda.co.uk' => {
+    'vm3.vm-network' => {
       :metadata_dev => '/dev/vdb', # SSD
       :data_dev => '/dev/vdc',     # SSD
       :mass_fs_tests_parallel_runs => 3,
     },
 
-    'debian-vm2.lambda.co.uk:mix' => {
+    'vm3.vm-network:mix' => {
       :metadata_dev => '/dev/vdb', # SSD
       :data_dev => '/dev/vde',     # Spindle
       :data_size => 1097152 * 2 * 10,
@@ -24,7 +23,7 @@ module Config
       :mass_fs_tests_parallel_runs => 3,
     },
 
-    'debian-vm2.lambda.co.uk:spindle' => {
+    'vm3.vm-network:spindle' => {
       :metadata_dev => '/dev/vdd', # Spindle
       :data_dev => '/dev/vde',     # Spindle
       :data_size => 1097152 * 2 * 10,
@@ -32,19 +31,9 @@ module Config
       :mass_fs_tests_parallel_runs => 3
     },
 
-    'vm-debian-6-x86-64' =>
-    { :metadata_dev => '/dev/sdc',
-      :data_dev => '/dev/sdd'
-    },
-
     'vm-debian-32' =>
     { :metadata_dev => '/dev/sdc',
       :data_dev => '/dev/sdd'
-    },
-
-    'ubuntu' =>
-    { :metadata_dev => 'metadata_dev',
-      :data_dev => 'data_dev'
     },
 
     # others ...
@@ -60,39 +49,25 @@ module Config
 
 
     'a4.ww.redhat.com' =>
-    { :metadata_dev => '/dev/tst/cache',
+    { :metadata_dev => '/dev/tst/metadata',
       :metadata_size => 32768,
-      :data_dev => '/dev/tst/dual_spindle_linear_sde+sdf',
-      :data_size => 283115520,
+      :data_dev => '/dev/tst/pool',
+      :data_size => 419463168,
       :volume_size => 70377, # 2097152,
       :data_block_size => 524288,
       :low_water_mark => 5,
-      :mass_fs_tests_parallel_runs => 128,
-      :cache_policies => %w|mq q2|
-      # :cache_policies => %w|mq multiqueue q2 twoqueue fifo filo lru mru lfu mfu|
+      :mass_fs_tests_parallel_runs => 128
     }
 
   }
 
-  def Config.hostname_list
-    CONFIGS.keys.map {|name| name.gsub(/:.*/, '')}
-  end
-
   def Config.get_config
     host = `hostname --fqdn`.chomp
-
-    unless hostname_list.member?(host)
+    if CONFIGS.has_key?(host)
+      host = "#{host}:#{$profile}" if $profile
+      CONFIGS[host]
+    else
       raise RuntimeError, "unknown host, set up your config in config.rb"
     end
-
-    if $profile
-      host = "#{host}:#{$profile}"
-
-      unless CONFIGS.has_key?(host)
-        raise RuntimeError, "unknown profile '#{$profile}'"
-      end
-    end
-
-    CONFIGS[host]
   end
 end
