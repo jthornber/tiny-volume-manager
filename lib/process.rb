@@ -1,4 +1,3 @@
-require 'lib/dry_run'
 require 'lib/log'
 
 #----------------------------------------------------------------
@@ -113,10 +112,12 @@ module ProcessControl
   end
 
   def self.run_(default, *cmd)
-    DryRun.run(default) do
+    begin
       c = LogConsumer.new
       ProcessControl.really_run(c, *cmd)
       c.stdout_lines.join("\n")
+    rescue
+      default
     end
   end
 
@@ -142,9 +143,7 @@ module ProcessControl
   end
 
   def self.sleep(duration)
-    if !$dry_run
-      Kernel.sleep(duration)
-    end
+    Kernel.sleep(duration)
   end
 end
 
