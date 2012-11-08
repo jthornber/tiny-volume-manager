@@ -8,7 +8,7 @@ class CacheStatus
 
   def initialize(cache_dev)
     status = cache_dev.status
-    m = status.match(/(\d+)\s(\d+)\scache\s(\d+)\s(\d+)\s(\d+)\s(\d+)\s(\d+)\s(\d+)\s(\d+)\s(\d+)/)
+    m = status.match(/\d+\s\d+\scache\s(\d+)\s(\d+)\s(\d+)\s(\d+)\s(\d+)\s(\d+)\s(\d+)\s(\d+)/)
     if m.nil?
       raise "couldn't parse cache status '#{status}'"
     else
