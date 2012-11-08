@@ -5,7 +5,7 @@ require 'lib/utils'
 require 'lib/fs'
 require 'lib/tags'
 require 'lib/thinp-test'
-require 'lib/cache-test'
+require 'lib/cache-status'
 
 require 'pp'
 
@@ -368,8 +368,9 @@ class CacheTests < ThinpTestCase
   end
 
   def wait_for_all_clean(cache)
-    cache.event_tracker.wait do
+    cache.event_tracker.wait(cache) do |cache|
       status = CacheStatus.new(cache)
+      STDERR.puts "#{status.nr_dirty} dirty blocks"
       status.nr_dirty == 0
     end
   end
@@ -385,7 +386,7 @@ class CacheTests < ThinpTestCase
         cache.load(table)
       end
 
-      wait_for_all_clean
+      wait_for_all_clean(cache)
     end
 
     # We should be able to use the origin directly now

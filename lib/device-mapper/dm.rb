@@ -240,8 +240,8 @@ module DM
 
     # Wait for an event _since_ this one.  Updates event nr to reflect
     # the new number.
-    def wait(&condition)
-      until condition.call
+    def wait(*args, &condition)
+      until condition.call(*args)
         ProcessControl.run("dmsetup wait #{@device.name} #{@event_nr}")
         @event_nr = @device.event_nr
       end

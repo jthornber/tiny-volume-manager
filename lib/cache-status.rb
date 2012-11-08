@@ -3,18 +3,15 @@ require 'lib/log'
 #----------------------------------------------------------------
 
 class CacheStatus
-  attr_reader :read_hits, :read_misses, :write_hits, :write_misses,
+  attr_reader :read_hits, :read_misses, :write_hits, :write_misses
   attr_reader :demotions, :promotions, :residency, :nr_dirty
 
   def initialize(cache_dev)
-    status = cache.status
-    m = status.match(/(\d+)\s(\d+)\/(\d+)\s(\d+)\/(\d+)\s(\d+)\s(\d+)\s(\d+)/)
+    status = cache_dev.status
+    m = status.match(/\d+\s\d+\scache\s(\d+)\s(\d+)\s(\d+)\s(\d+)\s(\d+)\s(\d+)\s(\d+)\s(\d+)/)
     if m.nil?
-      raise "couldn't parse cache status"
+      raise "couldn't parse cache status '#{status}'"
     else
-      attr_reader :read_hits, :read_misses, :write_hits, :write_misses,
-      attr_reader :demotions, :promotions, :residency, :nr_dirty
-
       @read_hits = m[1].to_i
       @read_misses = m[2].to_i
       @write_hits = m[3].to_i
