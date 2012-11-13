@@ -112,13 +112,9 @@ module ProcessControl
   end
 
   def self.run_(default, *cmd)
-    begin
-      c = LogConsumer.new
-      ProcessControl.really_run(c, *cmd)
-      c.stdout_lines.join("\n")
-    rescue
-      default
-    end
+    c = LogConsumer.new
+    ProcessControl.really_run(c, *cmd)
+    c.stdout_lines.join("\n")
   end
 
   def self.capture(*cmd)
