@@ -397,4 +397,9 @@ class CacheTests < ThinpTestCase
       end
     end
   end
+
+  def test_construct_cache
+    with_standard_cache(:format => true) do |cache|
+    end
+  end
 end
