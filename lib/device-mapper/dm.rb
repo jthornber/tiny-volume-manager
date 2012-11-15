@@ -62,8 +62,15 @@ module DM
   end
 
   class CacheTarget < Target
-    def initialize(sector_count, metadata_dev, origin_dev, cache_dev, block_size, policy)
-      super('cache', sector_count, metadata_dev, origin_dev, cache_dev, block_size, policy);
+    def initialize(sector_count, metadata_dev, cache_dev, origin_dev, block_size, features,
+                   policy, keys)
+      args = [metadata_dev, cache_dev, origin_dev, block_size] +
+        [features.size] + features.map {|f| f.to_s} +
+        [policy, keys.size]
+
+      keys.each_pair {|p| args = args + p}
+
+      super('cache', sector_count, *args)
     end
   end
 

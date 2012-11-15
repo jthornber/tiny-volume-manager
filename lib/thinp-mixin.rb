@@ -162,8 +162,8 @@ module ThinpTestMixin
 
       tvm.add_volume(linear_vol('cache', cache_size))
       with_dev(tvm.table('cache')) do |cache|
-        table = Table.new(CacheTarget.new(data_size, md, @data_dev, cache,
-                                          block_size, policy))
+        table = Table.new(CacheTarget.new(data_size, md, cache, @data_dev,
+                                          block_size, [:writeback], policy, {}))
         with_dev(table, &block)
       end
     end

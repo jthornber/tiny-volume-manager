@@ -343,7 +343,7 @@ class CacheTests < ThinpTestCase
       while tid.alive?
         sleep 5
         cache.pause do
-          table.targets[0].args[4] = use_mq ? 'mq' : 'mkfs'
+          table.targets[0].args[6] = use_mq ? 'mq' : 'writeback'
           cache.load(table)
           use_mq = !use_mq
         end
@@ -377,12 +377,11 @@ class CacheTests < ThinpTestCase
 
   def test_writeback_policy
     with_standard_cache(:format => true) do |cache|
-      table = cache.active_table
-
       do_git_prepare(cache, :ext4)
 
       cache.pause do
-        table.targets[0].args[4] = 'writeback'
+        table = cache.active_table
+        table.targets[0].args[6] = 'writeback'
         cache.load(table)
       end
 
