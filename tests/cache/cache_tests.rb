@@ -20,6 +20,62 @@ class CacheTests < ThinpTestCase
     @data_block_size = 2048
   end
 
+  CacheStack = Struct.new(:tvm, :md, :ssd, :origin, :cache, :opts)
+
+  # assumes origin is already set
+  def activate_cache(stack, &block)
+    opts = stack.opts
+    block_size = opts.fetch(:block_size, @data_block_size)
+    policy = opts.fetch(:policy, 'default')
+    tvm = stack.tvm
+
+    with_dev(tvm.table('md')) do |md|
+      if opts.fetch(:format, false)
+        wipe_device(md, 8)
+      end
+
+      stack.md = md
+
+      with_dev(tvm.table('ssd')) do |ssd|
+        stack.ssd = ssd
+
+        table = Table.new(CacheTarget.new(dev_size(stack.origin), md, ssd, stack.origin,
+                                          block_size, [:writeback], policy, {}))
+        with_dev(table) do |cache|
+          stack.cache = cache
+          block.call(stack)
+        end
+      end
+    end
+  end
+
+  def setup_stack(tvm, opts = Hash.new)
+    cache_size = opts.fetch(:cache_size, 2048 * 1024)
+    block_size = opts.fetch(:block_size, @data_block_size)
+
+    # we set up a small linear device, made out of the metadata dev.
+    tvm.add_allocation_volume(@metadata_dev, 0, dev_size(@metadata_dev))
+    tvm.add_volume(linear_vol('md', 4 * 2048))
+
+    if (tvm.free_space < cache_size)
+      raise "insufficient space on metadata_device for cache, free_space = #{tvm.free_space}, cache_size = #{cache_size}"
+    end
+
+    tvm.add_volume(linear_vol('ssd', cache_size))
+    CacheStack.new(tvm, nil, nil, @data_dev, nil, opts)
+  end
+
+  def resize_ssd(stack, new_size)
+    tvm = stack.tvm
+
+    stack.cache.pause do        # must suspend cache so resize is detected
+      stack.ssd.pause do
+        tvm.resize('ssd', new_size)
+        stack.ssd.load(tvm.table('ssd'))
+      end
+    end
+  end
+
   def drop_caches
     ProcessControl.run('echo 3 > /proc/sys/vm/drop_caches')
   end
@@ -118,112 +174,101 @@ class CacheTests < ThinpTestCase
     end
   end
 
-  def do_git_extract_cache_quick(format = nil, block_size = nil, policy = nil, meg = nil)
-    format = true if format.nil?
-    block_size = 512 if block_size.nil?
-    policy = 'mq' if policy.nil?
-    meg = 2048 if meg.nil?
+  def do_git_extract_cache_quick(opts)
+    opts[:format] = true
 
-    with_standard_cache(:cache_size => 1024 * meg,
-                        :format => format,
-                        :block_size => block_size,
-                        :policy => policy) do |cache|
-      do_git_prepare(cache, :ext4)
-      do_git_extract(cache, :ext4, TAGS[0..5])
+    stack = setup_stack(VM.new, opts)
+    activate_cache(stack) do |stack|
+      do_git_prepare(stack.cache, :ext4)
+      do_git_extract(stack.cache, :ext4, TAGS[0..5])
     end
   end
 
   def test_git_extract_cache_quick
-    do_git_extract_cache_quick(nil, nil, 'mq', 2048)
+    do_git_extract_cache_quick(:policy => 'mq', :cache_size => 1024 * 2048)
   end
 
   def test_git_extract_cache_quick_multiqueue
-    do_git_extract_cache_quick(nil, nil, 'multiqueue')
+    do_git_extract_cache_quick(:policy => 'multiqueue')
   end
 
   def test_git_extract_cache_quick_multiqueue_ws
-    do_git_extract_cache_quick(nil, nil, 'multiqueue_ws')
+    do_git_extract_cache_quick(:policy => 'multiqueue_ws')
   end
 
   def test_git_extract_cache_quick_q2
-    do_git_extract_cache_quick(nil, nil, 'q2')
+    do_git_extract_cache_quick(:policy => 'q2')
   end
 
   def test_git_extract_cache_quick_twoqueue
-    do_git_extract_cache_quick(nil, nil, 'twoqueue')
+    do_git_extract_cache_quick(:policy => 'twoqueue')
   end
 
   def test_git_extract_cache_quick_fifo
-    do_git_extract_cache_quick(nil, nil, 'fifo')
+    do_git_extract_cache_quick(:policy => 'fifo')
   end
 
   def test_git_extract_cache_quick_filo
-    do_git_extract_cache_quick(nil, nil, 'filo')
+    do_git_extract_cache_quick(:policy => 'filo')
   end
 
   def test_git_extract_cache_quick_lru
-    do_git_extract_cache_quick(nil, nil, 'lru')
+    do_git_extract_cache_quick(:policy => 'lru')
   end
 
   def test_git_extract_cache_quick_mru
-    do_git_extract_cache_quick(nil, nil, 'mru')
+    do_git_extract_cache_quick(:policy => 'mru')
   end
 
   def test_git_extract_cache_quick_lfu
-    do_git_extract_cache_quick(nil, nil, 'lfu')
+    do_git_extract_cache_quick(:policy => 'lfu')
   end
 
   def test_git_extract_cache_quick_mfu
-    do_git_extract_cache_quick(nil, nil, 'mfu')
+    do_git_extract_cache_quick(:policy => 'mfu')
   end
 
   def test_git_extract_cache_quick_lfu_ws
-    do_git_extract_cache_quick(nil, nil, 'lfu_ws')
+    do_git_extract_cache_quick(:policy => 'lfu_ws')
   end
 
   def test_git_extract_cache_quick_mfu_ws
-    do_git_extract_cache_quick(nil, nil, 'mfu_ws')
+    do_git_extract_cache_quick(:policy => 'mfu_ws')
   end
 
   def test_git_extract_cache_quick_random
-    do_git_extract_cache_quick(nil, nil, 'random')
+    do_git_extract_cache_quick(:policy => 'random')
   end
 
   def test_git_extract_cache_quick_mq
-    do_git_extract_cache_quick(nil, nil, 'mq')
+    do_git_extract_cache_quick(:policy => 'mq')
   end
 
   def test_git_extract_cache_quick_mkfs
-    do_git_extract_cache_quick(nil, nil, 'mkfs')
+    do_git_extract_cache_quick(:policy => 'mkfs')
   end
 
   def test_git_extract_cache_quick_debug_mq
-    do_git_extract_cache_quick(nil, nil, 'debug')
+    do_git_extract_cache_quick(:policy => 'debug')
   end
 
   def test_git_extract_cache
-    meg = 2048
-
-    with_standard_cache(:format => true, :block_size => 512) do |cache|
-      do_git_prepare(cache, :ext4)
-      do_git_extract(cache, :ext4)
+    stack = setup_stack(VM.new, :format => true, :block_size => 512)
+    activate_cache(stack) do |stack|
+      do_git_prepare(stack.cache, :ext4)
+      do_git_extract(stack.cache, :ext4)
     end
   end
 
   def test_cache_sizing_effect
     meg = 2048
-    cache_sizes = [64,128,192,256,320,384,448,512,576,640,704,768,832,896,960,1024,1088,1152,1216,1280,1344,1408]
+    cache_sizes = [64, 128, 192, 256, 320, 384, 448, 512,
+                   576, 640, 704, 768, 832, 896, 960,
+                   1024, 1088, 1152, 1216, 1280, 1344, 1408]
 
     cache_sizes.each do |size|
-      with_standard_cache(:cache_size => size * meg,
-                          :format => true,
-                          :block_size => 512,
-                          :data_size => 1408 * meg) do |cache|
-        report_time("extract_log_test with cache size #{size}M") do
-          do_git_prepare(cache, :ext4)
-          do_git_extract(cache, :ext4, TAGS[0..5])
-        end
-      end
+      do_git_extract_cache_quick(:cache_size => size * meg,
+                                 :data_size => 1408 * meg)
     end
   end
 
@@ -353,6 +398,24 @@ class CacheTests < ThinpTestCase
     end
   end
 
+  def test_cache_grow
+    meg = 2048
+
+    stack = setup_stack(VM.new, :format => true, :cache_size => 16 * meg)
+    activate_cache(stack) do |stack|
+      tid = Thread.new(stack.cache) do
+        do_git_prepare(stack.cache, :ext4)
+      end
+
+      [256, 512, 768, 1024].each do |size|
+        sleep 10
+        resize_ssd(stack, size * meg)
+      end
+
+      tid.join
+    end
+  end
+
   def test_dt_cache
     with_standard_cache(:format => true, :policy => 'mq') do |cache|
       dt_device(cache)
@@ -398,7 +461,8 @@ class CacheTests < ThinpTestCase
   end
 
   def test_construct_cache
-    with_standard_cache(:format => true) do |cache|
+    stack = setup_stack(VM.new, :format => true)
+    activate_cache(stack) do |stack|
     end
   end
 end
