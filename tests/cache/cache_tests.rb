@@ -11,6 +11,72 @@ require 'pp'
 
 #----------------------------------------------------------------
 
+class CacheStack
+  include ThinpTestMixin
+  include Utils
+
+  attr_accessor :tvm, :md, :ssd, :origin, :cache, :opts
+
+  def initialize(dm, ssd_dev, spindle_dev, opts)
+    @dm = dm
+    @tvm = TinyVolumeManager::VM.new
+    
+    cache_size = opts.fetch(:cache_size, 2048 * 1024)
+    block_size = opts.fetch(:block_size, 512)
+
+    # we set up a small linear device, made out of the metadata dev.
+    @tvm.add_allocation_volume(ssd_dev, 0, dev_size(ssd_dev))
+    @tvm.add_volume(linear_vol('md', 4 * 2048))
+
+    if (@tvm.free_space < cache_size)
+      raise "insufficient space on metadata_device for cache, free_space = #{@tvm.free_space}, cache_size = #{cache_size}"
+    end
+    @tvm.add_volume(linear_vol('ssd', cache_size))
+
+    @md = nil
+    @ssd = nil
+    @origin = spindle_dev
+    @cache = nil
+    @opts = opts
+  end
+
+  # assumes origin is already set
+  def activate(&block)
+    block_size = @opts.fetch(:block_size, 512)
+    policy = @opts.fetch(:policy, 'default')
+
+    with_dev(@tvm.table('md')) do |md|
+      @md = md
+
+      if @opts.fetch(:format, false)
+        wipe_device(md, 8)
+      end
+
+      with_dev(@tvm.table('ssd')) do |ssd|
+        @ssd = ssd
+
+        table = Table.new(CacheTarget.new(dev_size(@origin), md, ssd, @origin,
+                                          block_size, [:writeback], policy, {}))
+        with_dev(table) do |cache|
+          @cache = cache
+          block.call(self)
+        end
+      end
+    end
+  end
+
+  def resize_ssd(new_size)
+    @cache.pause do        # must suspend cache so resize is detected
+      @ssd.pause do
+        @tvm.resize('ssd', new_size)
+        @ssd.load(@tvm.table('ssd'))
+      end
+    end
+  end
+end
+
+#----------------------------------------------------------------
+
 class CacheTests < ThinpTestCase
   include Tags
   include Utils
@@ -18,62 +84,6 @@ class CacheTests < ThinpTestCase
   def setup
     super
     @data_block_size = 2048
-  end
-
-  CacheStack = Struct.new(:tvm, :md, :ssd, :origin, :cache, :opts)
-
-  # assumes origin is already set
-  def activate_cache(stack, &block)
-    opts = stack.opts
-    block_size = opts.fetch(:block_size, @data_block_size)
-    policy = opts.fetch(:policy, 'default')
-    tvm = stack.tvm
-
-    with_dev(tvm.table('md')) do |md|
-      if opts.fetch(:format, false)
-        wipe_device(md, 8)
-      end
-
-      stack.md = md
-
-      with_dev(tvm.table('ssd')) do |ssd|
-        stack.ssd = ssd
-
-        table = Table.new(CacheTarget.new(dev_size(stack.origin), md, ssd, stack.origin,
-                                          block_size, [:writeback], policy, {}))
-        with_dev(table) do |cache|
-          stack.cache = cache
-          block.call(stack)
-        end
-      end
-    end
-  end
-
-  def setup_stack(tvm, opts = Hash.new)
-    cache_size = opts.fetch(:cache_size, 2048 * 1024)
-    block_size = opts.fetch(:block_size, @data_block_size)
-
-    # we set up a small linear device, made out of the metadata dev.
-    tvm.add_allocation_volume(@metadata_dev, 0, dev_size(@metadata_dev))
-    tvm.add_volume(linear_vol('md', 4 * 2048))
-
-    if (tvm.free_space < cache_size)
-      raise "insufficient space on metadata_device for cache, free_space = #{tvm.free_space}, cache_size = #{cache_size}"
-    end
-
-    tvm.add_volume(linear_vol('ssd', cache_size))
-    CacheStack.new(tvm, nil, nil, @data_dev, nil, opts)
-  end
-
-  def resize_ssd(stack, new_size)
-    tvm = stack.tvm
-
-    stack.cache.pause do        # must suspend cache so resize is detected
-      stack.ssd.pause do
-        tvm.resize('ssd', new_size)
-        stack.ssd.load(tvm.table('ssd'))
-      end
-    end
   end
 
   def drop_caches
@@ -175,10 +185,8 @@ class CacheTests < ThinpTestCase
   end
 
   def do_git_extract_cache_quick(opts)
-    opts[:format] = true
-
-    stack = setup_stack(VM.new, opts)
-    activate_cache(stack) do |stack|
+    stack = CacheStack.new(@dm, @metadata_dev, @data_dev, :format => true)
+    stack.activate do |stack|
       do_git_prepare(stack.cache, :ext4)
       do_git_extract(stack.cache, :ext4, TAGS[0..5])
     end
@@ -253,8 +261,8 @@ class CacheTests < ThinpTestCase
   end
 
   def test_git_extract_cache
-    stack = setup_stack(VM.new, :format => true, :block_size => 512)
-    activate_cache(stack) do |stack|
+    stack = CacheStack.new(@dm, @metadata_dev, @data_dev, :format => true)
+    stack.activate do |stack|
       do_git_prepare(stack.cache, :ext4)
       do_git_extract(stack.cache, :ext4)
     end
@@ -401,8 +409,10 @@ class CacheTests < ThinpTestCase
   def test_cache_grow
     meg = 2048
 
-    stack = setup_stack(VM.new, :format => true, :cache_size => 16 * meg)
-    activate_cache(stack) do |stack|
+    stack = CacheStack.new(@dm, @metadata_dev, @data_dev,
+                           :format => true,
+                           :cache_size => 16 * meg)
+    stack.activate do |stack|
       tid = Thread.new(stack.cache) do
         do_git_prepare(stack.cache, :ext4)
       end
@@ -461,8 +471,8 @@ class CacheTests < ThinpTestCase
   end
 
   def test_construct_cache
-    stack = setup_stack(VM.new, :format => true)
-    activate_cache(stack) do |stack|
+    stack = CacheStack.new(@dm, @metadata_dev, @data_dev, :format => true)
+    stack.activate do |stack|
     end
   end
 end
