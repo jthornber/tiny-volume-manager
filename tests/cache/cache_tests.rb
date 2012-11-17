@@ -11,108 +11,7 @@ require 'pp'
 
 #----------------------------------------------------------------
 
-class CacheStack
-  include ThinpTestMixin
-  include Utils
-
-  attr_accessor :tvm, :md, :ssd, :origin, :cache, :opts
-
-  def initialize(dm, ssd_dev, spindle_dev, opts)
-    @dm = dm
-    @tvm = TinyVolumeManager::VM.new
-    
-    cache_size = opts.fetch(:cache_size, 2048 * 1024)
-    block_size = opts.fetch(:block_size, 512)
-
-    # we set up a small linear device, made out of the metadata dev.
-    @tvm.add_allocation_volume(ssd_dev, 0, dev_size(ssd_dev))
-    @tvm.add_volume(linear_vol('md', 4 * 2048))
-
-    if (@tvm.free_space < cache_size)
-      raise "insufficient space on metadata_device for cache, free_space = #{@tvm.free_space}, cache_size = #{cache_size}"
-    end
-    @tvm.add_volume(linear_vol('ssd', cache_size))
-
-    @md = nil
-    @ssd = nil
-    @origin = spindle_dev
-    @cache = nil
-    @opts = opts
-  end
-
-  # assumes origin is already set
-  def activate(&block)
-    block_size = @opts.fetch(:block_size, 512)
-    policy = @opts.fetch(:policy, 'default')
-
-    with_dev(@tvm.table('md')) do |md|
-      @md = md
-
-      if @opts.fetch(:format, false)
-        wipe_device(md, 8)
-      end
-
-      with_dev(@tvm.table('ssd')) do |ssd|
-        @ssd = ssd
-
-        table = Table.new(CacheTarget.new(dev_size(@origin), md, ssd, @origin,
-                                          block_size, [:writeback], policy, {}))
-        with_dev(table) do |cache|
-          @cache = cache
-          block.call(self)
-        end
-      end
-    end
-  end
-
-  def resize_ssd(new_size)
-    @cache.pause do        # must suspend cache so resize is detected
-      @ssd.pause do
-        @tvm.resize('ssd', new_size)
-        @ssd.load(@tvm.table('ssd'))
-      end
-    end
-  end
-end
-
-#----------------------------------------------------------------
-
-class CacheTests < ThinpTestCase
-  include Tags
-  include Utils
-
-  def setup
-    super
-    @data_block_size = 2048
-  end
-
-  def drop_caches
-    ProcessControl.run('echo 3 > /proc/sys/vm/drop_caches')
-  end
-
-  def _test_dt_works
-    with_standard_cache(:format => true) do |cache|
-      dt_device(cache)
-    end
-  end
-
-  def _test_dd_benchmark
-    with_standard_cache(:format => true) do |cache|
-      wipe_device(cache)
-    end
-  end
-
-  def do_fio(dev, fs_type)
-    fs = FS::file_system(fs_type, dev)
-    fs.format
-
-    fs.with_mount('./fio_test', :discard => true) do
-      Dir.chdir('./fio_test') do
-        ProcessControl.run("fio ../tests/cache/fio.config")
-      end
-    end
-  end
-
+module GitExtract
   TAGS = %w(v2.6.12 v2.6.13 v2.6.14 v2.6.15 v2.6.16 v2.6.17 v2.6.18 v2.6.19
             v2.6.20 v2.6.21 v2.6.22 v2.6.23 v2.6.24 v2.6.25 v2.6.26 v2.6.27 v2.6.28
             v2.6.29 v2.6.30 v2.6.31 v2.6.32 v2.6.33 v2.6.34 v2.6.35 v2.6.36 v2.6.37
@@ -158,6 +57,141 @@ class CacheTests < ThinpTestCase
       end
     end
   end
+end
+
+#----------------------------------------------------------------
+
+class Policy
+  attr_accessor :name, :opts
+
+  def initialize(name, opts = Hash.new)
+    @name = name
+    @opts = opts
+  end
+end
+
+#--------------------------------
+
+class CacheStack
+  include ThinpTestMixin
+  include Utils
+
+  attr_accessor :tvm, :md, :ssd, :origin, :cache, :opts
+
+  # options: :cache_size (in sectors), :block_size (in sectors),
+  # :policy (class Policy), :format (bool), :origin_size (sectors)
+
+
+  # FIXME: add methods for changing the policy + args
+
+  def initialize(dm, ssd_dev, spindle_dev, opts)
+    @dm = dm
+    @ssd_dev = ssd_dev
+    @spindle_dev = spindle_dev
+
+    @md = nil
+    @ssd = nil
+    @origin = nil
+    @cache = nil
+    @opts = opts
+
+    @tvm = TinyVolumeManager::VM.new
+    @tvm.add_allocation_volume(ssd_dev, 0, dev_size(ssd_dev))
+
+    @data_tvm = TinyVolumeManager::VM.new
+    @data_tvm.add_allocation_volume(spindle_dev, 0, dev_size(spindle_dev))
+    
+    # we set up a small linear device, made out of the metadata dev.
+    @tvm.add_volume(linear_vol('md', 4 * 2048))
+
+    cache_size = opts.fetch(:cache_size, 2048 * 1024)
+    @tvm.add_volume(linear_vol('ssd', cache_size))
+
+    @data_tvm.add_volume(linear_vol('origin', origin_size))
+  end
+
+  def activate(&block)
+    with_devs(@tvm.table('md'),
+              @tvm.table('ssd'),
+              @data_tvm.table('origin')) do |md, ssd, origin|
+      @md = md
+      @ssd = ssd
+      @origin = origin
+
+      wipe_device(md, 8) if @opts.fetch(:format, false)
+
+      with_dev(cache_table) do |cache|
+        @cache = cache
+        block.call(self)
+      end
+    end
+  end
+
+  def resize_ssd(new_size)
+    @cache.pause do        # must suspend cache so resize is detected
+      @ssd.pause do
+        @tvm.resize('ssd', new_size)
+        @ssd.load(@tvm.table('ssd'))
+      end
+    end
+  end
+
+  def origin_size
+    @opts.fetch(:data_size, dev_size(@spindle_dev))
+  end
+
+  def block_size
+    @opts.fetch(:block_size, 512)
+  end
+
+  def policy
+    @opts.fetch(:policy, Policy.new('default'))
+  end
+
+  def cache_table
+    Table.new(CacheTarget.new(origin_size, @md, @ssd, @origin,
+                              block_size, [:writeback], policy.name, {}))
+  end
+end
+
+#----------------------------------------------------------------
+
+class CacheTests < ThinpTestCase
+  include GitExtract
+  include Tags
+  include Utils
+
+  def setup
+    super
+    @data_block_size = 2048
+  end
+
+  def drop_caches
+    ProcessControl.run('echo 3 > /proc/sys/vm/drop_caches')
+  end
+
+  def _test_dt_works
+    with_standard_cache(:format => true) do |cache|
+      dt_device(cache)
+    end
+  end
+
+  def _test_dd_benchmark
+    with_standard_cache(:format => true) do |cache|
+      wipe_device(cache)
+    end
+  end
+
+  def do_fio(dev, fs_type)
+    fs = FS::file_system(fs_type, dev)
+    fs.format
+
+    fs.with_mount('./fio_test', :discard => true) do
+      Dir.chdir('./fio_test') do
+        ProcessControl.run("fio ../tests/cache/fio.config")
+      end
+    end
+  end
 
   def do_format(dev, fs_type)
     fs = FS::file_system(fs_type, dev)
@@ -193,71 +227,71 @@ class CacheTests < ThinpTestCase
   end
 
   def test_git_extract_cache_quick
-    do_git_extract_cache_quick(:policy => 'mq', :cache_size => 1024 * 2048)
+    do_git_extract_cache_quick(:policy => Policy.new('mq'), :cache_size => 1024 * 2048)
   end
 
   def test_git_extract_cache_quick_multiqueue
-    do_git_extract_cache_quick(:policy => 'multiqueue')
+    do_git_extract_cache_quick(:policy => Policy.new('multiqueue'))
   end
 
   def test_git_extract_cache_quick_multiqueue_ws
-    do_git_extract_cache_quick(:policy => 'multiqueue_ws')
+    do_git_extract_cache_quick(:policy => Policy.new('multiqueue_ws'))
   end
 
   def test_git_extract_cache_quick_q2
-    do_git_extract_cache_quick(:policy => 'q2')
+    do_git_extract_cache_quick(:policy => Policy.new('q2'))
   end
 
   def test_git_extract_cache_quick_twoqueue
-    do_git_extract_cache_quick(:policy => 'twoqueue')
+    do_git_extract_cache_quick(:policy => Policy.new('twoqueue'))
   end
 
   def test_git_extract_cache_quick_fifo
-    do_git_extract_cache_quick(:policy => 'fifo')
+    do_git_extract_cache_quick(:policy => Policy.new('fifo'))
   end
 
   def test_git_extract_cache_quick_filo
-    do_git_extract_cache_quick(:policy => 'filo')
+    do_git_extract_cache_quick(:policy => Policy.new('filo'))
   end
 
   def test_git_extract_cache_quick_lru
-    do_git_extract_cache_quick(:policy => 'lru')
+    do_git_extract_cache_quick(:policy => Policy.new('lru'))
   end
 
   def test_git_extract_cache_quick_mru
-    do_git_extract_cache_quick(:policy => 'mru')
+    do_git_extract_cache_quick(:policy => Policy.new('mru'))
   end
 
   def test_git_extract_cache_quick_lfu
-    do_git_extract_cache_quick(:policy => 'lfu')
+    do_git_extract_cache_quick(:policy => Policy.new('lfu'))
   end
 
   def test_git_extract_cache_quick_mfu
-    do_git_extract_cache_quick(:policy => 'mfu')
+    do_git_extract_cache_quick(:policy => Policy.new('mfu'))
   end
 
   def test_git_extract_cache_quick_lfu_ws
-    do_git_extract_cache_quick(:policy => 'lfu_ws')
+    do_git_extract_cache_quick(:policy => Policy.new('lfu_ws'))
   end
 
   def test_git_extract_cache_quick_mfu_ws
-    do_git_extract_cache_quick(:policy => 'mfu_ws')
+    do_git_extract_cache_quick(:policy => Policy.new('mfu_ws'))
   end
 
   def test_git_extract_cache_quick_random
-    do_git_extract_cache_quick(:policy => 'random')
+    do_git_extract_cache_quick(:policy => Policy.new('random'))
   end
 
   def test_git_extract_cache_quick_mq
-    do_git_extract_cache_quick(:policy => 'mq')
+    do_git_extract_cache_quick(:policy => Policy.new('mq'))
   end
 
   def test_git_extract_cache_quick_mkfs
-    do_git_extract_cache_quick(:policy => 'mkfs')
+    do_git_extract_cache_quick(:policy => Policy.new('mkfs'))
   end
 
   def test_git_extract_cache_quick_debug_mq
-    do_git_extract_cache_quick(:policy => 'debug')
+    do_git_extract_cache_quick(:policy => Policy.new('debug'))
   end
 
   def test_git_extract_cache
@@ -307,7 +341,7 @@ class CacheTests < ThinpTestCase
                         :format => true,
                         :block_size => 512,
                         :data_size => 1024 * meg,
-                        :policy => 'mq') do |cache|
+                        :policy => Policy.new('mq')) do |cache|
       do_fio(cache, :ext4)
     end
   end
@@ -319,7 +353,7 @@ class CacheTests < ThinpTestCase
   end
 
   def test_format_cache
-    with_standard_cache(:format => true, :policy => 'lru') do |cache|
+    with_standard_cache(:format => true, :policy => Policy.new('lru')) do |cache|
       do_format(cache, :ext4)
     end
   end
@@ -336,7 +370,7 @@ class CacheTests < ThinpTestCase
     with_standard_cache(:cache_size => 256 * meg,
                         :format => true,
                         :block_size => 512,
-                        :policy => 'mkfs') do |cache|
+                        :policy => Policy.new('mkfs')) do |cache|
       do_bonnie(cache, :ext4)
     end
   end
@@ -384,7 +418,7 @@ class CacheTests < ThinpTestCase
   end
 
   def test_table_reload_changed_policy
-    with_standard_cache(:format => true, :policy => 'mq') do |cache|
+    with_standard_cache(:format => true, :policy => Policy.new('mq')) do |cache|
       table = cache.active_table
 
       tid = Thread.new(cache) do
@@ -427,7 +461,7 @@ class CacheTests < ThinpTestCase
   end
 
   def test_dt_cache
-    with_standard_cache(:format => true, :policy => 'mq') do |cache|
+    with_standard_cache(:format => true, :policy => Policy.new('mq')) do |cache|
       dt_device(cache)
     end
   end
@@ -435,7 +469,7 @@ class CacheTests < ThinpTestCase
   def test_unknown_policy_fails
     assert_raise(ExitError) do
       with_standard_cache(:format => true,
-                          :policy => 'time_traveller') do |cache|
+                          :policy => Policy.new('time_traveller')) do |cache|
       end
     end
   end
