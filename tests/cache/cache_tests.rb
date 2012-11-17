@@ -17,7 +17,7 @@ module GitExtract
             v2.6.29 v2.6.30 v2.6.31 v2.6.32 v2.6.33 v2.6.34 v2.6.35 v2.6.36 v2.6.37
             v2.6.38 v2.6.39 v3.0 v3.1 v3.2)
 
-  def do_git_prepare_(dev, fs_type)
+  def git_prepare_(dev, fs_type)
     fs = FS::file_system(fs_type, dev)
     STDERR.puts "formatting ..."
     fs.format
@@ -30,11 +30,11 @@ module GitExtract
     end
   end
 
-  def do_git_prepare(dev, fs_type)
-    report_time("git_prepare", STDERR) {do_git_prepare_(dev, fs_type)}
+  def git_prepare(dev, fs_type)
+    report_time("git_prepare", STDERR) {git_prepare_(dev, fs_type)}
   end
 
-  def do_git_extract(dev, fs_type, tags = TAGS)
+  def git_extract(dev, fs_type, tags = TAGS)
     fs_type = :ext4
 
     fs = FS::file_system(fs_type, dev)
@@ -221,8 +221,8 @@ class CacheTests < ThinpTestCase
   def do_git_extract_cache_quick(opts)
     stack = CacheStack.new(@dm, @metadata_dev, @data_dev, :format => true)
     stack.activate do |stack|
-      do_git_prepare(stack.cache, :ext4)
-      do_git_extract(stack.cache, :ext4, TAGS[0..5])
+      git_prepare(stack.cache, :ext4)
+      git_extract(stack.cache, :ext4, TAGS[0..5])
     end
   end
 
@@ -297,8 +297,8 @@ class CacheTests < ThinpTestCase
   def test_git_extract_cache
     stack = CacheStack.new(@dm, @metadata_dev, @data_dev, :format => true)
     stack.activate do |stack|
-      do_git_prepare(stack.cache, :ext4)
-      do_git_extract(stack.cache, :ext4)
+      git_prepare(stack.cache, :ext4)
+      git_extract(stack.cache, :ext4)
     end
   end
 
@@ -316,15 +316,15 @@ class CacheTests < ThinpTestCase
 
   def test_git_extract_linear
     with_standard_linear do |linear|
-      do_git_prepare(linear, :ext4)
-      do_git_extract(linear, :ext4)
+      git_prepare(linear, :ext4)
+      git_extract(linear, :ext4)
     end
   end
 
   def test_git_extract_linear_quick
     with_standard_linear do |linear|
-      do_git_prepare(linear, :ext4)
-      do_git_extract(linear, :ext4, TAGS[0..5])
+      git_prepare(linear, :ext4)
+      git_extract(linear, :ext4, TAGS[0..5])
     end
   end
 
@@ -395,7 +395,7 @@ class CacheTests < ThinpTestCase
 
   def test_suspend_resume
     with_standard_cache(:format => true) do |cache|
-      do_git_prepare(cache, :ext4)
+      git_prepare(cache, :ext4)
 
       3.times do
         report_time("suspend/resume", STDERR) do
@@ -409,7 +409,7 @@ class CacheTests < ThinpTestCase
     with_standard_cache(:format => true) do |cache|
       table = cache.active_table
 
-      do_git_prepare(cache, :ext4)
+      git_prepare(cache, :ext4)
 
       cache.pause do
         cache.load(table)
@@ -422,7 +422,7 @@ class CacheTests < ThinpTestCase
       table = cache.active_table
 
       tid = Thread.new(cache) do
-        do_git_prepare(cache, :ext4)
+        git_prepare(cache, :ext4)
       end
 
       use_mq = false
@@ -448,7 +448,7 @@ class CacheTests < ThinpTestCase
                            :cache_size => 16 * meg)
     stack.activate do |stack|
       tid = Thread.new(stack.cache) do
-        do_git_prepare(stack.cache, :ext4)
+        git_prepare(stack.cache, :ext4)
       end
 
       [256, 512, 768, 1024].each do |size|
@@ -484,7 +484,7 @@ class CacheTests < ThinpTestCase
 
   def test_writeback_policy
     with_standard_cache(:format => true) do |cache|
-      do_git_prepare(cache, :ext4)
+      git_prepare(cache, :ext4)
 
       cache.pause do
         table = cache.active_table
