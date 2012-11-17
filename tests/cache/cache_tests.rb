@@ -61,6 +61,22 @@ end
 
 #----------------------------------------------------------------
 
+module DiskUnits
+  def sectors(n)
+    n
+  end
+
+  def meg(n)
+    n * 2048
+  end
+
+  def gig(n)
+    n * 2048 * 1024
+  end
+end
+
+#----------------------------------------------------------------
+
 class Policy
   attr_accessor :name, :opts
 
@@ -73,6 +89,7 @@ end
 #--------------------------------
 
 class CacheStack
+  include DiskUnits
   include ThinpTestMixin
   include Utils
 
@@ -102,9 +119,9 @@ class CacheStack
     @data_tvm.add_allocation_volume(spindle_dev, 0, dev_size(spindle_dev))
     
     # we set up a small linear device, made out of the metadata dev.
-    @tvm.add_volume(linear_vol('md', 4 * 2048))
+    @tvm.add_volume(linear_vol('md', meg(4)))
 
-    cache_size = opts.fetch(:cache_size, 2048 * 1024)
+    cache_size = opts.fetch(:cache_size, meg(1024))
     @tvm.add_volume(linear_vol('ssd', cache_size))
 
     @data_tvm.add_volume(linear_vol('origin', origin_size))
@@ -160,11 +177,23 @@ class CacheTests < ThinpTestCase
   include GitExtract
   include Tags
   include Utils
+  include DiskUnits
 
   def setup
     super
-    @data_block_size = 2048
+    @data_block_size = meg(1)
   end
+
+  #--------------------------------
+
+  def with_standard_cache(opts = Hash.new, &block)
+    stack = CacheStack.new(@dm, @metadata_dev, @data_dev, :format => true)
+    stack.activate do |stack|
+      block.call(stack.cache)
+    end
+  end
+
+  #--------------------------------
 
   def drop_caches
     ProcessControl.run('echo 3 > /proc/sys/vm/drop_caches')
@@ -227,7 +256,7 @@ class CacheTests < ThinpTestCase
   end
 
   def test_git_extract_cache_quick
-    do_git_extract_cache_quick(:policy => Policy.new('mq'), :cache_size => 1024 * 2048)
+    do_git_extract_cache_quick(:policy => Policy.new('mq'), :cache_size => meg(1024))
   end
 
   def test_git_extract_cache_quick_multiqueue
@@ -303,14 +332,13 @@ class CacheTests < ThinpTestCase
   end
 
   def test_cache_sizing_effect
-    meg = 2048
     cache_sizes = [64, 128, 192, 256, 320, 384, 448, 512,
                    576, 640, 704, 768, 832, 896, 960,
                    1024, 1088, 1152, 1216, 1280, 1344, 1408]
 
     cache_sizes.each do |size|
-      do_git_extract_cache_quick(:cache_size => size * meg,
-                                 :data_size => 1408 * meg)
+      do_git_extract_cache_quick(:cache_size => meg(size),
+                                 :data_size => meg(1408))
     end
   end
 
@@ -335,12 +363,10 @@ class CacheTests < ThinpTestCase
   end
 
   def test_fio_cache
-    meg = 2048
-
-    with_standard_cache(:cache_size => 1024 * meg,
+    with_standard_cache(:cache_size => meg(1024),
                         :format => true,
                         :block_size => 512,
-                        :data_size => 1024 * meg,
+                        :data_size => meg(1024),
                         :policy => Policy.new('mq')) do |cache|
       do_fio(cache, :ext4)
     end
@@ -353,7 +379,7 @@ class CacheTests < ThinpTestCase
   end
 
   def test_format_cache
-    with_standard_cache(:format => true, :policy => Policy.new('lru')) do |cache|
+    with_standard_cache(:format => true, :policy => Policy.new('mq')) do |cache|
       do_format(cache, :ext4)
     end
   end
@@ -365,9 +391,7 @@ class CacheTests < ThinpTestCase
   end
 
   def test_bonnie_cache
-    meg = 2048
-
-    with_standard_cache(:cache_size => 256 * meg,
+    with_standard_cache(:cache_size => meg(256),
                         :format => true,
                         :block_size => 512,
                         :policy => Policy.new('mkfs')) do |cache|
@@ -441,11 +465,9 @@ class CacheTests < ThinpTestCase
   end
 
   def test_cache_grow
-    meg = 2048
-
     stack = CacheStack.new(@dm, @metadata_dev, @data_dev,
                            :format => true,
-                           :cache_size => 16 * meg)
+                           :cache_size => meg(16))
     stack.activate do |stack|
       tid = Thread.new(stack.cache) do
         git_prepare(stack.cache, :ext4)
@@ -453,7 +475,7 @@ class CacheTests < ThinpTestCase
 
       [256, 512, 768, 1024].each do |size|
         sleep 10
-        resize_ssd(stack, size * meg)
+        resize_ssd(stack, meg(size))
       end
 
       tid.join
