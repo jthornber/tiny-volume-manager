@@ -184,27 +184,39 @@ class CacheTests < ThinpTestCase
   #--------------------------------
 
   def with_standard_cache(opts = Hash.new, &block)
-    stack = CacheStack.new(@dm, @metadata_dev, @data_dev, :format => true)
+    stack = CacheStack.new(@dm, @metadata_dev, @data_dev, opts)
     stack.activate do |stack|
       block.call(stack.cache)
     end
   end
 
-  #--------------------------------
-
   def drop_caches
     ProcessControl.run('echo 3 > /proc/sys/vm/drop_caches')
   end
 
-  def _test_dt_works
-    with_standard_cache(:format => true) do |cache|
+  #--------------------------------
+
+  def test_dt_cache
+    with_standard_cache(:format => true, :data_size => gig(1)) do |cache|
       dt_device(cache)
     end
   end
 
-  def _test_dd_benchmark
-    with_standard_cache(:format => true) do |cache|
+  def test_dt_linear
+    with_standard_linear(:data_size => gig(1)) do |linear|
+      dt_device(linear)
+    end
+  end
+
+  def test_dd_cache
+    with_standard_cache(:format => true, :data_size => gig(1)) do |cache|
       wipe_device(cache)
+    end
+  end
+
+  def test_dd_linear
+    with_standard_linear(:data_size => gig(1)) do |linear|
+      wipe_device(linear)
     end
   end
 
