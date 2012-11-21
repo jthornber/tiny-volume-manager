@@ -162,9 +162,13 @@ class CacheStack
     @opts.fetch(:policy, Policy.new('default'))
   end
 
+  def io_mode
+    @opts.fetch(:io_mode, :writeback)
+  end
+
   def cache_table
     Table.new(CacheTarget.new(origin_size, @md, @ssd, @origin,
-                              block_size, [:writeback], policy.name, {}))
+                              block_size, [io_mode], policy.name, {}))
   end
 end
 
@@ -538,6 +542,28 @@ class CacheTests < ThinpTestCase
   def test_construct_cache
     stack = CacheStack.new(@dm, @metadata_dev, @data_dev, :format => true)
     stack.activate do |stack|
+    end
+  end
+
+  def test_writethrough
+    size = gig(2)
+
+    # wipe the origin to ensure we don't accidentally have the same
+    # data on it.
+    with_standard_linear(:data_size => size) do |origin|
+      wipe_device(origin)
+    end
+
+    # format and set up a git repo on the cache
+    with_standard_cache(:format => true,
+                        :io_mode => :writethrough,
+                        :data_size => size) do |cache|
+      git_prepare(cache, :ext4)
+    end
+
+    # origin should have all data
+    with_standard_linear(:data_size => size) do |origin|
+      git_extract(origin, :ext4, TAGS[0..1])
     end
   end
 end
