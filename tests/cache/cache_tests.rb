@@ -150,6 +150,17 @@ class CacheStack
     end
   end
 
+  def resize_origin(new_size)
+    @opts[:data_size] = new_size
+
+    @cache.pause do
+      @origin.pause do
+        @data_tvm.resize('origin', new_size)
+        @origin.load(@data_tvm.table('origin'))
+      end
+    end
+  end
+
   def origin_size
     @opts.fetch(:data_size, dev_size(@spindle_dev))
   end
@@ -564,6 +575,19 @@ class CacheTests < ThinpTestCase
     # origin should have all data
     with_standard_linear(:data_size => size) do |origin|
       git_extract(origin, :ext4, TAGS[0..1])
+    end
+  end
+
+  def test_origin_grow
+    # format and set up a git repo on the cache
+    stack = CacheStack.new(@dm, @metadata_dev, @data_dev,
+                           :format => true,
+                           :io_mode => :writethrough,
+                           :data_size => gig(2))
+    stack.activate do |stack|
+      git_prepare(stack.cache, :ext4)
+      stack.resize_origin(gig(3))
+      git_extract(stack.cache, :ext4, TAGS[0..1])
     end
   end
 end
