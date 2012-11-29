@@ -272,7 +272,8 @@ class CacheTests < ThinpTestCase
   end
 
   def do_git_extract_cache_quick(opts)
-    stack = CacheStack.new(@dm, @metadata_dev, @data_dev, :format => true)
+    stack = CacheStack.new(@dm, @metadata_dev, @data_dev,
+                           :format => true)
     stack.activate do |stack|
       git_prepare(stack.cache, :ext4)
       git_extract(stack.cache, :ext4, TAGS[0..5])
@@ -590,4 +591,17 @@ class CacheTests < ThinpTestCase
       git_extract(stack.cache, :ext4, TAGS[0..1])
     end
   end
+
+  def test_origin_shrink
+    # format and set up a git repo on the cache
+    stack = CacheStack.new(@dm, @metadata_dev, @data_dev,
+                           :format => true,
+                           :io_mode => :writethrough,
+                           :data_size => gig(3))
+    stack.activate do |stack|
+      git_prepare(stack.cache, :ext4)
+      stack.resize_origin(gig(2))
+      git_extract(stack.cache, :ext4, TAGS[0..1])
+    end
+  end  
 end
