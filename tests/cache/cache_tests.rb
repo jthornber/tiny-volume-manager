@@ -132,7 +132,7 @@ class CacheStack
       @ssd = ssd
       @origin = origin
 
-      wipe_device(md, 8) if @opts.fetch(:format, false)
+      wipe_device(md, 8) if @opts.fetch(:format, true)
 
       with_dev(cache_table) do |cache|
         @cache = cache
@@ -272,8 +272,7 @@ class CacheTests < ThinpTestCase
   end
 
   def do_git_extract_cache_quick(opts)
-    stack = CacheStack.new(@dm, @metadata_dev, @data_dev,
-                           :format => true)
+    stack = CacheStack.new(@dm, @metadata_dev, @data_dev, opts)
     stack.activate do |stack|
       git_prepare(stack.cache, :ext4)
       git_extract(stack.cache, :ext4, TAGS[0..5])
@@ -340,8 +339,12 @@ class CacheTests < ThinpTestCase
     do_git_extract_cache_quick(:policy => Policy.new('mq'))
   end
 
-  def test_git_extract_cache_quick_mkfs
-    do_git_extract_cache_quick(:policy => Policy.new('mkfs'))
+  def test_git_extract_cache_quick_dumb
+    do_git_extract_cache_quick(:policy => Policy.new('dumb'))
+  end
+
+  def test_git_extract_cache_quick_noop
+    do_git_extract_cache_quick(:policy => Policy.new('noop'))
   end
 
   def test_git_extract_cache_quick_debug_mq
