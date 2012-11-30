@@ -283,22 +283,94 @@ class CacheTests < ThinpTestCase
     do_git_extract_cache_quick(:policy => Policy.new('mq'), :cache_size => meg(1024))
   end
 
-  def test_git_extract_only_cache_quick
-    size = gig(2)
+  def do_git_extract_only_cache_quick(opts)
+    opts = {
+      :policy     => opts.fetch(:policy, Policy.new('basic')),
+      :cache_size => opts.fetch(:cache_size, meg(1024)),
+      :data_size  => opts.fetch(:data_size, gig(2))
+    }
 
-    with_standard_linear(:data_size => size) do |origin|
+    with_standard_linear(:data_size => opts.fetch(:data_size)) do |origin|
       git_prepare(origin, :ext4)
     end
 
-    opts = {
-      :policy => Policy.new('mq'),
-      :cache_size => meg(1024),
-      :data_size => size
-    }
     stack = CacheStack.new(@dm, @metadata_dev, @data_dev, opts)
     stack.activate do |stack|
       git_extract(stack.cache, :ext4, TAGS[0..5])
     end
+  end
+
+  def test_git_extract_only_cache_quick_mq
+    do_git_extract_only_cache_quick(:policy => Policy.new('mq'))
+  end
+
+  def test_git_extract_only_cache_quick_multiqueue
+    do_git_extract_only_cache_quick(:policy => Policy.new('multiqueue'))
+  end
+
+  def test_git_extract_only_cache_quick_multiqueue_ws
+    do_git_extract_only_cache_quick(:policy => Policy.new('multiqueue_ws'))
+  end
+
+  def test_git_extract_only_cache_quick_q2
+    do_git_extract_only_cache_quick(:policy => Policy.new('q2'))
+  end
+
+  def test_git_extract_only_cache_quick_twoqueue
+    do_git_extract_only_cache_quick(:policy => Policy.new('twoqueue'))
+  end
+
+  def test_git_extract_only_cache_quick_fifo
+    do_git_extract_only_cache_quick(:policy => Policy.new('fifo'))
+  end
+
+  def test_git_extract_only_cache_quick_filo
+    do_git_extract_only_cache_quick(:policy => Policy.new('filo'))
+  end
+
+  def test_git_extract_only_cache_quick_lru
+    do_git_extract_only_cache_quick(:policy => Policy.new('lru'))
+  end
+
+  def test_git_extract_only_cache_quick_mru
+    do_git_extract_only_cache_quick(:policy => Policy.new('mru'))
+  end
+
+  def test_git_extract_only_cache_quick_lfu
+    do_git_extract_only_cache_quick(:policy => Policy.new('lfu'))
+  end
+
+  def test_git_extract_only_cache_quick_mfu
+    do_git_extract_only_cache_quick(:policy => Policy.new('mfu'))
+  end
+
+  def test_git_extract_only_cache_quick_lfu_ws
+    do_git_extract_only_cache_quick(:policy => Policy.new('lfu_ws'))
+  end
+
+  def test_git_extract_only_cache_quick_mfu_ws
+    do_git_extract_only_cache_quick(:policy => Policy.new('mfu_ws'))
+  end
+
+  def test_git_extract_only_cache_quick_random
+    do_git_extract_only_cache_quick(:policy => Policy.new('random'))
+  end
+
+  def test_git_extract_only_cache_quick_dumb
+    do_git_extract_only_cache_quick(:policy => Policy.new('dumb'))
+  end
+
+  def test_git_extract_only_cache_quick_debug
+    do_git_extract_only_cache_quick(:policy => Policy.new('debug'))
+  end
+
+
+  def test_git_extract_cache_quick_mq
+    do_git_extract_cache_quick(:policy => Policy.new('mq'))
+  end
+
+  def test_git_extract_cache_quick_mq_wt
+    do_git_extract_cache_quick(:policy => Policy.new('mq'), :io_mode => :writethrough)
   end
 
   def test_git_extract_cache_quick_multiqueue
@@ -307,6 +379,10 @@ class CacheTests < ThinpTestCase
 
   def test_git_extract_cache_quick_multiqueue_ws
     do_git_extract_cache_quick(:policy => Policy.new('multiqueue_ws'))
+  end
+
+  def test_git_extract_cache_quick_multiqueue_ws_wt
+    do_git_extract_cache_quick(:policy => Policy.new('multiqueue_ws'), :io_mode => :writethrough)
   end
 
   def test_git_extract_cache_quick_q2
@@ -351,10 +427,6 @@ class CacheTests < ThinpTestCase
 
   def test_git_extract_cache_quick_random
     do_git_extract_cache_quick(:policy => Policy.new('random'))
-  end
-
-  def test_git_extract_cache_quick_mq
-    do_git_extract_cache_quick(:policy => Policy.new('mq'))
   end
 
   def test_git_extract_cache_quick_dumb
