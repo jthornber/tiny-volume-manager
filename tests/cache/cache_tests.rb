@@ -283,6 +283,24 @@ class CacheTests < ThinpTestCase
     do_git_extract_cache_quick(:policy => Policy.new('mq'), :cache_size => meg(1024))
   end
 
+  def test_git_extract_only_cache_quick
+    size = gig(2)
+
+    with_standard_linear(:data_size => size) do |origin|
+      git_prepare(origin, :ext4)
+    end
+
+    opts = {
+      :policy => Policy.new('mq'),
+      :cache_size => meg(1024),
+      :data_size => size
+    }
+    stack = CacheStack.new(@dm, @metadata_dev, @data_dev, opts)
+    stack.activate do |stack|
+      git_extract(stack.cache, :ext4, TAGS[0..5])
+    end
+  end
+
   def test_git_extract_cache_quick_multiqueue
     do_git_extract_cache_quick(:policy => Policy.new('multiqueue'))
   end
