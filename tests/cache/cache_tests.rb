@@ -292,12 +292,12 @@ class CacheTests < ThinpTestCase
 
     opts = {
       :policy => Policy.new('mq'),
-      :cache_size => meg(1024),
+      :cache_size => meg(256),
       :data_size => size
     }
     stack = CacheStack.new(@dm, @metadata_dev, @data_dev, opts)
     stack.activate do |stack|
-      git_extract(stack.cache, :ext4, TAGS[0..5])
+      git_extract(stack.cache, :ext4, TAGS[0..10])
     end
   end
 
