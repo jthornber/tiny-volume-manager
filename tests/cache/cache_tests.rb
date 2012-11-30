@@ -286,7 +286,7 @@ class CacheTests < ThinpTestCase
   def do_git_extract_only_cache_quick(opts)
     opts = {
       :policy     => opts.fetch(:policy, Policy.new('basic')),
-      :cache_size => opts.fetch(:cache_size, meg(1024)),
+      :cache_size => opts.fetch(:cache_size, meg(256)),
       :data_size  => opts.fetch(:data_size, gig(2))
     }
 
@@ -296,7 +296,7 @@ class CacheTests < ThinpTestCase
 
     stack = CacheStack.new(@dm, @metadata_dev, @data_dev, opts)
     stack.activate do |stack|
-      git_extract(stack.cache, :ext4, TAGS[0..5])
+      git_extract(stack.cache, :ext4, TAGS[0..10])
     end
   end
 
