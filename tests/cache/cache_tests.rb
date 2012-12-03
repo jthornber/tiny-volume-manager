@@ -116,8 +116,8 @@ class CacheStack
     @tvm.add_allocation_volume(ssd_dev, 0, dev_size(ssd_dev))
     @tvm.add_volume(linear_vol('md', meg(4)))
 
-    cache_size = opts.fetch(:cache_size, meg(1024))
-    @tvm.add_volume(linear_vol('ssd', cache_size))
+    opts[:cache_size] = opts.fetch(:cache_size, meg(1024))
+    @tvm.add_volume(linear_vol('ssd', opts[:cache_size]))
 
     @data_tvm = TinyVolumeManager::VM.new
     @data_tvm.add_allocation_volume(spindle_dev, 0, dev_size(spindle_dev))
@@ -704,106 +704,202 @@ class CacheTests < ThinpTestCase
   end  
 
   #
-  # Stazus interface tests
+  # Status interface tests
   #
-  def git_status(opts)
+  def message_status_interface(opts, msg)
     stack = CacheStack.new(@dm, @metadata_dev, @data_dev, opts)
     stack.activate do |stack|
+      if (!msg.nil?)
+        stack.cache.message(msg)
+      end
+
       @status = CacheStatus.new(stack.cache)
-      # Default threshold tests
-      assert(@status.policy1 == 512)
-      assert(@status.policy2 == 4)
     end
-    @status
   end
 
-  def do_git_status(opts)
+  def do_message_status_interface(opts)
     opts[:mq_module] = opts.fetch(:mq_module, false)
-    status = git_status(opts)
+
+    opts[:sequential_threshold] = opts.fetch(:sequential_threshold, 512)
+    if (opts[:sequential_threshold] != 512)
+       msg = '0 set_config sequential_threshold ' + opts[:sequential_threshold].to_s
+    end
+
+    opts[:random_threshold] = opts.fetch(:random_threshold, 4)
+    if (opts[:random_threshold] != 4)
+         msg = '0 set_config random_threshold ' + opts[:random_threshold].to_s
+    end
+
+    status = message_status_interface(opts, msg)
+
+    # Default sequential/random threshold tests
+    assert(@status.policy1 == opts[:sequential_threshold])
+    assert(@status.policy2 == opts[:random_threshold])
+
+    assert(status.md_used   != 0)
+    assert(status.demotions == 0)
+    assert(status.migration_threshold == 2048 * 100)
 
     if !opts.fetch(:mq_module)
       opts[:policy_multiqueue] = opts.fetch(:policy_multiqueue, false)
 
       if opts.fetch(:policy_multiqueue)
         # Default multiqueue timeout
-        assert(@status.policy3 == 5000)
+        assert(status.policy3 == 5000)
       end
 
       # Default T_HITS accounting
-      assert(@status.policy4 == 0)
+      assert(status.policy4 == 0)
     end
   end
 
-  def test_git_status_mq
-    do_git_status(:policy => Policy.new('mq'), :mq_module => true )
+  def test_message_status_interface_default
+    do_message_status_interface(:policy => Policy.new('default'), :mq_module => true )
   end
 
-  def test_git_status_default
-    do_git_status(:policy => Policy.new('default'), :mq_module => true )
+  def test_message_status_interface_mq
+    do_message_status_interface( :policy => Policy.new('mq'), :mq_module => true )
   end
 
-  def test_git_status_basic
-    do_git_status(:policy => Policy.new('basic'), :policy_multiqueue => true )
+  def test_message_status_interface_basic
+    # do_message_status_interface(:policy => Policy.new('basic'), :policy_multiqueue => true )
+    do_message_status_interface( :policy => Policy.new('basic'), :sequential_threshold => 768, :random_threshold => 44 )
   end
 
-  def test_git_status_dumb
-    do_git_status(:policy => Policy.new('dumb'))
+  def test_message_status_interface_dumb
+    do_message_status_interface(:policy => Policy.new('dumb'))
   end
 
-  def test_git_status_fifo
-    do_git_status(:policy => Policy.new('fifo'))
+  def test_message_status_interface_fifo
+    do_message_status_interface(:policy => Policy.new('fifo'))
   end
 
-  def test_git_status_filo
-    do_git_status(:policy => Policy.new('filo'))
+  def test_message_status_interface_filo
+    do_message_status_interface(:policy => Policy.new('filo'))
   end
 
-  def test_git_status_lfu
-    do_git_status(:policy => Policy.new('lfu'))
+  def test_message_status_interface_lfu
+    do_message_status_interface(:policy => Policy.new('lfu'))
   end
 
-  def test_git_status_lfu_ws
-    do_git_status(:policy => Policy.new('lfu_ws'))
+  def test_message_status_interface_lfu_ws
+    do_message_status_interface(:policy => Policy.new('lfu_ws'))
   end
 
-  def test_git_status_mfu
-    do_git_status(:policy => Policy.new('mfu'))
+  def test_message_status_interface_mfu
+    do_message_status_interface(:policy => Policy.new('mfu'))
   end
 
-  def test_git_status_mfu_ws
-    do_git_status(:policy => Policy.new('mfu_ws'))
+  def test_message_status_interface_mfu_ws
+    do_message_status_interface(:policy => Policy.new('mfu_ws'))
   end
 
-  def test_git_status_lru
-    do_git_status(:policy => Policy.new('lru'))
+  def test_message_status_interface_lru
+    do_message_status_interface(:policy => Policy.new('lru'))
   end
 
-  def test_git_status_mru
-    do_git_status(:policy => Policy.new('mru'))
+  def test_message_status_interface_mru
+    do_message_status_interface(:policy => Policy.new('mru'))
   end
 
-  def test_git_status_multiqueue
-    do_git_status(:policy => Policy.new('multiqueue'), :policy_multiqueue => true)
+  def test_message_status_interface_multiqueue
+    do_message_status_interface(:policy => Policy.new('multiqueue'), :policy_multiqueue => true)
   end
 
-  def test_git_status_multiqueue_ws
-    do_git_status(:policy => Policy.new('multiqueue_ws'), :policy_multiqueue => true)
+  def test_message_status_interface_multiqueue_ws
+    do_message_status_interface(:policy => Policy.new('multiqueue_ws'), :policy_multiqueue => true)
   end
 
-  def test_git_status_noop
-    do_git_status(:policy => Policy.new('noop'))
+  def test_message_status_interface_noop
+    do_message_status_interface(:policy => Policy.new('noop'))
   end
 
-  def test_git_status_random
-    do_git_status(:policy => Policy.new('random'))
+  def test_message_status_interface_random
+    do_message_status_interface(:policy => Policy.new('random'))
   end
 
-  def test_git_status_q2
-    do_git_status(:policy => Policy.new('q2'))
+  def test_message_status_interface_q2
+    do_message_status_interface(:policy => Policy.new('q2'))
   end
 
-  def test_git_status_filo
-    do_git_status(:policy => Policy.new('filo'))
+  def test_message_status_interface_twoqueue
+    do_message_status_interface(:policy => Policy.new('twoqueue'))
   end
 
+  # Tests setting sequential threshold
+  def do_message_thresholds(opts)
+    opts[:sequential_threshold] = 768
+    do_message_status_interface(opts)
+    opts.delete(:sequential_threshold)
+    opts[:random_threshold] = 44
+    do_message_status_interface(opts)
+  end
+
+  def test_message_interface_thresholds_default
+    do_message_thresholds(:policy => Policy.new('default'), :mq_module => true)
+  end
+
+  def test_message_interface_thresholds_mq
+    do_message_thresholds(:policy => Policy.new('mq'), :mq_module => true)
+  end
+
+  def test_message_interface_thresholds_basic
+    do_message_thresholds(:policy => Policy.new('basic'))
+  end
+
+  def test_message_interface_thresholds_fifo
+    do_message_thresholds(:policy => Policy.new('fifo'))
+  end
+
+  def test_message_interface_thresholds_filo
+    do_message_thresholds(:policy => Policy.new('filo'))
+  end
+
+  def test_message_interface_thresholds_lfu
+    do_message_thresholds(:policy => Policy.new('lfu'))
+  end
+
+  def test_message_interface_thresholds_lfu_ws
+    do_message_thresholds(:policy => Policy.new('lfu_ws'))
+  end
+
+  def test_message_interface_thresholds_mfu
+    do_message_thresholds(:policy => Policy.new('mfu'))
+  end
+
+  def test_message_interface_thresholds_mfu_ws
+    do_message_thresholds(:policy => Policy.new('mfu_ws'))
+  end
+
+  def test_message_interface_thresholds_lru
+    do_message_thresholds(:policy => Policy.new('lru'))
+  end
+
+  def test_message_interface_thresholds_mru
+    do_message_thresholds(:policy => Policy.new('mru'))
+  end
+
+  def test_message_interface_thresholds_multiqueue
+    do_message_thresholds(:policy => Policy.new('multiqueue', :policy_multiqueue => true))
+  end
+
+  def test_message_interface_thresholds_multiqueue_ws
+    do_message_thresholds(:policy => Policy.new('multiqueue_ws', :policy_multiqueue => true))
+  end
+
+  def test_message_interface_thresholds_noop
+    do_message_thresholds(:policy => Policy.new('noop'))
+  end
+
+  def test_message_interface_thresholds_random
+    do_message_thresholds(:policy => Policy.new('random'))
+  end
+
+  def test_message_interface_thresholds_q2
+    do_message_thresholds(:policy => Policy.new('q2'))
+  end
+
+  def test_message_interface_thresholds_twoqueue
+    do_message_thresholds(:policy => Policy.new('twoqueue'))
+  end
 end
