@@ -238,15 +238,17 @@ class DiscardQuickTests < ThinpTestCase
   end
 
   def test_discard_same_blocks
+    @data_block_size = 128
+
     with_standard_pool(@size) do |pool|
       with_new_thin(pool, @volume_size, 0) do |thin|
-        wipe_device(thin, 128)
+        wipe_device(thin, 256)
 
         1000.times do
-          thin.discard(0, 256)
+          thin.discard(0, 128)
         end
 
-        assert_used_blocks(pool, 0)
+        assert_used_blocks(pool, 1)
       end
     end
   end
