@@ -279,12 +279,6 @@ class CacheTests < ThinpTestCase
     end
   end
 
-  def test_git_status
-    stack = CacheStack.new(@dm, @metadata_dev, @data_dev, opts)
-    stack.activate do |stack|
-      status = Cachck_mq
-    end
-  end
 
   def test_git_extract_cache_quick
     do_git_extract_cache_quick(:policy => Policy.new('mq'), :cache_size => meg(1024))
@@ -708,4 +702,108 @@ class CacheTests < ThinpTestCase
       git_extract(stack.cache, :ext4, TAGS[0..1])
     end
   end  
+
+  #
+  # Stazus interface tests
+  #
+  def git_status(opts)
+    stack = CacheStack.new(@dm, @metadata_dev, @data_dev, opts)
+    stack.activate do |stack|
+      @status = CacheStatus.new(stack.cache)
+      # Default threshold tests
+      assert(@status.policy1 == 512)
+      assert(@status.policy2 == 4)
+    end
+    @status
+  end
+
+  def do_git_status(opts)
+    opts[:mq_module] = opts.fetch(:mq_module, false)
+    status = git_status(opts)
+
+    if !opts.fetch(:mq_module)
+      opts[:policy_multiqueue] = opts.fetch(:policy_multiqueue, false)
+
+      if opts.fetch(:policy_multiqueue)
+        # Default multiqueue timeout
+        assert(@status.policy3 == 5000)
+      end
+
+      # Default T_HITS accounting
+      assert(@status.policy4 == 0)
+    end
+  end
+
+  def test_git_status_mq
+    do_git_status(:policy => Policy.new('mq'), :mq_module => true )
+  end
+
+  def test_git_status_default
+    do_git_status(:policy => Policy.new('default'), :mq_module => true )
+  end
+
+  def test_git_status_basic
+    do_git_status(:policy => Policy.new('basic'), :policy_multiqueue => true )
+  end
+
+  def test_git_status_dumb
+    do_git_status(:policy => Policy.new('dumb'))
+  end
+
+  def test_git_status_fifo
+    do_git_status(:policy => Policy.new('fifo'))
+  end
+
+  def test_git_status_filo
+    do_git_status(:policy => Policy.new('filo'))
+  end
+
+  def test_git_status_lfu
+    do_git_status(:policy => Policy.new('lfu'))
+  end
+
+  def test_git_status_lfu_ws
+    do_git_status(:policy => Policy.new('lfu_ws'))
+  end
+
+  def test_git_status_mfu
+    do_git_status(:policy => Policy.new('mfu'))
+  end
+
+  def test_git_status_mfu_ws
+    do_git_status(:policy => Policy.new('mfu_ws'))
+  end
+
+  def test_git_status_lru
+    do_git_status(:policy => Policy.new('lru'))
+  end
+
+  def test_git_status_mru
+    do_git_status(:policy => Policy.new('mru'))
+  end
+
+  def test_git_status_multiqueue
+    do_git_status(:policy => Policy.new('multiqueue'), :policy_multiqueue => true)
+  end
+
+  def test_git_status_multiqueue_ws
+    do_git_status(:policy => Policy.new('multiqueue_ws'), :policy_multiqueue => true)
+  end
+
+  def test_git_status_noop
+    do_git_status(:policy => Policy.new('noop'))
+  end
+
+  def test_git_status_random
+    do_git_status(:policy => Policy.new('random'))
+  end
+
+  def test_git_status_q2
+    do_git_status(:policy => Policy.new('q2'))
+  end
+
+  def test_git_status_filo
+    do_git_status(:policy => Policy.new('filo'))
+  end
+
 end

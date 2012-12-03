@@ -29,8 +29,7 @@ class CacheStatus
         @policy1,
         @policy2,
         @policy3,
-        @policy4
-    ) = (m[1..2] + m[3].scan(/\s\d+/)).map! {|s| s.to_i }
+        @policy4 ) = (m[1..2] + m[3].scan(/\s\d+/)).map! {|s| s.to_i }
     end
   end
 end
