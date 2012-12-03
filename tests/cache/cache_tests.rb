@@ -279,6 +279,13 @@ class CacheTests < ThinpTestCase
     end
   end
 
+  def test_git_status
+    stack = CacheStack.new(@dm, @metadata_dev, @data_dev, opts)
+    stack.activate do |stack|
+      status = Cachck_mq
+    end
+  end
+
   def test_git_extract_cache_quick
     do_git_extract_cache_quick(:policy => Policy.new('mq'), :cache_size => meg(1024))
   end
