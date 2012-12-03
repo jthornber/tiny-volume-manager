@@ -356,6 +356,10 @@ class CacheTests < ThinpTestCase
     do_git_extract_only_cache_quick(:policy => Policy.new('random'))
   end
 
+  def test_git_extract_only_cache_quick_noop
+    do_git_extract_only_cache_quick(:policy => Policy.new('noop'))
+  end
+
   def test_git_extract_only_cache_quick_dumb
     do_git_extract_only_cache_quick(:policy => Policy.new('dumb'))
   end
