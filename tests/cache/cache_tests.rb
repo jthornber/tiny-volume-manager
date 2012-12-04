@@ -968,17 +968,20 @@ class CacheTests < ThinpTestCase
   def do_ctr_tests(policy = nil)
     policy = 'basic' if policy.nil?
     policy_multiqueue = (policy == 'basic' || policy == 'multiqueue' || policy == 'multiqueue_ws') ? true : false
+    policy_params = [
+      { :sequential_threshold => 234 },
+      { :random_threshold => 16 },
+      { :sequential_threshold => 234, :random_threshold => 16 },
+      { :sequential_threshold => 234, :hits => 1 },
+      { :sequential_threshold => 234, :hits => 0 },
+      { :random_threshold => 16, :hits => 1 },
+      { :random_threshold => 16, :hits => 0 },
+      { :sequential_threshold => 234, :random_threshold => 16, :hits => 1 },
+      { :sequential_threshold => 234, :random_threshold => 16, :hits => 0 }
+    ]
 
-    do_message_status_interface(false, :policy => Policy.new(policy, :sequential_threshold => 234), :policy_multiqueue => policy_multiqueue)
-    do_message_status_interface(false, :policy => Policy.new(policy, :random_threshold => 16), :policy_multiqueue => policy_multiqueue)
-    do_message_status_interface(false, :policy => Policy.new(policy, :sequential_threshold => 234, :random_threshold => 16), :policy_multiqueue => policy_multiqueue)
-    do_message_status_interface(false, :policy => Policy.new(policy, :sequential_threshold => 234, :hits => 1), :policy_multiqueue => policy_multiqueue)
-    do_message_status_interface(false, :policy => Policy.new(policy, :sequential_threshold => 234, :hits => 0), :policy_multiqueue => policy_multiqueue)
-    do_message_status_interface(false, :policy => Policy.new(policy, :random_threshold => 16, :hits => 1), :policy_multiqueue => policy_multiqueue)
-    do_message_status_interface(false, :policy => Policy.new(policy, :random_threshold => 16, :hits => 0), :policy_multiqueue => policy_multiqueue)
-    do_message_status_interface(false, :policy => Policy.new(policy, :sequential_threshold => 234, :random_threshold => 16, :hits => 1), :policy_multiqueue => policy_multiqueue)
-    do_message_status_interface(false, :policy => Policy.new(policy, :sequential_threshold => 234, :random_threshold => 16, :hits => 0), :policy_multiqueue => policy_multiqueue)
-    #
+    policy_params.each { |params| do_message_status_interface(false, :policy => Policy.new(policy, params), :policy_multiqueue => policy_multiqueue) }
+
     # No migration_threshold ctr key pair as yet....
     assert_raise(ExitError) do
       do_message_status_interface(false, :policy => Policy.new('basic', :sequential_threshold => 234, :random_threshold => 16, :hits => 0), :migration_threshold => 2000 * 100, :policy_multiqueue => true)
