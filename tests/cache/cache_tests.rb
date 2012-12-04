@@ -300,7 +300,7 @@ class CacheTests < ThinpTestCase
       :data_size  => opts.fetch(:data_size, gig(2))
     }
 
-    with_standard_linear(:data_size => opts.fetch(:data_size)) do |origin|
+    with_standard_linear(:data_size => opts[:data_size]) do |origin|
       git_prepare(origin, :ext4)
     end
 
@@ -310,8 +310,16 @@ class CacheTests < ThinpTestCase
     end
   end
 
+  def test_git_extract_only_cache_quick_default
+    do_git_extract_only_cache_quick(:policy => Policy.new('default'))
+  end
+
   def test_git_extract_only_cache_quick_mq
     do_git_extract_only_cache_quick(:policy => Policy.new('mq'))
+  end
+
+  def test_git_extract_only_cache_quick_basic
+    do_git_extract_only_cache_quick(:policy => Policy.new('basic'))
   end
 
   def test_git_extract_only_cache_quick_multiqueue
@@ -385,6 +393,10 @@ class CacheTests < ThinpTestCase
 
   def test_git_extract_cache_quick_mq_wt
     do_git_extract_cache_quick(:policy => Policy.new('mq'), :io_mode => :writethrough)
+  end
+
+  def test_git_extract_cache_quick_basic
+    do_git_extract_cache_quick(:policy => Policy.new('basic'))
   end
 
   def test_git_extract_cache_quick_multiqueue
@@ -717,146 +729,143 @@ class CacheTests < ThinpTestCase
   #
   # Check for defaults, set alternates and check those got set properly.
   #
-  def ctr_message_status_interface(opts, msg)
+  def ctr_message_status_interface(opts, msg = nil)
     stack = CacheStack.new(@dm, @metadata_dev, @data_dev, opts)
     stack.activate do |stack|
-      if (!msg.nil?)
-        stack.cache.message(msg)
-      end
-
-      @status = CacheStatus.new(stack.cache)
+      stack.cache.message(msg) if !msg.nil?
+      [ CacheStatus.new(stack.cache), stack.origin_size / stack.block_size ]
     end
   end
 
-  def do_message_status_interface(do_msg, opts)
+  def do_ctr_message_status_interface(do_msg, opts)
     msg = nil
-    sequential_threshold_default = 512
-    random_threshold_default = 4
-    migration_threshold_default = 2048 * 100
+    defaults = {
+      :migration_threshold => 2048 * 100,
+      :sequential_threshold => 512,
+      :random_threshold => 4,
+      :multiqueue_timeout => 5000,
+      :hits => 0
+    }
+    expected = Hash.new
+
     opts[:mq_module] = opts.fetch(:mq_module, false)
-    opts[:sequential_threshold] = opts.fetch(:sequential_threshold, sequential_threshold_default)
-    opts[:random_threshold] = opts.fetch(:random_threshold, random_threshold_default)
-    if do_msg
-      opts[:migration_threshold] = opts.fetch(:migration_threshold, migration_threshold_default)
+    opts[:policy_multiqueue] = opts.fetch(:policy_multiqueue, false)
 
-      if (opts[:sequential_threshold] != sequential_threshold_default)
-         msg = '0 set_config sequential_threshold ' + opts[:sequential_threshold].to_s
-      end
-
-      if (opts[:random_threshold] != random_threshold_default)
-         msg = '0 set_config random_threshold ' + opts[:random_threshold].to_s
-      end
-
-      if (opts[:migration_threshold] != migration_threshold_default)
-           msg = '0 set_config migration_threshold ' + opts[:migration_threshold].to_s
+    defaults.keys.each do |o|
+      if do_msg
+        expected[o] = opts.fetch(o, defaults[o])
+        if opts[o]
+          msg = '0 set_config ' + o.to_s + opts[o].to_s
+        end
+      else
+        expected[o] = opts[:policy].keys.fetch(o, defaults[o])
       end
     end
 
-    status = ctr_message_status_interface(opts, msg)
+    expected[:hits] = expected[:hits] == 0 ? 1 : 0 if opts[:hits] || opts[:policy].keys[:hits]
+    ( status, nr_blocks ) = ctr_message_status_interface(opts, msg)
 
-    if do_msg
-      # Default sequential/random threshold tests
-      assert(@status.policy1 == opts[:sequential_threshold])
-      assert(@status.policy2 == opts[:random_threshold])
-      assert(status.migration_threshold == opts[:migration_threshold])
-    end
+    # Default sequential/random threshold tests
+    assert(status.policy1 == expected[:sequential_threshold])
+    assert(status.policy2 == expected[:random_threshold])
+    assert(status.migration_threshold == expected[:migration_threshold])
+
 
     assert(status.md_used != 0)
     assert(status.demotions == 0)
+    assert(status.promotions <= nr_blocks)
+    assert(status.promotions == status.residency)
 
     if !opts.fetch(:mq_module)
-      opts[:policy_multiqueue] = opts.fetch(:policy_multiqueue, false)
-
-      if opts.fetch(:policy_multiqueue)
-        # Default multiqueue timeout
-        assert(status.policy3 == 5000)
-      end
+      # Default multiqueue timeout
+      assert((status.policy3 - expected[:multiqueue_timeout]).abs < 100) if opts[:policy_multiqueue]
 
       # T_HITS/T_SECTORS accounting
-      assert(status.policy4 == 0 || status.policy4 == 1)
+      assert(status.policy4 == expected[:hits])
     end
   end
 
   def test_message_status_interface_default
-    do_message_status_interface(true, :policy => Policy.new('default'), :mq_module => true)
+    do_ctr_message_status_interface(true, :policy => Policy.new('default'), :mq_module => true)
   end
 
   def test_message_status_interface_mq
-    do_message_status_interface(true,  :policy => Policy.new('mq'), :mq_module => true)
+    do_ctr_message_status_interface(true,  :policy => Policy.new('mq'), :mq_module => true)
   end
 
   def test_message_status_interface_basic
-    do_message_status_interface(true,  :policy => Policy.new('basic'), :policy_multiqueue => true)
-  end
-
-  def test_message_status_interface_dumb
-    do_message_status_interface(true, :policy => Policy.new('dumb'))
-  end
-
-  def test_message_status_interface_fifo
-    do_message_status_interface(true, :policy => Policy.new('fifo'))
-  end
-
-  def test_message_status_interface_filo
-    do_message_status_interface(true, :policy => Policy.new('filo'))
-  end
-
-  def test_message_status_interface_lfu
-    do_message_status_interface(true, :policy => Policy.new('lfu'))
-  end
-
-  def test_message_status_interface_lfu_ws
-    do_message_status_interface(true, :policy => Policy.new('lfu_ws'))
-  end
-
-  def test_message_status_interface_mfu
-    do_message_status_interface(true, :policy => Policy.new('mfu'))
-  end
-
-  def test_message_status_interface_mfu_ws
-    do_message_status_interface(true, :policy => Policy.new('mfu_ws'))
-  end
-
-  def test_message_status_interface_lru
-    do_message_status_interface(true, :policy => Policy.new('lru'))
-  end
-
-  def test_message_status_interface_mru
-    do_message_status_interface(true, :policy => Policy.new('mru'))
+    do_ctr_message_status_interface(true,  :policy => Policy.new('basic'), :policy_multiqueue => true)
   end
 
   def test_message_status_interface_multiqueue
-    do_message_status_interface(true, :policy => Policy.new('multiqueue'), :policy_multiqueue => true)
+    do_ctr_message_status_interface(true, :policy => Policy.new('multiqueue'), :policy_multiqueue => true)
   end
 
   def test_message_status_interface_multiqueue_ws
-    do_message_status_interface(true, :policy => Policy.new('multiqueue_ws'), :policy_multiqueue => true)
-  end
-
-  def test_message_status_interface_noop
-    do_message_status_interface(true, :policy => Policy.new('noop'))
-  end
-
-  def test_message_status_interface_random
-    do_message_status_interface(true, :policy => Policy.new('random'))
+    do_ctr_message_status_interface(true, :policy => Policy.new('multiqueue_ws'), :policy_multiqueue => true)
   end
 
   def test_message_status_interface_q2
-    do_message_status_interface(true, :policy => Policy.new('q2'))
+    do_ctr_message_status_interface(true, :policy => Policy.new('q2'))
   end
 
   def test_message_status_interface_twoqueue
-    do_message_status_interface(true, :policy => Policy.new('twoqueue'))
+    do_ctr_message_status_interface(true, :policy => Policy.new('twoqueue'))
   end
 
-  # Tests setting sequential threshold
+  def test_message_status_interface_fifo
+    do_ctr_message_status_interface(true, :policy => Policy.new('fifo'))
+  end
+
+  def test_message_status_interface_filo
+    do_ctr_message_status_interface(true, :policy => Policy.new('filo'))
+  end
+
+  def test_message_status_interface_lfu
+    do_ctr_message_status_interface(true, :policy => Policy.new('lfu'))
+  end
+
+  def test_message_status_interface_mfu
+    do_ctr_message_status_interface(true, :policy => Policy.new('mfu'))
+  end
+
+  def test_message_status_interface_lfu_ws
+    do_ctr_message_status_interface(true, :policy => Policy.new('lfu_ws'))
+  end
+
+  def test_message_status_interface_mfu_ws
+    do_ctr_message_status_interface(true, :policy => Policy.new('mfu_ws'))
+  end
+
+  def test_message_status_interface_lru
+    do_ctr_message_status_interface(true, :policy => Policy.new('lru'))
+  end
+
+  def test_message_status_interface_mru
+    do_ctr_message_status_interface(true, :policy => Policy.new('mru'))
+  end
+
+  def test_message_status_interface_noop
+    do_ctr_message_status_interface(true, :policy => Policy.new('noop'))
+  end
+
+  def test_message_status_interface_random
+    do_ctr_message_status_interface(true, :policy => Policy.new('random'))
+  end
+
+  def test_message_status_interface_dumb
+    do_ctr_message_status_interface(true, :policy => Policy.new('dumb'))
+  end
+
+
+  # Tests policy modules setting of sequential/random thresholds
   def do_message_thresholds(opts)
     opts[:sequential_threshold] = 768
-    do_message_status_interface(true, opts)
+    do_ctr_message_status_interface(true, opts)
     # Only one key pair per message
     opts.delete(:sequential_threshold)
     opts[:random_threshold] = 44
-    do_message_status_interface(true, opts)
+    do_ctr_message_status_interface(true, opts)
   end
 
   def test_message_interface_thresholds_default
@@ -871,8 +880,20 @@ class CacheTests < ThinpTestCase
     do_message_thresholds(:policy => Policy.new('basic'), :policy_multiqueue => true)
   end
 
-  def test_message_interface_thresholds_dumb
-    do_message_thresholds(:policy => Policy.new('dumb'))
+  def test_message_interface_thresholds_multiqueue
+    do_message_thresholds(:policy => Policy.new('multiqueue'), :policy_multiqueue => true)
+  end
+
+  def test_message_interface_thresholds_multiqueue_ws
+    do_message_thresholds(:policy => Policy.new('multiqueue_ws'), :policy_multiqueue => true)
+  end
+
+  def test_message_interface_thresholds_q2
+    do_message_thresholds(:policy => Policy.new('q2'))
+  end
+
+  def test_message_interface_thresholds_twoqueue
+    do_message_thresholds(:policy => Policy.new('twoqueue'))
   end
 
   def test_message_interface_thresholds_fifo
@@ -907,14 +928,6 @@ class CacheTests < ThinpTestCase
     do_message_thresholds(:policy => Policy.new('mru'))
   end
 
-  def test_message_interface_thresholds_multiqueue
-    do_message_thresholds(:policy => Policy.new('multiqueue'), :policy_multiqueue => true)
-  end
-
-  def test_message_interface_thresholds_multiqueue_ws
-    do_message_thresholds(:policy => Policy.new('multiqueue_ws'), :policy_multiqueue => true)
-  end
-
   def test_message_interface_thresholds_noop
     do_message_thresholds(:policy => Policy.new('noop'))
   end
@@ -923,77 +936,100 @@ class CacheTests < ThinpTestCase
     do_message_thresholds(:policy => Policy.new('random'))
   end
 
-  def test_message_interface_thresholds_q2
-    do_message_thresholds(:policy => Policy.new('q2'))
-  end
-
-  def test_message_interface_thresholds_twoqueue
-    do_message_thresholds(:policy => Policy.new('twoqueue'))
+  def test_message_interface_thresholds_dumb
+    do_message_thresholds(:policy => Policy.new('dumb'))
   end
 
  
   # Test change of target migration threshold
   def test_message_interface_target_migration_threshold
-    do_message_status_interface(true, :policy => Policy.new('basic'), :migration_threshold => 2000 * 100)
+    do_ctr_message_status_interface(true, :policy => Policy.new('basic'), :migration_threshold => 2000 * 100)
   end
 
-
-  # Test basic module ctr hits/sectors settings
-  def test_ctr_hits
-    do_message_status_interface(false, :policy => Policy.new('basic', :hits => 1))
-  end
-
-  def test_ctr_sectors
-    do_message_status_interface(false, :policy => Policy.new('basic', :hits => 0))
-  end
-
-  def test_ctr_sectors_3
-    assert_raise(ExitError) do
-      do_message_status_interface(false, :policy => Policy.new('basic', :hits => 3))
-    end
-  end
-
-
-  # Test mq module ctr arguments
-  def test_ctr_sequential_threshold_default
-    do_message_status_interface(false, :policy => Policy.new('default', :sequential_threshold => 234), :mq_module => true)
-  end
-
-  def test_ctr_random_threshold_default
-    do_message_status_interface(false, :policy => Policy.new('default', :random_threshold => 16), :mq_module => true)
-  end
-
- 
-  # Test basic module ctr arguments
+  # Test policy replacment module ctr arguments
   def do_ctr_tests(policy = nil)
     policy = 'basic' if policy.nil?
-    policy_multiqueue = (policy == 'basic' || policy == 'multiqueue' || policy == 'multiqueue_ws') ? true : false
+    mq_module = (policy == 'mq' || policy == 'default')
+    policy_multiqueue = (policy == 'basic' || policy == 'multiqueue' || policy == 'multiqueue_ws')
+    # FIXME: enough variation?
     policy_params = [
-      { :sequential_threshold => 234 },
-      { :random_threshold => 16 },
-      { :sequential_threshold => 234, :random_threshold => 16 },
-      { :sequential_threshold => 234, :hits => 1 },
-      { :sequential_threshold => 234, :hits => 0 },
-      { :random_threshold => 16, :hits => 1 },
-      { :random_threshold => 16, :hits => 0 },
-      { :sequential_threshold => 234, :random_threshold => 16, :hits => 1 },
-      { :sequential_threshold => 234, :random_threshold => 16, :hits => 0 }
+      [ false, {} ],
+      [ false, { :sequential_threshold => 234 } ],
+      [ false, { :random_threshold => 16 } ],
+      [ false, { :sequential_threshold => 234, :random_threshold => 16 } ],
+      [ false, { :multiqueue_timeout => 3333 } ],
+      [ false, { :multiqueue_timeout => 3333, :sequential_threshold => 234 } ],
+      [ false, { :multiqueue_timeout => 3333, :random_threshold => 16 } ],
+      [ false, { :sequential_threshold => 234, :multiqueue_timeout => 3333 } ],
+      [ false, { :random_threshold => 16, :multiqueue_timeout => 3333 } ],
+      [ false, { :sequential_threshold => 234, :random_threshold => 16, :multiqueue_timeout => 3333 } ],
+      [ false, { :sequential_threshold => 234, :multiqueue_timeout => 3333, :random_threshold => 16 } ],
+      [ false, { :multiqueue_timeout => 3333, :random_threshold => 16, :sequential_threshold => 234 } ],
+      [ false, { :hits => 0 } ],
+      [ false, { :hits => 1 } ],
+      [ true,  { :hits => 3 } ],
+      [ false, { :sequential_threshold => 234, :hits => 0 } ],
+      [ false, { :sequential_threshold => 234, :hits => 1 } ],
+      [ false, { :random_threshold => 16, :hits => 0 } ],
+      [ false, { :random_threshold => 16, :hits => 1 } ],
+      [ false, { :sequential_threshold => 234, :random_threshold => 16, :hits => 0 } ],
+      [ false, { :sequential_threshold => 234, :random_threshold => 16, :hits => 1 } ],
+      [ false, { :sequential_threshold => 234, :hits => 0, :random_threshold => 16 } ],
+      [ false, { :sequential_threshold => 234, :hits => 1, :random_threshold => 16 } ],
+      [ false, { :hits => 0, :random_threshold => 16, :sequential_threshold => 234 } ],
+      [ false, { :hits => 1, :random_threshold => 16, :sequential_threshold => 234 } ]
     ]
 
-    policy_params.each { |params| do_message_status_interface(false, :policy => Policy.new(policy, params), :policy_multiqueue => policy_multiqueue) }
+    policy_params.each do |params|
+      # No hits/multiqueue_threshold supportin the mq module
+      if (!((params[1][:hits] || params[1][:multiqueue_timeout]) && mq_module))
+        if (params[0])
+          assert_raise(ExitError) do
+            do_ctr_message_status_interface(false, :policy => Policy.new(policy, params[1]),
+                                            :policy_multiqueue => policy_multiqueue, :mq_module => mq_module)
+          end
+        else
+          do_ctr_message_status_interface(false, :policy => Policy.new(policy, params[1]),
+                                          :policy_multiqueue => policy_multiqueue, :mq_module => mq_module)
+        end
+      end
+    end
 
     # No migration_threshold ctr key pair as yet....
     assert_raise(ExitError) do
-      do_message_status_interface(false, :policy => Policy.new('basic', :sequential_threshold => 234, :random_threshold => 16, :hits => 0), :migration_threshold => 2000 * 100, :policy_multiqueue => true)
+      do_ctr_message_status_interface(false, :policy => Policy.new('basic', :sequential_threshold => 234, :random_threshold => 16, :hits => 0),
+                                      :migration_threshold => 2000 * 100, :policy_multiqueue => true)
     end
   end
 
+  # Test mq policy module ctr arguments
+  def test_ctr_mq
+    do_ctr_tests('mq')
+  end
+
+  def test_ctr_default
+    do_ctr_tests('default')
+  end
+
+  # Test basic policy module ctr arguments
   def test_ctr_basic
     do_ctr_tests('basic')
   end
 
-  def test_ctr_dumb
-    do_ctr_tests('dumb')
+  def test_ctr_multiqueue
+    do_ctr_tests('multiqueue')
+  end
+
+  def test_ctr_multiqueue_ws
+    do_ctr_tests('multiqueue_ws')
+  end
+
+  def test_ctr_q2
+    do_ctr_tests('q2')
+  end
+
+  def test_ctr_twoqueue
+    do_ctr_tests('twoqueue')
   end
 
   def test_ctr_fifo
@@ -1008,12 +1044,12 @@ class CacheTests < ThinpTestCase
     do_ctr_tests('lfu')
   end
 
-  def test_ctr_lfu_ws
-    do_ctr_tests('lfu_ws')
-  end
-
   def test_ctr_mfu
     do_ctr_tests('mfu')
+  end
+
+  def test_ctr_lfu_ws
+    do_ctr_tests('lfu_ws')
   end
 
   def test_ctr_mfu_ws
@@ -1032,14 +1068,6 @@ class CacheTests < ThinpTestCase
     do_ctr_tests('mru')
   end
 
-  def test_ctr_multiqueue
-    do_ctr_tests('multiqueue')
-  end
-
-  def test_ctr_multiqueue_ws
-    do_ctr_tests('multiqueue_ws')
-  end
-
   def test_ctr_noop
     do_ctr_tests('noop')
   end
@@ -1048,12 +1076,8 @@ class CacheTests < ThinpTestCase
     do_ctr_tests('random')
   end
 
-  def test_ctr_q2
-    do_ctr_tests('q2')
-  end
-
-  def test_ctr_twoqueue
-    do_ctr_tests('twoqueue')
+  def test_ctr_dumb
+    do_ctr_tests('dumb')
   end
 
 end
