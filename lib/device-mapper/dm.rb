@@ -66,9 +66,9 @@ module DM
                    policy, keys)
       args = [metadata_dev, cache_dev, origin_dev, block_size] +
         [features.size] + features.map {|f| f.to_s} +
-        [policy, keys.size]
+        [policy, 2 * keys.size]
 
-      keys.each_pair {|p| args = args + p}
+      keys.each {|k, v| args = args + [ k.to_s, v.to_s]}
 
       super('cache', sector_count, *args)
     end
