@@ -86,11 +86,11 @@ class Policy
   end
 
   def is_basic_module
-    @name != 'mq' && @name != 'default'
+    ! ['mq', 'default'].include?(@name)
   end
 
   def is_basic_multiqueue
-    @name == 'basic' || @name == 'multiqueue' || @name == 'multiqueue_ws'
+    ['basic', 'multiqueue', 'multiqueue_ws'].include?(@name)
   end
 end
 
@@ -769,6 +769,7 @@ class CacheTests < ThinpTestCase
       end
     end
 
+    # Got to invert hits option for expeted check further down
     expected[:hits] = expected[:hits] == 0 ? 1 : 0 if opts[:hits] || opts[:policy].opts[:hits]
 
     ( status, nr_blocks, md_total ) = ctr_message_status_interface(opts, msg)
