@@ -742,8 +742,9 @@ class CacheTests < ThinpTestCase
   def ctr_message_status_interface(opts, msg = nil)
     stack = CacheStack.new(@dm, @metadata_dev, @data_dev, opts)
     stack.activate do |stack|
-      stack.cache.message(msg) if msg
-      [ CacheStatus.new(stack.cache), stack.origin_size / stack.block_size, stack.metadata_blocks ]
+      cache = stack.cache
+      cache.message(msg) if msg
+      [ CacheTable.new(cache), CacheStatus.new(cache), stack.origin_size / stack.block_size, stack.metadata_blocks ]
     end
   end
 
@@ -772,7 +773,7 @@ class CacheTests < ThinpTestCase
     # Got to invert hits option for expeted check further down
     expected[:hits] = expected[:hits] == 0 ? 1 : 0 if opts[:hits] || opts[:policy].opts[:hits]
 
-    ( status, nr_blocks, md_total ) = ctr_message_status_interface(opts, msg)
+    table, status, nr_blocks, md_total = ctr_message_status_interface(opts, msg)
 
     # sequential/random/migration threshold assertions
     assert(status.policy1 == expected[:sequential_threshold])
@@ -1099,5 +1100,11 @@ class CacheTests < ThinpTestCase
     assert_raise(ExitError) do
       do_ctr_message_status_interface(false, :policy => Policy.new('basic', :migration_threshold => 2000 * 100))
     end
+  end
+
+  def test_cache_table
+    opts = Hash.new
+    opts[:policy] = Policy.new('basic', :hits => 1)
+    table, status, nr_blocks, md_total = ctr_message_status_interface(opts)
   end
 end
