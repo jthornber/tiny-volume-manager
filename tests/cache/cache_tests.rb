@@ -78,18 +78,18 @@ end
 #----------------------------------------------------------------
 
 class Policy
-  attr_accessor :name, :keys
+  attr_accessor :name, :opts
 
-  def initialize(name, keys = Hash.new)
+  def initialize(name, opts = Hash.new)
     @name = name
-    @keys = keys
+    @opts = opts
   end
 
-  def basic_module
+  def is_basic_module
     @name != 'mq' && @name != 'default'
   end
 
-  def basic_multiqueue
+  def is_basic_multiqueue
     @name == 'basic' || @name == 'multiqueue' || @name == 'multiqueue_ws'
   end
 end
@@ -196,7 +196,7 @@ class CacheStack
   def cache_table
     Table.new(CacheTarget.new(origin_size, @md, @ssd, @origin,
                               block_size, [io_mode] + migration_threshold,
-                              policy.name, policy.keys))
+                              policy.name, policy.opts))
   end
 end
 
@@ -764,11 +764,11 @@ class CacheTests < ThinpTestCase
         # delete the option to avoid putting it up as a ctr key pair
         msg = [ '0 set_config', o.to_s, opts.delete(o).to_s ].join(' ') if opts[o]
       else
-        expected[o] = opts[:policy].keys.fetch(o, defaults[o])
+        expected[o] = opts[:policy].opts.fetch(o, defaults[o])
       end
     end
 
-    expected[:hits] = expected[:hits] == 0 ? 1 : 0 if opts[:hits] || opts[:policy].keys[:hits]
+    expected[:hits] = expected[:hits] == 0 ? 1 : 0 if opts[:hits] || opts[:policy].opts[:hits]
 
     ( status, nr_blocks ) = ctr_message_status_interface(opts, msg)
 
@@ -783,9 +783,9 @@ class CacheTests < ThinpTestCase
     assert(status.promotions <= nr_blocks)
     assert(status.promotions == status.residency)
 
-    if opts[:policy].basic_module
-      # Default multiqueue timeout
-      assert((status.policy3 - expected[:multiqueue_timeout]).abs < 100) if opts[:policy].basic_multiqueue
+    if opts[:policy].is_basic_module
+      # Default multiqueue timeout (pay attention to rounding divergence by the basic module)
+      assert((status.policy3 - expected[:multiqueue_timeout]).abs < 100) if opts[:policy].is_basic_multiqueue
 
       # T_HITS/T_SECTORS accounting
       assert(status.policy4 == expected[:hits])
@@ -952,10 +952,12 @@ class CacheTests < ThinpTestCase
     do_ctr_message_status_interface(true, :policy => Policy.new('basic'), :migration_threshold => 2000 * 100)
   end
 
-  # Test policy replacment module ctr arguments
-  def do_ctr_tests(policy = nil)
-    name = 'basic' if policy.nil?
- 
+  # Test policy replacement module ctr arguments
+  def with_policy(name, opts = Hash.new, &block)
+    block.call(Policy.new(name, opts))
+  end
+
+  def do_ctr_tests(name)
     # FIXME: enough variations?
     policy_params = [
       [ false, {} ],
@@ -968,8 +970,6 @@ class CacheTests < ThinpTestCase
       [ false, { :sequential_threshold => 234, :multiqueue_timeout => 3333 } ],
       [ false, { :random_threshold => 16, :multiqueue_timeout => 3333 } ],
       [ false, { :sequential_threshold => 234, :random_threshold => 16, :multiqueue_timeout => 3333 } ],
-      [ false, { :sequential_threshold => 234, :multiqueue_timeout => 3333, :random_threshold => 16 } ],
-      [ false, { :multiqueue_timeout => 3333, :random_threshold => 16, :sequential_threshold => 234 } ],
       [ false, { :hits => 0 } ],
       [ false, { :hits => 1 } ],
       [ false, { :sequential_threshold => 234, :hits => 0 } ],
@@ -978,20 +978,17 @@ class CacheTests < ThinpTestCase
       [ false, { :random_threshold => 16, :hits => 1 } ],
       [ false, { :sequential_threshold => 234, :random_threshold => 16, :hits => 0 } ],
       [ false, { :sequential_threshold => 234, :random_threshold => 16, :hits => 1 } ],
-      [ false, { :sequential_threshold => 234, :hits => 0, :random_threshold => 16 } ],
-      [ false, { :sequential_threshold => 234, :hits => 1, :random_threshold => 16 } ],
-      [ false, { :hits => 0, :random_threshold => 16, :sequential_threshold => 234 } ],
-      [ false, { :hits => 1, :random_threshold => 16, :sequential_threshold => 234 } ],
       [ true,  { :hits => 3 } ],
       [ true,  { :wrong_key => 3 } ],
-      [ false, { :sequential_threshold => -1 } ]
+      [ true,  { :sequential_threshold => -1 } ],
+      [ true,  { :random_threshold => -1 } ]
     ]
 
-    policy_params.each do |params|
+    policy_params.each do | ( fails, test_opts ) |
       # No hits/multiqueue_threshold supportin the mq module
-      Policy.new(name, params[1]) do |policy|
-        if (params[1][:hits].nil? && params[1][:multiqueue_timeout].nil?)
-          if (params[0])
+      with_policy(name, test_opts) do |policy|
+        if policy.is_basic_module || (test_opts[:hits].nil? && test_opts[:multiqueue_timeout].nil?)
+          if (fails)
             assert_raise(ExitError) do
               do_ctr_message_status_interface(false, :policy => policy)
             end
