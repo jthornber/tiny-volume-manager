@@ -984,6 +984,7 @@ class CacheTests < ThinpTestCase
     # FIXME: enough variations?
     # _# suffixes to keys (eg. :hits_2 as oposed to :hits) are being used to deploy an option multiple times
     policy_params = [
+    # [ should_fail, argument_hash ]
       [ false, {} ],
       [ false, { :sequential_threshold => 234 } ],
       [ false, { :random_threshold => 16 } ],
@@ -1022,7 +1023,7 @@ class CacheTests < ThinpTestCase
       [ true,  { :random_threshold => -1 } ]
     ]
 
-    policy_params.each do | ( should_fail, test_opts ) |
+    policy_params.each do |should_fail, test_opts|
       with_policy(name, test_opts) do |policy|
         if policy.is_basic_module
           if policy.is_basic_multiqueue
@@ -1129,6 +1130,7 @@ class CacheTests < ThinpTestCase
       do_ctr_message_status_interface(false, :policy => Policy.new('basic', :migration_threshold => 2000 * 100))
     end
   end
+
 
   def test_cache_table
     opts = Hash.new
