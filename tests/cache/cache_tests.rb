@@ -67,11 +67,11 @@ module DiskUnits
   end
 
   def meg(n)
-    n * 2048
+    n * sectors(2048)
   end
 
   def gig(n)
-    n * 2048 * 1024
+    n * meg(1) * 1024
   end
 end
 
@@ -190,11 +190,7 @@ class CacheStack
   end
 
   def migration_threshold
-    if @opts[:migration_threshold]
-       [ "migration_threshold", opts[:migration_threshold].to_s ]
-    else
-       []
-    end
+    @opts[:migration_threshold] ? [ "migration_threshold", opts[:migration_threshold].to_s ] : []
   end
 
   def cache_table
