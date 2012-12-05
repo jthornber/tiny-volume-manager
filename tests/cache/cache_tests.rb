@@ -748,6 +748,17 @@ class CacheTests < ThinpTestCase
     end
   end
 
+  def get_opt(opts, o)
+    for i in 1..9
+      oo = (o.to_s + "_#{i}").to_sym
+      if opts[oo]
+        return opts[oo]
+      end
+    end
+
+    nil
+  end
+
   def do_ctr_message_status_interface(do_msg, opts = Hash.new)
     opts[:policy] = opts.fetch(:policy, Policy.new('basic'))
     msg = nil
@@ -762,14 +773,17 @@ class CacheTests < ThinpTestCase
 
     defaults.keys.each do |o|
       if do_msg
-        expected[o] = opts.fetch(o, defaults[o])
+        v = get_opt(opts, o)
+        expected[o] = v ? v : opts.fetch(o, defaults[o])
+ 
         # delete the message option to avoid it as a ctr key pair
         msg = [ '0 set_config', o.to_s, opts.delete(o).to_s ].join(' ') if opts[o]
       else
-        expected[o] = opts[:policy].opts.fetch(o, defaults[o])
+        v = get_opt(opts[:policy].opts, o)
+        expected[o] = v ? v : opts[:policy].opts.fetch(o, defaults[o])
       end
     end
-
+ 
     # Got to invert hits option for expeted check further down
     expected[:hits] = expected[:hits] == 0 ? 1 : 0 if opts[:hits] || opts[:policy].opts[:hits]
 
@@ -968,25 +982,39 @@ class CacheTests < ThinpTestCase
     name = 'basic' if name.nil?
  
     # FIXME: enough variations?
+    # _# suffixes to keys (eg. :hits_2 as oposed to :hits) are being used to deploy an option multiple times
     policy_params = [
       [ false, {} ],
       [ false, { :sequential_threshold => 234 } ],
       [ false, { :random_threshold => 16 } ],
       [ false, { :sequential_threshold => 234, :random_threshold => 16 } ],
+      [ false, { :random_threshold => 16, :sequential_threshold => 234 } ],
       [ false, { :multiqueue_timeout => 3333 } ],
       [ false, { :multiqueue_timeout => 3333, :sequential_threshold => 234 } ],
-      [ false, { :multiqueue_timeout => 3333, :random_threshold => 16 } ],
       [ false, { :sequential_threshold => 234, :multiqueue_timeout => 3333 } ],
+      [ false, { :multiqueue_timeout => 3333, :random_threshold => 16 } ],
       [ false, { :random_threshold => 16, :multiqueue_timeout => 3333 } ],
       [ false, { :sequential_threshold => 234, :random_threshold => 16, :multiqueue_timeout => 3333 } ],
+      [ false, { :random_threshold => 16, :multiqueue_timeout => 3333, :sequential_threshold => 234 } ],
       [ false, { :hits => 0 } ],
       [ false, { :hits => 1 } ],
       [ false, { :sequential_threshold => 234, :hits => 0 } ],
+      [ false, { :hits => 0, :sequential_threshold => 234 } ],
       [ false, { :sequential_threshold => 234, :hits => 1 } ],
+      [ false, { :hits => 1, :sequential_threshold => 234 } ],
       [ false, { :random_threshold => 16, :hits => 0 } ],
+      [ false, { :hits => 0, :random_threshold => 16 } ],
       [ false, { :random_threshold => 16, :hits => 1 } ],
+      [ false, { :hits => 1, :random_threshold => 16 } ],
       [ false, { :sequential_threshold => 234, :random_threshold => 16, :hits => 0 } ],
+      [ false, { :random_threshold => 16, :hits => 0, :sequential_threshold => 234 } ],
+      [ false, { :hits => 0, :sequential_threshold => 234, :random_threshold => 16 } ],
       [ false, { :sequential_threshold => 234, :random_threshold => 16, :hits => 1 } ],
+      [ false, { :random_threshold => 16, :hits => 1, :sequential_threshold => 234 } ],
+      [ false, { :hits => 1, :sequential_threshold => 234, :random_threshold => 16 } ],
+      [ true,  { :sequential_threshold_1 => 234, :sequential_threshold_2 => 234 } ],
+      [ true,  { :random_threshold_1 => 16, :random_threshold_2 => 32 } ],
+      [ true,  { :hits_1 => 1, :hits_2 => 1 } ],
       [ true,  { :hits => -1 } ],
       [ true,  { :hits => 3 } ],
       [ true,  { :bogus_huddel_key => 3 } ],
