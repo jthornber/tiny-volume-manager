@@ -828,8 +828,7 @@ class CacheTests < ThinpTestCase
 
 
   # Tests policy modules setting of sequential/random thresholds
-  def do_message_thresholds(name = nil)
-    name = 'basic' if name.nil?
+  def do_message_thresholds(name = 'basic')
     with_policy(name) { |policy| do_ctr_message_status_interface(true, :policy => policy, :sequential_threshold => 768) }
     with_policy(name) { |policy| do_ctr_message_status_interface(true, :policy => policy, :random_threshold => 44) }
   end
@@ -916,9 +915,7 @@ class CacheTests < ThinpTestCase
     block.call(Policy.new(name, opts))
   end
 
-  def do_ctr_tests(name = nil)
-    name = 'basic' if name.nil?
- 
+  def do_ctr_tests(name = 'basic')
     # FIXME: enough variations?
     # _# suffixes to policy option keys (eg. :hits_2 as oposed to :hits) are
     # being used to deploy an option multiple times
