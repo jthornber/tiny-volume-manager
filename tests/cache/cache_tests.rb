@@ -1134,7 +1134,8 @@ class CacheTests < ThinpTestCase
 
   def test_cache_table
     opts = Hash.new
-    opts[:policy] = Policy.new('basic', :hits => 1)
+    opts[:policy] = Policy.new('basic', :hits => 1, :sequential_threshold => 255, :random_threshold => 22, :multiqueue_timeout => 4444)
     table, status, nr_blocks, md_total = ctr_message_status_interface(opts)
+p table, status
   end
 end
