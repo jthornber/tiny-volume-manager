@@ -828,88 +828,82 @@ class CacheTests < ThinpTestCase
 
 
   # Tests policy modules setting of sequential/random thresholds
-  def do_message_thresholds(opts = Hash.new)
-    opts[:policy] = opts.fetch(:policy, Policy.new('basic'))
-
-    opts[:sequential_threshold] = 768
-    do_ctr_message_status_interface(true, opts)
-
-    # Only one key pair per message
-    opts.delete(:sequential_threshold)
-    opts[:random_threshold] = 44
-    do_ctr_message_status_interface(true, opts)
+  def do_message_thresholds(name = nil)
+    name = 'basic' if name.nil?
+    with_policy(name) { |policy| do_ctr_message_status_interface(true, :policy => policy, :sequential_threshold => 768) }
+    with_policy(name) { |policy| do_ctr_message_status_interface(true, :policy => policy, :random_threshold => 44) }
   end
 
   def test_message_thresholds_default
-    do_message_thresholds(:policy => Policy.new('default'))
+    do_message_thresholds('default')
   end
 
   def test_message_thresholds_mq
-    do_message_thresholds(:policy => Policy.new('mq'))
+    do_message_thresholds('mq')
   end
 
   def test_message_thresholds_basic
-    do_message_thresholds(:policy => Policy.new('basic'))
+    do_message_thresholds('basic')
   end
 
   def test_message_thresholds_multiqueue
-    do_message_thresholds(:policy => Policy.new('multiqueue'))
+    do_message_thresholds('multiqueue')
   end
 
   def test_message_thresholds_multiqueue_ws
-    do_message_thresholds(:policy => Policy.new('multiqueue_ws'))
+    do_message_thresholds('multiqueue_ws')
   end
 
   def test_message_thresholds_q2
-    do_message_thresholds(:policy => Policy.new('q2'))
+    do_message_thresholds('q2')
   end
 
   def test_message_thresholds_twoqueue
-    do_message_thresholds(:policy => Policy.new('twoqueue'))
+    do_message_thresholds('twoqueue')
   end
 
   def test_message_thresholds_fifo
-    do_message_thresholds(:policy => Policy.new('fifo'))
+    do_message_thresholds('fifo')
   end
 
   def test_message_thresholds_filo
-    do_message_thresholds(:policy => Policy.new('filo'))
+    do_message_thresholds('filo')
   end
 
   def test_message_thresholds_lfu
-    do_message_thresholds(:policy => Policy.new('lfu'))
+    do_message_thresholds('lfu')
   end
 
   def test_message_thresholds_lfu_ws
-    do_message_thresholds(:policy => Policy.new('lfu_ws'))
+    do_message_thresholds('lfu_ws')
   end
 
   def test_message_thresholds_mfu
-    do_message_thresholds(:policy => Policy.new('mfu'))
+    do_message_thresholds('mfu')
   end
 
   def test_message_thresholds_mfu_ws
-    do_message_thresholds(:policy => Policy.new('mfu_ws'))
+    do_message_thresholds('mfu_ws')
   end
 
   def test_message_thresholds_lru
-    do_message_thresholds(:policy => Policy.new('lru'))
+    do_message_thresholds('lru')
   end
 
   def test_message_thresholds_mru
-    do_message_thresholds(:policy => Policy.new('mru'))
+    do_message_thresholds('mru')
   end
 
   def test_message_thresholds_noop
-    do_message_thresholds(:policy => Policy.new('noop'))
+    do_message_thresholds('noop')
   end
 
   def test_message_thresholds_random
-    do_message_thresholds(:policy => Policy.new('random'))
+    do_message_thresholds('random')
   end
 
   def test_message_thresholds_dumb
-    do_message_thresholds(:policy => Policy.new('dumb'))
+    do_message_thresholds('dumb')
   end
  
   # Test change of target migration threshold
@@ -926,9 +920,11 @@ class CacheTests < ThinpTestCase
     name = 'basic' if name.nil?
  
     # FIXME: enough variations?
-    # _# suffixes to keys (eg. :hits_2 as oposed to :hits) are being used to deploy an option multiple times
+    # _# suffixes to policy option keys (eg. :hits_2 as oposed to :hits) are
+    # being used to deploy an option multiple times
+ 
     policy_params = [
-    # [ should_fail, argument_hash ]
+    # [ should_fail, policy_option_hash ]
       [ false, {} ],
       [ false, { :sequential_threshold => 234 } ],
       [ false, { :random_threshold => 16 } ],
