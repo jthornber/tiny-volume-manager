@@ -237,6 +237,43 @@ class DiscardQuickTests < ThinpTestCase
     assert_fully_mapped(md, 0)
   end
 
+  def test_discard_same_blocks
+    @data_block_size = 128
+
+    with_standard_pool(@size) do |pool|
+      with_new_thin(pool, @volume_size, 0) do |thin|
+        wipe_device(thin, 256)
+
+        1000.times do
+          thin.discard(0, 128)
+        end
+
+        assert_used_blocks(pool, 1)
+      end
+    end
+  end
+
+  def test_discard_with_background_io
+    with_standard_pool(@size) do |pool|
+      with_new_thin(pool, @volume_size, 0) do |thin|
+        tid = Thread.new(thin) do |thin|
+          wipe_device(thin)
+        end
+
+        sleep(10)
+
+        1000.times do
+          s = rand(@blocks_per_dev - 1)
+          s_len = 1 + rand(5)
+
+          discard(thin, s, s_len)
+        end
+
+        tid.join
+      end
+    end
+  end
+
   def test_disable_discard
     with_standard_pool(@size, :discard => false) do |pool|
       with_new_thin(pool, @volume_size, 0) do |thin|
