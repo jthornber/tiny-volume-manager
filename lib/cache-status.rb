@@ -37,7 +37,7 @@ end
 
 class CacheTable
   attr_reader :metadata_dev, :cache_dev, :origin_dev, :block_size, :nr_feature_args,
-	:feature_args, :nr_policy_args, :policy_args
+              :feature_args, :nr_policy_args, :policy_args
   
   # start len "cache" md cd od bs #features feature_arg{1,} #policy_args policy_arg{0,}
   # 0 283115520 cache 254:12 254:13 254:14 512 1 writeback basic 0
@@ -50,7 +50,7 @@ class CacheTable
       raise "couldn't parse cache table"
     else
       a = m[1..-2].to_a + m[-1].scan(/\s\S+/)
-      a.map! { |s| s.lstrip.rstrip }
+      a.map! { |s| s.strip }
 
       @metadata_dev,
       @cache_dev,

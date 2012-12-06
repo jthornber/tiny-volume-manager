@@ -697,9 +697,7 @@ class CacheTests < ThinpTestCase
   def get_opt(opts, o)
     for i in 1..9
       oo = (o.to_s + "_#{i}").to_sym
-      if opts[oo]
-        return opts[oo]
-      end
+      return opts[oo] if opts[oo]
     end
 
     nil
@@ -717,16 +715,16 @@ class CacheTests < ThinpTestCase
     }
     expected = Hash.new
 
-    defaults.keys.each do |o|
+    defaults.each_pair do |o, val|
       if do_msg
         v = get_opt(opts, o)
-        expected[o] = v ? v : opts.fetch(o, defaults[o])
+        expected[o] = v ? v : opts.fetch(o, val)
  
         # delete the message option to avoid it as a ctr key pair
         msg = [ '0 set_config', o.to_s, opts.delete(o).to_s ].join(' ') if opts[o]
       else
         v = get_opt(opts[:policy].opts, o)
-        expected[o] = v ? v : opts[:policy].opts.fetch(o, defaults[o])
+        expected[o] = v ? v : opts[:policy].opts.fetch(o, val)
       end
     end
  
@@ -748,7 +746,7 @@ class CacheTests < ThinpTestCase
     assert(status.promotions == status.residency)
 
     if opts[:policy].is_basic_module
-      # Default multiqueue timeout paying attention to rounding divergence by the basic modules timout calculation
+      # Default multiqueue timeout paying attention to rounding divergence caused by the basic modules timout calculation
       assert((status.policy3 - expected[:multiqueue_timeout]).abs < 10) if opts[:policy].is_basic_multiqueue
 
       # T_HITS/T_SECTORS accounting
