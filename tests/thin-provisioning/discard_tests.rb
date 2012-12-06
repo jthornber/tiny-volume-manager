@@ -6,6 +6,7 @@ require 'lib/fs'
 require 'lib/status'
 require 'lib/tags'
 require 'lib/thinp-test'
+require 'lib/thread-utils'
 require 'lib/xml_format'
 require 'set'
 
@@ -19,6 +20,9 @@ module DiscardMixin
 
   def setup
     super
+
+    @size = 2097152 * 2         # sectors
+
     @blocks_per_dev = div_up(@volume_size, @data_block_size)
     @volume_size = @blocks_per_dev * @data_block_size # we want whole blocks for these tests
   end
@@ -348,30 +352,25 @@ class DiscardSlowTests < ThinpTestCase
   end
 
   def do_discard_random_sectors(duration)
+    jobs = ThreadedJobs.new
+
     start = Time.now
     threshold_blocks = @blocks_per_dev / 3
 
-    with_standard_pool(@size) do |pool|
+    with_standard_pool(@size, :discard_passdown => false) do |pool|
       with_new_thin(pool, @volume_size, 0) do |thin|
-        while (Time.now - start) < duration
-
-          # FIXME: hack to force a commit
-          # pool.message(0, 'create_thin 1')
-          # pool.message(0, 'delete 1')
-
-          if used_data_blocks(pool) < threshold_blocks
-            STDERR.puts "#{Time.now} wiping dev"
-            wipe_device(thin) # provison in case of too few mappings
-          end
-
-          STDERR.puts 'entering discard loop'
-          10000.times do
+        jobs.add_job(2, thin) {|thin| wipe_device(thin)}
+        jobs.add_job(2, thin) do |thin|
+          1000.times do
             s = rand(@blocks_per_dev - 1)
-            s_len = 1 + rand(5)
+            s_len = 1 + rand(1024)
 
             discard(thin, s, s_len)
           end
         end
+
+        sleep(600)
+        jobs.stop
       end
     end
   end

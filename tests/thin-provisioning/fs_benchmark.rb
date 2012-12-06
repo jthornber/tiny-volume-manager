@@ -122,20 +122,16 @@ class FSBench < ThinpTestCase
     with_standard_pool(@size, :zero => false, :block_size => 2048) do |pool|
       with_new_thin(pool, @size, 0) do |thin|
         extract(thin)
-
-        # privisioned
-        extract(thin)
       end
     end
   end
 
-  # FIXME: re introduce
   def _test_git_extract_rolling_snap
     dir = Dir.pwd
     n = 0
 
     body = lambda do |pool, thin|
-      git_extract
+      extract(thin)
       dump_metadata(pool, @metadata_dev, "#{dir}/git_extract_#{n}.xml");
       n += 1
     end
