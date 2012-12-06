@@ -730,7 +730,7 @@ class CacheTests < ThinpTestCase
       end
     end
  
-    # Got to invert hits option for expeted check further down
+    # Got to invert hits option for expected check further down
     expected[:hits] = expected[:hits] == 0 ? 1 : 0 if opts[:hits] || opts[:policy].opts[:hits]
 
     table, status, nr_blocks, md_total = ctr_message_status_interface(opts, msg)
