@@ -35,12 +35,21 @@ class Policy
     @opts = opts
   end
 
-  def is_basic_module
+  def is_valid_policy_name(name = @name)
+    ['mq', 'default', 'basic', 'multiqueue', 'multiqueue_ws', 'q2', 'twoqueue', 'fifo',
+     'filo', 'lfu', 'mfu', 'lfu_ws', 'mfu_ws', 'lru', 'mru', 'noop', 'random', 'dumb'].include?(name)
+  end
+
+  def is_basic_module(name = @name)
     ! ['mq', 'default'].include?(@name)
   end
 
-  def is_basic_multiqueue
+  def is_basic_multiqueue(name = @name)
     ['basic', 'multiqueue', 'multiqueue_ws'].include?(@name)
+  end
+
+  def is_valid_policy_arg(name)
+    ['sequential_threshold', 'random_threshold', 'multiqueue_timeout', 'hits'].include?(name)
   end
 end
 
@@ -690,7 +699,9 @@ class CacheTests < ThinpTestCase
     stack.activate do |stack|
       cache = stack.cache
       cache.message(msg) if msg
-      [ CacheTable.new(cache), CacheStatus.new(cache), stack.origin_size / stack.block_size, stack.metadata_blocks ]
+      [ CacheTable.new(cache), CacheStatus.new(cache),
+        stack.origin_size, stack.block_size, stack.metadata_blocks,
+        dev_to_hex(stack.md), dev_to_hex(stack.ssd), dev_to_hex(stack.origin) ]
     end
   end
 
@@ -731,11 +742,12 @@ class CacheTests < ThinpTestCase
     # Got to invert hits option for expected check further down
     expected[:hits] = expected[:hits] == 0 ? 1 : 0 if opts[:hits] || opts[:policy].opts[:hits]
 
-    table, status, nr_blocks, md_total = ctr_message_status_interface(opts, msg)
+    table, status, origin_size, block_size, md_total = ctr_message_status_interface(opts, msg)
+    nr_blocks = origin_size / block_size
 
     # sequential/random/migration threshold assertions
-    assert(status.policy1 == expected[:sequential_threshold])
-    assert(status.policy2 == expected[:random_threshold])
+    assert(status.policy_args[0] == expected[:sequential_threshold])
+    assert(status.policy_args[1] == expected[:random_threshold])
     assert(status.migration_threshold == expected[:migration_threshold])
 
     # allocation/demotion/promotion assertions
@@ -747,10 +759,10 @@ class CacheTests < ThinpTestCase
 
     if opts[:policy].is_basic_module
       # Default multiqueue timeout paying attention to rounding divergence caused by the basic modules timout calculation
-      assert((status.policy3 - expected[:multiqueue_timeout]).abs < 10) if opts[:policy].is_basic_multiqueue
+      assert((status.policy_args[2] - expected[:multiqueue_timeout]).abs < 10) if opts[:policy].is_basic_multiqueue
 
       # T_HITS/T_SECTORS accounting
-      assert(status.policy4 == expected[:hits])
+      assert(status.policy_args[3] == expected[:hits])
     end
   end
 
@@ -919,7 +931,6 @@ class CacheTests < ThinpTestCase
     # FIXME: enough variations?
     # _# suffixes to policy option keys (eg. :hits_2 as oposed to :hits) are
     # being used to deploy an option multiple times
- 
     policy_params = [
     # [ should_fail, policy_option_hash ]
       [ false, {} ],
@@ -1069,10 +1080,42 @@ class CacheTests < ThinpTestCase
   end
 
 
+  def is_valid_feature_arg(name)
+    ['writeback', 'writethrough'].include?(name)
+  end
+
+  def dev_to_hex(dm_dev)
+    rdev = File.open(dm_dev.path).stat.rdev
+    major = rdev / 256
+    minor = rdev - major * 256
+    major.to_s + ':' + minor.to_s
+  end
+
   def test_cache_table
     opts = Hash.new
-    opts[:policy] = Policy.new('basic', :hits => 1, :sequential_threshold => 255, :random_threshold => 22, :multiqueue_timeout => 4444)
-    table, status, nr_blocks, md_total = ctr_message_status_interface(opts)
-p table, status
+    policy = opts[:policy] = Policy.new('basic', :hits => 1, :sequential_threshold => 255, :random_threshold => 22, :multiqueue_timeout => 4444)
+    table, status, origin_size, block_size, md_total, metadata_dev, cache_dev, origin_dev = ctr_message_status_interface(opts)
+
+# p "==>", metadata_dev, table.metadata_dev, cache_dev, table.cache_dev, origin_dev, table.origin_dev
+    assert(table.metadata_dev == metadata_dev)
+    assert(table.cache_dev == cache_dev)
+    assert(table.origin_dev == origin_dev)
+    assert(table.block_size == block_size)
+    assert(table.nr_feature_args == table.feature_args.length)
+    assert(
+      table.feature_args.each do |arg|
+        return false if !is_valid_feature_arg(arg)
+        true
+      end
+    )
+    assert(policy.is_valid_policy_name(table.policy_name))
+    assert(table.nr_policy_args == table.policy_args.length)
+    assert(
+      table.policy_args.each do |arg|
+        return false if !policy.is_valid_policy_arg(arg)
+        true
+      end
+    )
   end
+
 end
