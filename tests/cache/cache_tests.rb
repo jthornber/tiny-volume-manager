@@ -62,6 +62,7 @@ class TestOptions
       [ false, { :sequential_threshold => 234, :random_threshold => 16, :hits => 1 }, {} ],
       [ false, { :random_threshold => 16, :hits => 1, :sequential_threshold => 234 }, {} ],
       [ false, { :hits => 1, :sequential_threshold => 234, :random_threshold => 16 }, {} ],
+
       [ true,  { :sequential_threshold_1 => 234, :sequential_threshold_2 => 234 }, {} ],
       [ true,  { :random_threshold_1 => 16, :random_threshold_2 => 32 }, {} ],
       [ true,  { :hits_1 => 1, :hits_2 => 1 }, {} ],
@@ -98,7 +99,7 @@ class Policy
   end
 
   def mq_module_policies
-    ['mq', 'default']
+    ['default', 'mq']
   end
 
   def basic_module_policies
@@ -786,10 +787,14 @@ class CacheTests < ThinpTestCase
   end
 
   def dev_to_hex(dm_dev)
-    rdev = File.open(dm_dev.path).stat.rdev
-    major = rdev / 256
-    minor = rdev - major * 256
-    major.to_s + ':' + minor.to_s
+    begin
+      rdev = (f = File.open(dm_dev.path)).stat.rdev
+      major = rdev / 256
+      minor = rdev - major * 256
+      major.to_s + ':' + minor.to_s
+    ensure
+      f.close unless f.nil?
+    end
   end
 
   def ctr_message_status_interface(opts, msg = nil)
@@ -976,12 +981,12 @@ class CacheTests < ThinpTestCase
     do_message_thresholds('lfu')
   end
 
-  def test_message_thresholds_lfu_ws
-    do_message_thresholds('lfu_ws')
-  end
-
   def test_message_thresholds_mfu
     do_message_thresholds('mfu')
+  end
+
+  def test_message_thresholds_lfu_ws
+    do_message_thresholds('lfu_ws')
   end
 
   def test_message_thresholds_mfu_ws
@@ -1047,12 +1052,12 @@ class CacheTests < ThinpTestCase
   end
 
   # Test mq policy module ctr arguments
-  def test_ctr_mq
-    do_ctr_tests('mq')
-  end
-
   def test_ctr_default
     do_ctr_tests('default')
+  end
+
+  def test_ctr_mq
+    do_ctr_tests('mq')
   end
 
   # Test basic policy module ctr arguments
@@ -1164,7 +1169,7 @@ class CacheTests < ThinpTestCase
            test = false;
         end
 
-        if test
+         if test
           feature_opts[:policy] = policy;
           if should_fail
             assert_raise(ExitError) do
@@ -1178,14 +1183,16 @@ class CacheTests < ThinpTestCase
     end
   end
 
-  def test_table_check_mq
-    do_table_check_tests('mq')
-  end
-
+  # Test mq policy module table correctness
   def test_table_check_default
     do_table_check_tests('default')
   end
 
+  def test_table_check_mq
+    do_table_check_tests('mq')
+  end
+
+  # Test basic policy module table correctness
   def test_table_check_basic
     do_table_check_tests('basic')
   end
