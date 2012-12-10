@@ -74,16 +74,16 @@ class TestOptions
   end
 
   def add_case(should_fail, policy_opts = Hash.new, feature_opts = Hash.new)
-    @params += [ should_fail, polocy_opts, feature_opts ]
+    @params += [should_fail, policy_opts, feature_opts]
   end
 
   def del_case(should_fail, policy_opts = Hash.new, feature_opts = Hash.new)
-    i = find_case(should_fail, polocy_opts, feature_opts)
+    i = find_case(should_fail, policy_opts, feature_opts)
     @params.delete_at(i) if i
   end
 
   def find_case(should_fail, policy_opts = Hash.new, feature_opts = Hash.new)
-    @params.index([ should_fail, polocy_opts, feature_opts ])
+    @params.index([should_fail, policy_opts, feature_opts])
   end
 end
 
@@ -97,24 +97,40 @@ class Policy
     @opts = opts
   end
 
+  def mq_module_policies
+    ['mq', 'default']
+  end
+
+  def basic_module_policies
+    ['basic', 'multiqueue', 'multiqueue_ws', 'q2', 'twoqueue', 'fifo', 'filo',
+     'lfu', 'mfu', 'lfu_ws', 'mfu_ws', 'lru', 'mru', 'noop', 'random', 'dumb']
+  end
+
+  def policies
+    mq_module_policies + basic_module_policies
+  end
+
   def is_valid_policy_name(name = @name)
-    ['mq', 'default', 'basic', 'multiqueue', 'multiqueue_ws', 'q2', 'twoqueue', 'fifo',
-     'filo', 'lfu', 'mfu', 'lfu_ws', 'mfu_ws', 'lru', 'mru', 'noop', 'random', 'dumb'].include?(name)
+    policies.include?(name)
   end
 
   def is_basic_module(name = @name)
-    ! ['mq', 'default'].include?(@name)
+    basic_module_policies.include?(@name)
   end
 
   def is_basic_multiqueue(name = @name)
     ['basic', 'multiqueue', 'multiqueue_ws'].include?(@name)
   end
 
+  def threshold_options
+      ['sequential_threshold', 'random_threshold']
+  end
+
   def is_valid_policy_arg(name)
     if is_basic_module(@name)
-      ['sequential_threshold', 'random_threshold', 'multiqueue_timeout', 'hits'].include?(name)
+      (threshold_options + ['multiqueue_timeout', 'hits']).include?(name)
     else
-      ['sequential_threshold', 'random_threshold'].include?(name)
+      threshold_options.include?(name)
     end
   end
 end
@@ -1119,8 +1135,9 @@ class CacheTests < ThinpTestCase
     ['writeback', 'writethrough'].include?(name)
   end
 
-  def do_table_check_test(name, opts = Hash.new)
+  def do_table_check_test(opts = Hash.new)
     table, status, origin_size, block_size, md_total, metadata_dev, cache_dev, origin_dev = ctr_message_status_interface(opts)
+
     assert(table.metadata_dev == metadata_dev)
     assert(table.cache_dev == cache_dev)
     assert(table.origin_dev == origin_dev)
@@ -1151,10 +1168,10 @@ class CacheTests < ThinpTestCase
           feature_opts[:policy] = policy;
           if should_fail
             assert_raise(ExitError) do
-              do_table_check_test(name, feature_opts)
+              do_table_check_test(feature_opts)
             end
           else
-            do_table_check_test(name, feature_opts)
+            do_table_check_test(feature_opts)
           end
         end
       end
