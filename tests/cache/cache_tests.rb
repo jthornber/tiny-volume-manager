@@ -27,7 +27,7 @@ end
 
 #----------------------------------------------------------------
 
-class TestOptions
+class TestCases
   attr_reader :params
 
   def initialize
@@ -35,68 +35,65 @@ class TestOptions
     # _# suffixes to policy option keys (eg. :hits_2 as oposed to :hits) are
     # being used to deploy an option multiple times
     @params = [
-    # [ should_fail, policy_option_hash, feature_option_hash ]
+    # [ should_fail, feature_option_hash, policy_option_hash ]
       [ false, {}, {} ],
-      [ false, { :sequential_threshold => 234 }, {} ],
-      [ false, { :sequential_threshold => 234 }, { :io_mode => 'writethrough' } ],
-      [ false, { :random_threshold => 16 } , {} ],
-      [ false, { :random_threshold => 16 }, { :io_mode => 'writeback' } ],
-      [ false, { :random_threshold => 16 }, { :io_mode => 'writethrough' } ],
-      [ false, { :random_threshold => 16, :sequential_threshold => 234 }, {} ],
-      [ false, { :sequential_threshold => 234, :random_threshold => 16 }, { :io_mode => 'writeback' } ],
-      [ false, { :sequential_threshold => 234, :random_threshold => 16 }, { :io_mode => 'writethrough' } ],
-      [ false, { :multiqueue_timeout => 3333 }, {} ],
-      [ false, { :multiqueue_timeout => 3333 }, { :io_mode => 'writeback'} ],
-      [ false, { :multiqueue_timeout => 3333 }, { :io_mode => 'writethrough'} ],
-      [ false, { :multiqueue_timeout => 3333, :sequential_threshold => 234 }, {} ],
-      [ false, { :sequential_threshold => 234, :multiqueue_timeout => 3333 }, {} ],
-      [ false, { :multiqueue_timeout => 3333, :random_threshold => 16 }, {} ],
-      [ false, { :random_threshold => 16, :multiqueue_timeout => 3333 }, {} ],
-      [ false, { :sequential_threshold => 234, :random_threshold => 16, :multiqueue_timeout => 3333 }, {} ],
-      [ false, { :random_threshold => 16, :multiqueue_timeout => 3333, :sequential_threshold => 234 }, {} ],
-      [ false, { :hits => 0 }, {} ],
-      [ false, { :hits => 1 }, {} ],
-      [ false, { :sequential_threshold => 234, :hits => 0 }, {} ],
-      [ false, { :hits => 0, :sequential_threshold => 234 }, {} ],
-      [ false, { :sequential_threshold => 234, :hits => 1 }, {} ],
-      [ false, { :hits => 1, :sequential_threshold => 234 }, {} ],
-      [ false, { :random_threshold => 16, :hits => 0 }, {} ],
-      [ false, { :hits => 0, :random_threshold => 16 }, {} ],
-      [ false, { :random_threshold => 16, :hits => 1 }, {} ],
-      [ false, { :hits => 1, :random_threshold => 16 }, {} ],
-      [ false, { :sequential_threshold => 234, :random_threshold => 16, :hits => 0 }, { :io_mode => 'writeback'} ],
-      [ false, { :sequential_threshold => 234, :random_threshold => 16, :hits => 0 }, {} ],
-      [ false, { :random_threshold => 16, :hits => 0, :sequential_threshold => 234 }, {} ],
-      [ false, { :hits => 0, :sequential_threshold => 234, :random_threshold => 16 }, {} ],
-      [ false, { :sequential_threshold => 234, :random_threshold => 16, :hits => 1 }, {} ],
-      [ false, { :random_threshold => 16, :hits => 1, :sequential_threshold => 234 }, {} ],
-      [ false, { :hits => 1, :sequential_threshold => 234, :random_threshold => 16 }, {} ],
+      [ false, {}, { :sequential_threshold => 234 } ],
+      [ false, { :io_mode => 'writethrough' }, { :sequential_threshold => 234 } ],
+      [ false, {}, { :random_threshold => 16 } ],
+      [ false, { :io_mode => 'writeback' }, { :random_threshold => 16 } ],
+      [ false, { :io_mode => 'writethrough' } , { :random_threshold => 16 } ],
+      [ false, {}, { :random_threshold => 16, :sequential_threshold => 234 } ],
+      [ false, { :io_mode => 'writeback' }, { :sequential_threshold => 234, :random_threshold => 16 } ],
+      [ false, { :io_mode => 'writethrough' }, { :sequential_threshold => 234, :random_threshold => 16 } ],
+      [ false, {}, { :multiqueue_timeout => 3333 } ],
+      [ false, { :io_mode => 'writeback' }, { :multiqueue_timeout => 3333 } ],
+      [ false, { :io_mode => 'writethrough'} , { :multiqueue_timeout => 3333 } ],
+      [ false, {}, { :multiqueue_timeout => 3333, :sequential_threshold => 234 } ],
+      [ false, {}, { :sequential_threshold => 234, :multiqueue_timeout => 3333 } ],
+      [ false, {}, { :multiqueue_timeout => 3333, :random_threshold => 16 } ],
+      [ false, {}, { :random_threshold => 16, :multiqueue_timeout => 3333 } ],
+      [ false, {}, { :sequential_threshold => 234, :random_threshold => 16, :multiqueue_timeout => 3333 } ],
+      [ false, {}, { :random_threshold => 16, :multiqueue_timeout => 3333, :sequential_threshold => 234 } ],
+      [ false, {}, { :hits => 0 } ],
+      [ false, {}, { :hits => 1 } ],
+      [ false, {}, { :sequential_threshold => 234, :hits => 0 } ],
+      [ false, {}, { :hits => 0, :sequential_threshold => 234 } ],
+      [ false, {}, { :sequential_threshold => 234, :hits => 1 } ],
+      [ false, {}, { :hits => 1, :sequential_threshold => 234 } ],
+      [ false, {}, { :random_threshold => 16, :hits => 0 } ],
+      [ false, {}, { :hits => 0, :random_threshold => 16 } ],
+      [ false, {}, { :random_threshold => 16, :hits => 1 } ],
+      [ false, {}, { :hits => 1, :random_threshold => 16 } ],
+      [ false, { :io_mode => 'writeback'} , { :sequential_threshold => 234, :random_threshold => 16, :hits => 0 } ],
+      [ false, {}, { :sequential_threshold => 234, :random_threshold => 16, :hits => 0 } ],
+      [ false, {}, { :random_threshold => 16, :hits => 0, :sequential_threshold => 234 } ],
+      [ false, {}, { :hits => 0, :sequential_threshold => 234, :random_threshold => 16 } ],
+      [ false, {}, { :sequential_threshold => 234, :random_threshold => 16, :hits => 1 } ],
+      [ false, {}, { :random_threshold => 16, :hits => 1, :sequential_threshold => 234 } ],
+      [ false, {}, { :hits => 1, :sequential_threshold => 234, :random_threshold => 16 } ],
 
-      [ true,  { :sequential_threshold_1 => 234, :sequential_threshold_2 => 234 }, {} ],
-      [ true,  { :random_threshold_1 => 16, :random_threshold_2 => 32 }, {} ],
-      [ true,  { :random_threshold => 16 } , { :io_mode => 'writefoothrough' } ],
-      [ true,  { :random_threshold => 16 } , { :io_mode => 'writefoobar' } ],
-      [ true,  { :sequential_threshold_1 => 234, :sequential_threshold_2 => 234 }, { :io_mode => 'writefoobar' } ],
-      [ true,  { :hits_1 => 1, :hits_2 => 1 }, {} ],
-      [ true,  { :hits => -1 }, {} ],
-      [ true,  { :hits => 3 }, {} ],
-      [ true,  { :bogus_huddel_key => 3 }, {} ],
-      [ true,  { :sequential_threshold => -1 }, {} ],
-      [ true,  { :random_threshold => -1 }, {} ]
+      [ true,  {}, { :sequential_threshold_1 => 234, :sequential_threshold_2 => 234 } ],
+      [ true,  {}, { :random_threshold_1 => 16, :random_threshold_2 => 32 } ],
+      [ true,  { :io_mode => 'writefoobar' }, { :sequential_threshold_1 => 234, :sequential_threshold_2 => 234 } ],
+      [ true,  {}, { :hits_1 => 1, :hits_2 => 1 } ],
+      [ true,  {}, { :hits => -1 } ],
+      [ true,  {}, { :hits => 3 } ],
+      [ true,  {}, { :bogus_huddel_key => 3 } ],
+      [ true,  {}, { :sequential_threshold => -1 } ],
+      [ true,  {}, { :random_threshold => -1 } ]
     ]
   end
 
-  def add_case(should_fail, policy_opts = Hash.new, feature_opts = Hash.new)
-    @params += [should_fail, policy_opts, feature_opts]
+  def add_case(should_fail, feature_opts = Hash.new, policy_opts = Hash.new)
+    @params += [should_fail, feature_opts, policy_opts]
   end
 
-  def del_case(should_fail, policy_opts = Hash.new, feature_opts = Hash.new)
-    i = find_case(should_fail, policy_opts, feature_opts)
-    @params.delete_at(i) if i
+  def del_case(should_fail, feature_opts = Hash.new, policy_opts = Hash.new)
+    @params.delete_at(i) if (i = find_case(should_fail, feature_opts, policy_opts))
   end
 
-  def find_case(should_fail, policy_opts = Hash.new, feature_opts = Hash.new)
-    @params.index([should_fail, policy_opts, feature_opts])
+  def find_case(should_fail, feature_opts = Hash.new, policy_opts = Hash.new)
+    @params.index([should_fail, feature_opts, policy_opts])
   end
 end
 
@@ -133,7 +130,7 @@ class Policy
     options.include?(name)
   end
 
-  def test(policy_opts = Hash.new)
+  def run_test(policy_opts = @opts)
     if is_basic_module
       if is_basic_multiqueue
         true # multiqueue_threshold only with basic module multiqueue policies
@@ -178,8 +175,8 @@ class CacheStack
     @tvm.add_allocation_volume(ssd_dev, 0, dev_size(ssd_dev))
     @tvm.add_volume(linear_vol('md', meg(4)))
 
-    opts[:cache_size] = opts.fetch(:cache_size, meg(1024))
-    @tvm.add_volume(linear_vol('ssd', opts[:cache_size]))
+    cache_size = opts.fetch(:cache_size, meg(1024))
+    @tvm.add_volume(linear_vol('ssd', cache_size))
 
     @data_tvm = TinyVolumeManager::VM.new
     @data_tvm.add_allocation_volume(spindle_dev, 0, dev_size(spindle_dev))
@@ -235,12 +232,19 @@ class CacheStack
     @opts.fetch(:block_size, 512)
   end
 
-  def policy
-    @opts.fetch(:policy, Policy.new('default'))
+  def policy_name
+    @opts[:policy].name
+  end
+
+  def policy_opts
+    t = Hash.new
+    t.replace(@opts)
+    t.delete(:policy)
+    t
   end
 
   def io_mode
-    @opts.fetch(:io_mode, :writeback)
+    @opts[:io_mode] ? [ @opts[:io_mode] ] : []
   end
 
   def migration_threshold
@@ -249,8 +253,8 @@ class CacheStack
 
   def cache_table
     Table.new(CacheTarget.new(origin_size, @md, @ssd, @origin,
-                              block_size, [io_mode] + migration_threshold,
-                              policy.name, policy.opts))
+                              block_size, io_mode + migration_threshold,
+                              policy_name, policy_opts))
   end
 end
 
@@ -823,7 +827,8 @@ class CacheTests < ThinpTestCase
 
   # Check ctr cache stack with optional massages to set io thresholds etc.
   def do_ctr_message_status_interface(do_msg, opts = Hash.new)
-    opts[:policy] = opts.fetch(:policy, Policy.new('basic'))
+    policy = opts.fetch(:policy, Policy.new('basic'))
+    # opts.delete(:policy)
     msg = nil
     defaults = {
       :io_mode => 'writeback',
@@ -843,14 +848,13 @@ class CacheTests < ThinpTestCase
         # delete the message option to avoid it as a ctr key pair
         msg = [ '0 set_config', o.to_s, opts.delete(o).to_s ].join(' ') if opts[o]
       else
-        v = get_opt(opts[:policy].opts, o)
-        expected[o] = v ? v : opts[:policy].opts.fetch(o, val)
+        v = get_opt(policy.opts, o)
+        expected[o] = v ? v : policy.opts.fetch(o, val)
       end
     end
  
     # Got to invert hits option for expected check further down
-    expected[:hits] = expected[:hits] == 0 ? 1 : 0 if opts[:hits] || opts[:policy].opts[:hits]
-
+    expected[:hits] = expected[:hits] == 0 ? 1 : 0 if opts[:hits] || policy.opts[:hits]
     table, status, origin_size, block_size, md_total = ctr_message_status_interface(opts, msg)
     nr_blocks = origin_size / block_size
 
@@ -866,9 +870,9 @@ class CacheTests < ThinpTestCase
     assert(status.promotions <= nr_blocks)
     assert(status.promotions == status.residency)
 
-    if opts[:policy].is_basic_module
+    if policy.is_basic_module
       # Default multiqueue timeout paying attention to rounding divergence caused by the basic modules timout calculation
-      assert((status.policy_args[2] - expected[:multiqueue_timeout]).abs < 10) if opts[:policy].is_basic_multiqueue
+      assert((status.policy_args[2] - expected[:multiqueue_timeout]).abs < 10) if policy.is_basic_multiqueue
 
       # T_HITS/T_SECTORS accounting
       assert(status.policy_args[3] == expected[:hits])
@@ -1037,16 +1041,21 @@ class CacheTests < ThinpTestCase
   end
 
   def do_ctr_tests(name = 'basic')
-    TestOptions.new.params.each do |should_fail, policy_opts, feature_opts|
+    TestCases.new.params.each do |should_fail, feature_opts, policy_opts|
       with_policy(name, policy_opts) do |policy|
-        if policy.test(policy_opts)
-          feature_opts[:policy] = policy;
+        if policy.run_test
+          policy_opts[:policy] = policy;
+          if feature_opts.size > 0
+            should_fail = true
+            policy_opts.merge!(feature_opts)
+          end
+
           if should_fail
             assert_raise(ExitError) do
-              do_ctr_message_status_interface(false, feature_opts)
+              do_ctr_message_status_interface(false, policy_opts)
             end
           else
-            do_ctr_message_status_interface(false, feature_opts)
+            do_ctr_message_status_interface(false, policy_opts)
           end
         end
       end
@@ -1130,7 +1139,7 @@ class CacheTests < ThinpTestCase
   # No target ctr migration_threshold key pair as yet....
   def test_ctr_migration_threshold_fails
     assert_raise(ExitError) do
-      do_ctr_message_status_interface(false, :policy => Policy.new('basic', :migration_threshold => 2000 * 100))
+      do_ctr_message_status_interface(false, :policy => Policy.new('basic'), :migration_threshold => 2000 * 100)
     end
   end
 
@@ -1157,9 +1166,9 @@ class CacheTests < ThinpTestCase
   end
 
   def do_table_check_tests(name = 'basic')
-    TestOptions.new.params.each do |should_fail, policy_opts, feature_opts|
+    TestCases.new.params.each do |should_fail, feature_opts, policy_opts|
       with_policy(name, policy_opts) do |policy|
-        if policy.test(policy_opts)
+        if policy.run_test
           feature_opts[:policy] = policy;
           if should_fail
             assert_raise(ExitError) do
