@@ -244,7 +244,9 @@ class CacheTests < ThinpTestCase
 
 
   def test_git_extract_cache_quick
-    do_git_extract_cache_quick(:policy => Policy.new('mq'), :cache_size => meg(1024))
+    do_git_extract_cache_quick(:policy => Policy.new('mq'),
+                               :cache_size => meg(1440),
+                               :data_size => gig(2))
   end
 
   def do_git_extract_only_cache_quick(opts)
@@ -448,7 +450,7 @@ class CacheTests < ThinpTestCase
   end
 
   def test_git_extract_linear_quick
-    with_standard_linear do |linear|
+    with_standard_linear(:data_size => gig(2)) do |linear|
       git_prepare(linear, :ext4)
       git_extract(linear, :ext4, TAGS[0..5])
     end
