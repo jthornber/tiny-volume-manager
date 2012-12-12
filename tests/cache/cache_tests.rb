@@ -547,18 +547,24 @@ class CacheTests < ThinpTestCase
   end
 
   def do_cache_sizing_effect(name = 'basic')
-    opts = Hash.new
-    opts[:policy] = Policy.new(name)
-    opts[:nr_tags] = 1
-    opts[:data_size] = gig(2)
+    opts = {
+      :policy => Policy.new(name),
+      :nr_tags => 1,
+      :data_size => gig(2)
+    }
     size = meg(64)
     while size < meg(1408) do
       opts[:cache_size] = size
+      size += meg(64)
+
       report_time("git_extract_cache_quick", STDERR) do
         do_git_extract_cache_quick(opts)
       end
-      size += meg(64)
     end
+  end
+
+  def test_cache_sizing_effect_oops
+    do_git_extract_cache_quick(:policy => Policy.new(name), :nr_tags => 1, :data_size => gig(2), :cache_size => 64)
   end
 
   def test_cache_sizing_effect_default
