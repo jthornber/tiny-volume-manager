@@ -130,6 +130,10 @@ class Policy
     options.include?(name)
   end
 
+  def all_options
+    @threshold_options + @basic_module_options
+  end
+
   def run_test(policy_opts = @opts)
     if is_basic_module
       if is_basic_multiqueue
@@ -175,7 +179,7 @@ class CacheStack
     @tvm.add_allocation_volume(ssd_dev, 0, dev_size(ssd_dev))
     @tvm.add_volume(linear_vol('md', meg(4)))
 
-    cache_size = opts.fetch(:cache_size, meg(1024))
+    cache_size = opts.fetch(:cache_size, gig(1))
     @tvm.add_volume(linear_vol('ssd', cache_size))
 
     @data_tvm = TinyVolumeManager::VM.new
@@ -233,14 +237,12 @@ class CacheStack
   end
 
   def policy_name
+    @opts[:policy] = @opts.fetch(:policy, Policy.new('basic'))
     @opts[:policy].name
   end
 
   def policy_opts
-    t = Hash.new
-    t.replace(@opts)
-    t.delete(:policy)
-    t
+    @opts.select { |key, v| @opts[:policy].all_options.include?(key) }
   end
 
   def io_mode
@@ -343,10 +345,11 @@ class CacheTests < ThinpTestCase
   end
 
   def do_git_extract_cache_quick(opts)
+    i = opts.fetch(:nr_tags, 5)
     stack = CacheStack.new(@dm, @metadata_dev, @data_dev, opts)
     stack.activate do |stack|
       git_prepare(stack.cache, :ext4)
-      git_extract(stack.cache, :ext4, TAGS[0..5])
+      git_extract(stack.cache, :ext4, TAGS[0..i])
     end
   end
 
@@ -357,7 +360,7 @@ class CacheTests < ThinpTestCase
                                :data_size => gig(2))
   end
 
-  def do_git_extract_only_cache_quick(opts)
+  def do_git_extract_only_cache_quick(opts = Hash.new)
     opts = {
       :policy     => opts.fetch(:policy, Policy.new('basic')),
       :cache_size => opts.fetch(:cache_size, meg(256)),
@@ -451,6 +454,10 @@ class CacheTests < ThinpTestCase
   end
 
 
+  def test_git_extract_cache_quick_default
+    do_git_extract_cache_quick(:policy => Policy.new('default'))
+  end
+
   def test_git_extract_cache_quick_mq
     do_git_extract_cache_quick(:policy => Policy.new('mq'))
   end
@@ -539,16 +546,93 @@ class CacheTests < ThinpTestCase
     end
   end
 
-  def test_cache_sizing_effect
-    cache_sizes = [64, 128, 192, 256, 320, 384, 448, 512,
-                   576, 640, 704, 768, 832, 896, 960,
-                   1024, 1088, 1152, 1216, 1280, 1344, 1408]
-
-    cache_sizes.each do |size|
-      do_git_extract_cache_quick(:cache_size => meg(size),
-                                 :data_size => meg(1408))
+  def do_cache_sizing_effect(name = 'basic')
+    opts = Hash.new
+    opts[:policy] = Policy.new(name)
+    opts[:nr_tags] = 1
+    opts[:data_size] = gig(2)
+    size = meg(64)
+    while size < meg(1408) do
+      opts[:cache_size] = size
+      report_time("git_extract_cache_quick", STDERR) do
+        do_git_extract_cache_quick(opts)
+      end
+      size += meg(64)
     end
   end
+
+  def test_cache_sizing_effect_default
+    do_cache_sizing_effect('default')
+  end
+
+  def test_cache_sizing_effect_mq
+    do_cache_sizing_effect('mq')
+  end
+
+  def test_cache_sizing_effect_basic
+    do_cache_sizing_effect('basic')
+  end
+
+  def test_cache_sizing_effect_multiqueue
+    do_cache_sizing_effect('multiqueue')
+  end
+
+  def test_cache_sizing_effect_multiqueue_ws
+    do_cache_sizing_effect('multiqueue_ws')
+  end
+
+  def test_cache_sizing_effect_q2
+    do_cache_sizing_effect('q2')
+  end
+
+  def test_cache_sizing_effect_twoqueue
+    do_cache_sizing_effect('twoqueue')
+  end
+
+  def test_cache_sizing_effect_fifo
+    do_cache_sizing_effect('fifo')
+  end
+
+  def test_cache_sizing_effect_filo
+    do_cache_sizing_effect('filo')
+  end
+
+  def test_cache_sizing_effect_lfu
+    do_cache_sizing_effect('lfu')
+  end
+
+  def test_cache_sizing_effect_mfu
+    do_cache_sizing_effect('mfu')
+  end
+
+  def test_cache_sizing_effect_lfu_ws
+    do_cache_sizing_effect('lfu_ws')
+  end
+
+  def test_cache_sizing_effect_mfu_ws
+    do_cache_sizing_effect('mfu_ws')
+  end
+
+  def test_cache_sizing_effect_lru
+    do_cache_sizing_effect('lru')
+  end
+
+  def test_cache_sizing_effect_mru
+    do_cache_sizing_effect('mru')
+  end
+
+  def test_cache_sizing_effect_noop
+    do_cache_sizing_effect('noop')
+  end
+
+  def test_cache_sizing_effect_random
+    do_cache_sizing_effect('random')
+  end
+
+  def test_cache_sizing_effect_dumb
+    do_cache_sizing_effect('dumb')
+  end
+
 
   def test_git_extract_linear
     with_standard_linear do |linear|
@@ -828,7 +912,6 @@ class CacheTests < ThinpTestCase
   # Check ctr cache stack with optional massages to set io thresholds etc.
   def do_ctr_message_status_interface(do_msg, opts = Hash.new)
     policy = opts.fetch(:policy, Policy.new('basic'))
-    # opts.delete(:policy)
     msg = nil
     defaults = {
       :io_mode => 'writeback',
@@ -1045,6 +1128,7 @@ class CacheTests < ThinpTestCase
       with_policy(name, policy_opts) do |policy|
         if policy.run_test
           policy_opts[:policy] = policy;
+
           if feature_opts.size > 0
             should_fail = true
             policy_opts.merge!(feature_opts)
