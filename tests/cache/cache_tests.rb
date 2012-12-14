@@ -290,6 +290,44 @@ class CacheTests < ThinpTestCase
     end
   end
 
+  #--------------------------------
+
+  def maxiops(dev, nr_seeks = 10000)
+    ProcessControl.run("maxiops -s #{nr_seeks} #{dev} -wb 4096")
+  end
+
+  def discard_dev(dev)
+    dev.discard(0, dev_size(dev))
+  end
+
+  def test_maxiops_cache_no_discard
+    with_standard_cache(:format => true,
+                        :data_size => gig(1)) do |cache|
+      maxiops(cache, 10000)
+    end
+  end
+
+  def test_maxiops_cache_with_discard
+    size = 512
+
+    with_standard_cache(:format => true,
+                        :data_size => gig(1),
+                        :cache_size => meg(size)) do |cache|
+      discard_dev(cache)
+      report_time("maxiops with cache size #{size}m", STDERR) do
+        maxiops(cache, 10000)
+      end
+    end
+  end
+
+  def test_maxiops_linear
+    with_standard_linear(:data_size => gig(1)) do |linear|
+      maxiops(linear, 10000)
+    end
+  end
+
+  #----------------------------------------------------------------
+
   def test_dd_cache
     with_standard_cache(:format => true, :data_size => gig(1)) do |cache|
       wipe_device(cache)
@@ -349,7 +387,7 @@ class CacheTests < ThinpTestCase
 
   def test_git_extract_cache_quick
     do_git_extract_cache_quick(:policy => Policy.new('mq'),
-                               :cache_size => meg(1440),
+                               :cache_size => meg(256),
                                :data_size => gig(2))
   end
 
@@ -536,13 +574,10 @@ class CacheTests < ThinpTestCase
   end
 
   def test_cache_sizing_effect
-    cache_sizes = [64, 128, 192, 256, 320, 384, 448, 512,
-                   576, 640, 704, 768, 832, 896, 960,
-                   1024, 1088, 1152, 1216, 1280, 1344, 1408]
-
+    cache_sizes = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 1536]
     cache_sizes.each do |size|
       do_git_extract_cache_quick(:cache_size => meg(size),
-                                 :data_size => meg(1408))
+                                 :data_size => gig(2))
     end
   end
 
@@ -658,7 +693,7 @@ class CacheTests < ThinpTestCase
       while tid.alive?
         sleep 5
         cache.pause do
-          table.targets[0].args[6] = use_mq ? 'mq' : 'writeback'
+          table.targets[0].args[6] = use_mq ? 'mq' : 'cleaner'
           cache.load(table)
           use_mq = !use_mq
         end
@@ -708,13 +743,13 @@ class CacheTests < ThinpTestCase
     end
   end
 
-  def test_writeback_policy
+  def test_cleaner_policy
     with_standard_cache(:format => true) do |cache|
       git_prepare(cache, :ext4)
 
       cache.pause do
         table = cache.active_table
-        table.targets[0].args[6] = 'writeback'
+        table.targets[0].args[6] = 'cleaner'
         cache.load(table)
       end
 
