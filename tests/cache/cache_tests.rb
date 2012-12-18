@@ -633,7 +633,7 @@ class CacheTests < ThinpTestCase
     with_standard_cache(:cache_size => meg(256),
                         :format => true,
                         :block_size => 512,
-                        :policy => Policy.new('mkfs')) do |cache|
+                        :policy => Policy.new('mq')) do |cache|
       do_bonnie(cache, :ext4)
     end
   end
