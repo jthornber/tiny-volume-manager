@@ -322,6 +322,71 @@ end
 
 #----------------------------------------------------------------
 
+class BcacheStack
+  include DiskUnits
+  include ThinpTestMixin
+  include Utils
+
+  attr_accessor :ssd, :cache, :opts
+
+  def initialize(dm, ssd_dev, spindle_dev, opts)
+    @dm = dm
+    @ssd_dev = ssd_dev
+    @spindle_dev = spindle_dev
+
+    @cache = nil
+    @opts = opts
+
+    @tvm = TinyVolumeManager::VM.new
+    @tvm.add_allocation_volume(ssd_dev, 0, dev_size(ssd_dev))
+    @tvm.add_volume(linear_vol('md', meg(4)))
+
+    cache_size = opts.fetch(:cache_size, gig(1))
+    @tvm.add_volume(linear_vol('ssd', cache_size))
+
+    @data_tvm = TinyVolumeManager::VM.new
+    @data_tvm.add_allocation_volume(spindle_dev, 0, dev_size(spindle_dev))
+    @data_tvm.add_volume(linear_vol('origin', origin_size))
+  end
+
+  def activate(&block)
+    with_devs(@tvm.table('ssd'),
+              @data_tvm.table('origin')) do |ssd, origin|
+      ProcessControl.run("make-bcache -B #{origin} -C #{ssd} --cache_replacement_policy=#{policy} -w #{block_size} --writeback --discard")
+      ProcessControl.run("echo #{origin} > /sys/fs/bcache/register")
+      ProcessControl.run("echo #{ssd} > /sys/fs/bcache/register")
+
+      # FIXME: need to readlink to get the bcache device name... so nasty
+      # ls -ltr /sys/block/dm-10/bcache/dev
+      # lrwxrwxrwx 1 root root 0 Jan 16 13:58 /sys/block/dm-10/bcache/dev -> ../../bcache3
+      bcache_name = File.readlink("/sys/block/#{origin.dm_name}/bcache/dev").split('/')[2]
+      @cache = "/dev/#{bcache_name}"
+      block.call(@cache)
+      ProcessControl.run("echo 1 > /sys/block/#{bcache_name}/bcache/cache/unregister")
+      sleep 2 # FIXME: remove once reported bcache kernel bug is fixed
+      ProcessControl.run("echo 1 > /sys/block/#{bcache_name}/bcache/stop")
+    end
+  end
+
+  def policy
+    @opts.fetch(:policy, 'fifo')
+  end
+
+  def cache_mode
+    @opts.fetch(:cache_mode, 'wb')
+  end
+
+  def block_size
+    @opts.fetch(:block_size, 4096)
+  end
+
+  def origin_size
+    @opts.fetch(:data_size, dev_size(@spindle_dev))
+  end
+end
+
+#----------------------------------------------------------------
+
 class CacheTests < ThinpTestCase
   include GitExtract
   include Tags
@@ -754,6 +819,14 @@ class CacheTests < ThinpTestCase
     end
   end
 
+  def test_git_extract_bcache_quick
+    stack = BcacheStack.new(@dm, @metadata_dev, @data_dev, :cache_size => meg(256))
+    stack.activate do |cache|
+      git_prepare(cache, :ext4)
+      git_extract(cache, :ext4, TAGS[0..5])
+    end
+  end
+
   def test_fio_linear
     with_standard_linear do |linear|
       do_fio(linear, :ext4)
@@ -871,12 +944,18 @@ class CacheTests < ThinpTestCase
         git_prepare(stack.cache, :ext4)
       end
 
-      [256, 512, 768, 1024].each do |size|
-        sleep 10
-        resize_ssd(stack, meg(size))
+      begin
+        [256, 512, 768, 1024].each do |size|
+          sleep 10
+          stack.resize_ssd(meg(size))
+          STDERR.puts "resized to #{size}"
+        end
+      rescue
+        tid.kill
+        throw
+      ensure
+        tid.join
       end
-
-      tid.join
     end
   end
 
@@ -976,7 +1055,7 @@ class CacheTests < ThinpTestCase
       stack.resize_origin(gig(2))
       git_extract(stack.cache, :ext4, TAGS[0..1])
     end
-  end  
+  end
 
 
   ##############################################################################
@@ -1033,7 +1112,7 @@ class CacheTests < ThinpTestCase
       if do_msg
         v = get_opt(opts, o)
         expected[o] = v ? v : opts.fetch(o, val)
- 
+
         # delete the message option to avoid it as a ctr key pair
         msg = [ '0 set_config', o.to_s, opts.delete(o).to_s ].join(' ') if opts[o]
       else
@@ -1041,7 +1120,7 @@ class CacheTests < ThinpTestCase
         expected[o] = v ? v : policy.opts.fetch(o, val)
       end
     end
- 
+
     # Got to invert hits option for expected check further down
     expected[:hits] = expected[:hits] == 0 ? 1 : 0 if opts[:hits] || policy.opts[:hits]
     table, status, origin_size, block_size, md_total = ctr_message_status_interface(opts, msg)
@@ -1218,7 +1297,7 @@ class CacheTests < ThinpTestCase
   def test_message_thresholds_dumb
     do_message_thresholds('dumb')
   end
- 
+
   # Test change of target migration threshold
   def test_message_target_migration_threshold
     do_ctr_message_status_interface(true, :policy => Policy.new('basic'), :migration_threshold => 2000 * 100)
