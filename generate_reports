@@ -37,7 +37,7 @@ class File
       else
         m = /([DIWE]), (\[.*\])[^:]*: (.*)/.match(line)
         if !m
-          raise RuntimeError, "bad log line: #{line}"
+          raise RuntimeError, "bad log line: '#{line}'"
         end
 
         msg = Message.new(m[1], trim_time(m[2]), m[3])

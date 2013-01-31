@@ -12,9 +12,8 @@ require 'lib/xml_format'
 
 #----------------------------------------------------------------
 
-# Repeatedly runs iozone, taking a new snap and dropping the old
-# between each run.
 class FSBench < ThinpTestCase
+  include GitExtract
   include Tags
   include Utils
   include XMLFormat
@@ -27,20 +26,9 @@ class FSBench < ThinpTestCase
     ProcessControl::run("bonnie++ -d #{dir} -r 0 -u root -s 2048")
   end
 
-  TAGS = %w(v2.6.12 v2.6.18 v2.6.22 v2.6.26 v2.6.30 v2.6.34 v2.6.37 v3.2)
-
-  def git_extract
-    repo = Git.clone('/root/linux-github', 'linux')
-
-    repo.in_repo do
-      TAGS.each do |tag|
-        report_time("checking out #{tag}") do
-          repo.checkout(tag)
-        end
-      end
-    end
-
-    repo.delete
+  def extract(dev)
+      git_prepare(dev, :ext4)
+      git_extract(dev, :ext4, TAGS[0..5])
   end
 
   def with_fs(dev, fs_type)
@@ -125,19 +113,25 @@ class FSBench < ThinpTestCase
   end
 
   def test_git_extract_raw
-    raw_test {git_extract}
+    with_standard_linear do |linear|
+      extract(linear)
+    end
   end
 
   def test_git_extract_thin
-    thin_test {git_extract}
+    with_standard_pool(@size, :zero => false, :block_size => 2048) do |pool|
+      with_new_thin(pool, @size, 0) do |thin|
+        extract(thin)
+      end
+    end
   end
 
-  def test_git_extract_rolling_snap
+  def _test_git_extract_rolling_snap
     dir = Dir.pwd
     n = 0
 
     body = lambda do |pool, thin|
-      git_extract
+      extract(thin)
       dump_metadata(pool, @metadata_dev, "#{dir}/git_extract_#{n}.xml");
       n += 1
     end
