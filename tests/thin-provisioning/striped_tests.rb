@@ -31,8 +31,8 @@ class StripesOnThinStack
     pool_table = Table.new(ThinPoolTarget.new(dev_size(@data_dev),
                                               @metadata_dev,
                                               @data_dev,
-                                              128,
-                                              0,
+                                              512,
+                                              8,
                                               true,
                                               true,
                                               false))
