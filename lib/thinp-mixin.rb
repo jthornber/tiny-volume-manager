@@ -22,8 +22,20 @@ end
 
 #------------------------------------------------
 # Use as a mixin to a class that has @dm defined
+module DMUtils
+  # low level dm handling
+  def with_dev(table, &block)
+    @dm.with_dev(table, &block)
+  end
+
+  def with_devs(*tables, &block)
+    @dm.with_devs(*tables, &block)
+  end
+end
+
 module DMThinUtils
   include DM
+  include DMUtils
 
   def thin_table(pool, size, id, opts = Hash.new)
     Table.new(ThinTarget.new(size, pool, id, opts[:origin]))
@@ -97,17 +109,6 @@ module ThinpTestMixin
     max_size = 8355840
     size = max_size if size > max_size
     size
-  end
-
-  #--------------------------------
-
-  # low level dm handling
-  def with_dev(table, &block)
-    @dm.with_dev(table, &block)
-  end
-
-  def with_devs(*tables, &block)
-    @dm.with_devs(*tables, &block)
   end
 
   #--------------------------------
