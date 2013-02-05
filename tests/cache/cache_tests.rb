@@ -427,6 +427,21 @@ class CacheTests < ThinpTestCase
     ProcessControl.run("maxiops -s #{nr_seeks} #{dev} -wb 4096")
   end
 
+  ORION_DIR = './orion_test'
+
+  def orion(dev, fs_type)
+    fs = FS::file_system(fs_type, dev)
+    fs.format
+
+    Dir.chdir('/root/bin') do
+      File.open('orion.lun', 'w+') do |f|
+        f.puts dev
+      end
+
+      ProcessControl.run("./orion -run simple")
+    end
+  end
+
   def discard_dev(dev)
     dev.discard(0, dev_size(dev))
   end
@@ -521,6 +536,22 @@ class CacheTests < ThinpTestCase
     do_git_extract_cache_quick(:policy => Policy.new('mq'),
                                :cache_size => meg(256),
                                :data_size => gig(2))
+  end
+
+  def test_orion_cache_simple
+    stack = CacheStack.new(@dm, @metadata_dev, @data_dev,
+                           :policy => Policy.new('mq'),
+                           :cache_size => meg(256),
+                           :data_size => gig(2))
+    stack.activate do |stack|
+      orion(stack.cache, :ext4)
+    end
+  end
+
+  def test_orion_linear_simple
+    with_standard_linear(:data_size => gig(2)) do |linear|
+      orion(linear, :ext4)
+    end
   end
 
   def do_git_extract_only_cache_quick(opts = Hash.new)
