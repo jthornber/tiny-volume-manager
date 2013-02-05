@@ -20,8 +20,43 @@ $prereqs = Prerequisites.requirements do
   require_ruby_version /^1.8/
 end
 
+#------------------------------------------------
+# Use as a mixin to a class that has @dm defined
+module DMThinUtils
+  include DM
+
+  def thin_table(pool, size, id, opts = Hash.new)
+    Table.new(ThinTarget.new(size, pool, id, opts[:origin]))
+  end
+
+  def with_thin(pool, size, id, opts = Hash.new, &block)
+    @dm.with_dev(thin_table(pool, size, id, opts), &block)
+  end
+
+  def with_new_thin(pool, size, id, opts = Hash.new, &block)
+    pool.message(0, "create_thin #{id}")
+    with_thin(pool, size, id, opts, &block)
+  end
+
+  def with_thins(pool, size, *ids, &block)
+    tables = ids.map {|id| thin_table(pool, size, id)}
+    @dm.with_devs(*tables, &block)
+  end
+
+  def with_new_thins(pool, size, *ids, &block)
+    ids.each do |id|
+      pool.message(0, "create_thin #{id}")
+    end
+
+    with_thins(pool, size, *ids, &block)
+  end
+end
+
+#------------------------------------------------
+
 module ThinpTestMixin
   include DM
+  include DMThinUtils
   include Benchmarking
   include MetadataUtils
   include ProcessControl
@@ -108,10 +143,6 @@ module ThinpTestMixin
     Table.new(LinearTarget.new(data_size, @data_dev, 0))
   end
 
-  def thin_table(pool, size, id, opts = Hash.new)
-    Table.new(ThinTarget.new(size, pool, id, opts[:origin]))
-  end
-
   def fake_discard_table(opts = Hash.new)
     dev = opts.fetch(:dev, @data_dev)
     offset = opts.fetch(:offset, 0)
@@ -141,28 +172,6 @@ module ThinpTestMixin
 
   def with_fake_discard(opts = Hash.new, &block)
     with_dev(fake_discard_table(opts), &block)
-  end
-
-  def with_thin(pool, size, id, opts = Hash.new, &block)
-    @dm.with_dev(thin_table(pool, size, id, opts), &block)
-  end
-
-  def with_new_thin(pool, size, id, opts = Hash.new, &block)
-    pool.message(0, "create_thin #{id}")
-    with_thin(pool, size, id, opts, &block)
-  end
-
-  def with_thins(pool, size, *ids, &block)
-    tables = ids.map {|id| thin_table(pool, size, id)}
-    @dm.with_devs(*tables, &block)
-  end
-
-  def with_new_thins(pool, size, *ids, &block)
-    ids.each do |id|
-      pool.message(0, "create_thin #{id}")
-    end
-
-    with_thins(pool, size, *ids, &block)
   end
 
   def with_new_snap(pool, size, id, origin, thin = nil, &block)
