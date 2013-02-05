@@ -6,24 +6,9 @@ require 'lib/fs'
 require 'lib/tags'
 require 'lib/thinp-test'
 require 'lib/cache-status'
+require 'lib/disk-units'
 
 require 'pp'
-
-#----------------------------------------------------------------
-
-module DiskUnits
-  def sectors(n)
-    n
-  end
-
-  def meg(n)
-    n * sectors(2048)
-  end
-
-  def gig(n)
-    n * meg(1) * 1024
-  end
-end
 
 #----------------------------------------------------------------
 
