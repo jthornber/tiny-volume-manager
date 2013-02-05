@@ -28,6 +28,12 @@ module DM
     end
   end
 
+  class StripeTarget < Target
+    def initialize(sector_count, chunk_size, *pairs)
+      super('striped', sector_count, chunk_size, *(pairs.flatten))
+    end
+  end
+
   class ThinPoolTarget < Target
     attr_accessor :metadata_dev
 
