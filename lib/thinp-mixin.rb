@@ -33,6 +33,55 @@ module DMUtils
   end
 end
 
+#------------------------------------------------
+
+class PoolStack
+  include DM
+  include DMUtils
+  include Utils
+
+  attr_reader :dm, :data_dev, :metadata_dev, :opts
+
+  def initialize(dm, data_dev, metadata_dev, opts)
+    @dm, @data_dev, @metadata_dev, @opts = [dm, data_dev, metadata_dev, opts]
+  end
+
+  def pool_table
+    size = @opts.fetch(:data_size, dev_size(@data_dev))
+    zero = @opts.fetch(:zero, true)
+    discard = @opts.fetch(:discard, true)
+    discard_pass = @opts.fetch(:discard_passdown, true)
+    read_only = @opts.fetch(:read_only, false)
+    block_size = @opts.fetch(:block_size, 128)
+    low_water_mark = @opts.fetch(:low_water_mark, 0)
+
+    Table.new(ThinPoolTarget.new(size, @metadata_dev, @data_dev,
+                                 block_size, low_water_mark,
+                                 zero, discard, discard_pass, read_only))
+  end
+
+  def activate(&block)
+    with_dev(pool_table) do |pool|
+      @pool = pool
+      block.call(pool)
+    end
+  end
+
+  def activate_thin(opts = Hash.new, &block)
+    id = opts.fetch(:id, 0)
+    create = opts.fetch(:create, false)
+
+    if (create)
+      @pool.message(0, "create_thin #{id}")
+    end
+
+    thin_table = Table.new(ThinTarget.new(opts[:thin], @pool, id, opts[:origin]))
+    @dm.with_dev(thin_table, &block)
+  end
+end
+
+#------------------------------------------------
+
 module DMThinUtils
   include DM
   include DMUtils
@@ -114,29 +163,20 @@ module ThinpTestMixin
   #--------------------------------
 
   # table generation
-
   def standard_pool_table(size, opts = Hash.new)
-    zero = opts.fetch(:zero, true)
-    discard = opts.fetch(:discard, true)
-    discard_pass = opts.fetch(:discard_passdown, true)
-    read_only = opts.fetch(:read_only, false)
-    block_size = opts.fetch(:block_size, @data_block_size)
-
-    Table.new(ThinPoolTarget.new(size, @metadata_dev, @data_dev,
-                                 block_size, @low_water_mark,
-                                 zero, discard, discard_pass, read_only))
+    opts[:data_size] = size
+    opts[:low_water_mark] = @low_water_mark
+    opts[:block_size] = @data_block_size
+    stack = PoolStack.new(@dm, @data_dev, @metadata_dev, opts)
+    stack.pool_table
   end
 
   def custom_data_pool_table(data_dev, size, opts = Hash.new)
-    zero = opts.fetch(:zero, true)
-    discard = opts.fetch(:discard, true)
-    discard_pass = opts.fetch(:discard_passdown, true)
-    read_only = opts.fetch(:read_only, false)
-    block_size = opts.fetch(:block_size, @data_block_size)
-
-    Table.new(ThinPoolTarget.new(size, @metadata_dev, data_dev,
-                                 block_size, @low_water_mark,
-                                 zero, discard, discard_pass, read_only))
+    opts[:data_size] = size
+    opts[:low_water_mark] = @low_water_mark
+    opts[:block_size] = @data_block_size
+    stack = PoolStack.new(@dm, data_dev, opts)
+    stack.pool_table
   end
 
   def standard_linear_table(opts = Hash.new)
@@ -160,11 +200,16 @@ module ThinpTestMixin
   #--------------------------------
 
   def with_standard_pool(size, opts = Hash.new, &block)
-    with_dev(standard_pool_table(size, opts), &block)
+    opts[:data_size] = size
+    stack = PoolStack.new(@dm, @data_dev, @metadata_dev, opts)
+    stack.activate(&block)
   end
 
   def with_custom_data_pool(data_dev, size, opts = Hash.new, &block)
-    with_dev(custom_data_pool_table(data_dev, size, opts), &block)
+    opts[:data_dev] = data_dev
+    opts[:data_size] = size
+    stack = PoolStack.new(@dm, @data_dev, @metadata_dev, opts)
+    stack.activate(&block)
   end
 
   def with_standard_linear(opts = Hash.new, &block)
