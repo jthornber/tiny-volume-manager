@@ -1,4 +1,5 @@
 require 'lib/log'
+require 'lib/prelude'
 require 'lib/process'
 require 'lib/utils'
 require 'lib/queue_limits'
@@ -130,9 +131,10 @@ module DM
     end
   end
 
+  # This hands off most of it's work to DMInterface
+  # FIXME: not true
   class DMDev
-    attr_accessor :name
-    attr_reader :interface, :active_table
+    attr_reader :name, :interface, :active_table
 
     def initialize(name, interface)
       @name = name
@@ -156,7 +158,11 @@ module DM
     end
 
     def suspend
-      ProcessControl.run("dmsetup suspend #{@name}")
+      @interface.suspend(path)
+    end
+
+    def resume
+      @interface.resume(path)
     end
 
     def pause(&block)
@@ -164,43 +170,35 @@ module DM
       bracket_(method(:resume), &block)
     end
 
-    def resume()
-      ProcessControl.run("dmsetup resume #{@name}")
-    end
-
-    def remove()
-      Utils.retry_if_fails(5.0) do
-        if File.exists?("/dev/mapper/" + @name)
-          ProcessControl.run("dmsetup remove #{@name}")
-        end
-      end
+    def remove
+      @interface.remove(path)
     end
 
     def message(sector, *args)
-      ProcessControl.run("dmsetup message #{path} #{sector} #{args.join(' ')}")
+      @interface.message(path, sector, *args)
     end
 
     def status
-      ProcessControl.run("dmsetup status #{@name}")
+      @interface.status(path)
     end
 
     def table
-      ProcessControl.run("dmsetup table #{@name}")
+      @interface.table(path)
     end
 
     def info
-      ProcessControl.run("dmsetup info #{@name}")
+      @interface.info(path)
     end
 
     def dm_name
       m = /Major, minor:\s*\d+, (\d+)/.match(info)
-      raise "Couldn't find minor number for dm device" unless m
+      raise "Couldn't find minor number for dm device in info" unless m
 
       "dm-#{m[1]}"
     end
 
     def event_nr
-      output = ProcessControl.run("dmsetup status -v #{@name}")
+      output = @interface.status(path, '-v')
       m = output.match(/Event number:[ \t]*([0-9]+)/)
       if m.nil?
         raise "Couldn't find event number for dm device"
@@ -213,6 +211,8 @@ module DM
       DMEventTracker.new(event_nr, self)
     end
 
+    #--------------------------------
+    # FIXME: the rest of these methods should go elsewhere
     def post_remove_check
       @active_table.targets.each do |target|
         if target.public_methods.member?('post_remove_check')
@@ -221,7 +221,7 @@ module DM
       end
     end
 
-    def to_s()
+    def to_s
       path
     end
 
@@ -259,6 +259,42 @@ module DM
   end
 
   class DMInterface
+    def suspend(path)
+      ProcessControl.run("dmsetup suspend #{path}")
+    end
+
+    def resume(path)
+      ProcessControl.run("dmsetup resume #{path}")
+    end
+
+    def remove(path)
+      # FIXME: lift this retry?
+      Utils.retry_if_fails(5.0) do
+        if File.exists?(path)
+          ProcessControl.run("dmsetup remove #{path}")
+        end
+      end
+    end
+
+    def message(name, sector, *args)
+      ProcessControl.run("dmsetup message #{path} #{sector} #{args.join(' ')}")
+    end
+
+    def status(path, *args)
+      ProcessControl.run("dmsetup status #{args} #{path}")
+    end
+
+    def table(path)
+      ProcessControl.run("dmsetup table #{path}")
+    end
+
+    def info(path)
+      ProcessControl.run("dmsetup info #{path}")
+    end
+
+    #--------------------------------
+    # FIXME: move these to a mixin module
+
     def with_dev(table = nil, &block)
       bracket(create(table),
               lambda {|dev| dev.remove; dev.post_remove_check},
