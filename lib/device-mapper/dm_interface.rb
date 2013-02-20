@@ -36,6 +36,7 @@ module DM
     end
 
     def wait(path, event_nr)
+      # FIXME: it would be nice if this returned the new event nr
       ProcessControl.run("dmsetup wait #{path} #{event_nr}")
     end
 
