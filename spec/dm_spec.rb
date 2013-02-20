@@ -11,11 +11,11 @@ def new_dev(name)
   [dev, dm]
 end
 
-def hands_down(method)
+def hands_down(method, *args)
     name = 'foo'
     dev, dm = new_dev(name)
-    dm.should_receive(method).with(dev.path)
-    dev.send(method)
+    dm.should_receive(method).with(dev.path, *args)
+    dev.send(method, *args)
 end
 
 def hands_down_with_result(method, result, *args)
@@ -79,7 +79,7 @@ describe DM::DMDev do
 
   it "should have a dm_name method" do
     fake_info = "the quick brown fox\nMajor, minor: 45, 17\njumps over the lazy"
-    
+
     name = 'foo'
     dev, dm = new_dev(name)
     dm.should_receive(:info).
@@ -90,18 +90,18 @@ describe DM::DMDev do
 
   it "should raise if malformed info in dm_name" do
     fake_info = "the quick brown fox\nMajor, minor: , 17\njumps over the lazy"
-    
+
     name = 'foo'
     dev, dm = new_dev(name)
     dm.should_receive(:info).
       with("/dev/mapper/#{name}").
       and_return(fake_info)
     expect {dev.dm_name}.to raise_error(RuntimeError)
-end    
+  end
 
   it "should have an event_nr method" do
     fake_status = "the quick brown fox\nEvent number: 18 \njumps over the lazy"
-    
+
     name = 'foo'
     dev, dm = new_dev(name)
     dm.should_receive(:status).
@@ -112,7 +112,7 @@ end
 
   it "should raise if malformed status in event_nr" do
     fake_status = "the quick brown fox\nEvent nimber: 18 \njumps over the lazy"
-    
+
     name = 'foo'
     dev, dm = new_dev(name)
     dm.should_receive(:status).
@@ -137,6 +137,10 @@ end
     tracker = dev.event_tracker
     tracker.event_nr.should == 18
     tracker.device.should === dev
+  end
+
+  it "should have a wait method" do
+    hands_down(:wait, 18)
   end
 
   it "should have a discard method" # FIXME: I don't think so

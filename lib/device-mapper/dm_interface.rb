@@ -35,6 +35,10 @@ module DM
       ProcessControl.run("dmsetup info #{path}")
     end
 
+    def wait(path, event_nr)
+      ProcessControl.run("dmsetup wait #{path} #{event_nr}")
+    end
+
     #--------------------------------
     # FIXME: move these to a mixin module
 

@@ -62,6 +62,10 @@ module DM
       @interface.info(path)
     end
 
+    def wait(event_nr)
+      @interface.wait(path, event_nr)
+    end
+
     def dm_name
       m = /Major, minor:\s*\d+, (\d+)/.match(info)
       raise "Couldn't find minor number for dm device in info" unless m
