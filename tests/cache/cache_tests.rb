@@ -223,7 +223,7 @@ class CacheStack
   end
 
   def policy_name
-    @opts[:policy] = @opts.fetch(:policy, Policy.new('basic'))
+    @opts[:policy] = @opts.fetch(:policy, Policy.new('default'))
     @opts[:policy].name
   end
 
@@ -727,7 +727,7 @@ class CacheTests < ThinpTestCase
       while tid.alive?
         sleep 5
         cache.pause do
-          table.targets[0].args[6] = use_mq ? 'mq' : 'cleaner'
+          table.targets[0].args[5] = use_mq ? 'mq' : 'cleaner'
           cache.load(table)
           use_mq = !use_mq
         end
@@ -789,7 +789,7 @@ class CacheTests < ThinpTestCase
 
       cache.pause do
         table = cache.active_table
-        table.targets[0].args[6] = 'cleaner'
+        table.targets[0].args[5] = 'cleaner'
         cache.load(table)
       end
 

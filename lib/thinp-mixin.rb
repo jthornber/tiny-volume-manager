@@ -67,6 +67,7 @@ class PoolStack
     end
   end
 
+  # FIXME: we should make this a separate stack
   def activate_thin(opts = Hash.new, &block)
     id = opts.fetch(:id, 0)
     create = opts.fetch(:create, false)
