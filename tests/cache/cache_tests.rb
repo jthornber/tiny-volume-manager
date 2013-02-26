@@ -1050,6 +1050,38 @@ class CacheTests < ThinpTestCase
   end
 
   define_tests_across(:table_check, POLICY_NAMES)
+
+  def test_status
+    opts = Hash.new
+    stack = CacheStack.new(@dm, @metadata_dev, @data_dev, opts)
+    stack.activate do |stack|
+      status = CacheStatus.new(stack.cache)
+
+      assert(status.core_args.assoc('migration_threshold'), '12345')
+      assert(status.policy_args.assoc('random_threshold'), '4321')
+    end
+  end
+
+  def test_table
+    opts = Hash.new
+    stack = CacheStack.new(@dm, @metadata_dev, @data_dev, opts)
+    stack.activate do |stack|
+      assert(stack.cache.table =~ /0 41943040 cache \d+:\d+ \d+:\d+ \d+:\d+ 512 0 default 0/)
+    end
+  end
+
+  def test_message
+    opts = Hash.new
+    stack = CacheStack.new(@dm, @metadata_dev, @data_dev, opts)
+    stack.activate do |stack|
+      stack.cache.message(0, "migration_threshold 12345")
+      stack.cache.message(0, "random_threshold 4321")
+      status = CacheStatus.new(stack.cache)
+
+      assert(status.core_args.assoc('migration_threshold'), '12345')
+      assert(status.policy_args.assoc('random_threshold'), '4321')
+    end
+  end
 end
 
 #----------------------------------------------------------------
