@@ -9,7 +9,7 @@ describe DM::DMDev do
   before :each do
     @name = 'foo'
     @dm = mock('dm interface')
-    @dev = DMDev.new(@name, @dm)
+    @dev = DM::DMDev.new(@name, @dm)
   end
 
   def hands_down(method, *args)
@@ -29,6 +29,10 @@ describe DM::DMDev do
 
   it "should know where it's node is in the /dev tree" do
     @dev.path.should == "/dev/mapper/#{@name}"
+  end
+
+  it "should hand down load" do
+    hands_down(:load, mock())
   end
 
   it "should hand down suspend" do

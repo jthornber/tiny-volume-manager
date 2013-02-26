@@ -1,6 +1,7 @@
 require 'lib/device-mapper/dm_event_tracker'
 require 'lib/log'
 require 'lib/prelude'
+require 'lib/utils'
 
 module DM
   # This hands off most of it's work to DMInterface
@@ -18,12 +19,7 @@ module DM
     end
 
     def load(table)
-      Utils::with_temp_file('dm-table') do |f|
-        debug "writing table: #{table.to_embed}"
-        f.puts table.to_s
-        f.flush
-        ProcessControl.run("dmsetup load #{@name} #{f.path}")
-      end
+      @interface.load(path, table)
 
       # FIXME: not active yet!
       @active_table = table

@@ -1,3 +1,6 @@
+require 'lib/prelude'
+require 'lib/device-mapper/dm'
+
 module DM
   # This mixin assumes there is a dm_interface method returns a DMInterface
 
@@ -36,7 +39,7 @@ module DM
 
       dm_interface.create(path)
       protect_(tidy) do
-        dev = DMDev.new(name, self)
+        dev = DMDev.new(create_path, dm_interface)
         unless table.nil?
           dev.load table
           dev.resume

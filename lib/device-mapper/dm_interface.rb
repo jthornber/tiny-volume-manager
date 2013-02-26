@@ -6,6 +6,15 @@ module DM
       ProcessControl.run("dmsetup create #{name} --notable")
     end
 
+    def load(path, table)
+      Utils::with_temp_file('dm-table') do |f|
+        debug "writing table: #{table.to_embed}"
+        f.puts table.to_s
+        f.flush
+        ProcessControl.run("dmsetup load #{@name} #{f.path}")
+      end
+    end
+
     def suspend(path)
       ProcessControl.run("dmsetup suspend #{path}")
     end
