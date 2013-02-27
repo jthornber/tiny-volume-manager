@@ -7,15 +7,11 @@ module DM
   # This hands off most of it's work to DMInterface
   class DMDev
     # FIXME: really not sure about active_table
-    attr_reader :name, :interface, :active_table
+    attr_reader :path, :interface, :active_table
 
-    def initialize(name, interface)
-      @name = name
+    def initialize(path, interface)
+      @path = path
       @interface = interface
-    end
-
-    def path()
-      "/dev/mapper/#{name}"
     end
 
     def load(table)
