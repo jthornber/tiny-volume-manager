@@ -14,7 +14,7 @@ module DM
 
     def with_devs(*tables, &block)
       release = lambda do |devs|
-        devs.each do |dev|
+        devs.reverse.each do |dev|
           begin
             dev.remove
             dev.post_remove_check
@@ -39,7 +39,7 @@ module DM
 
       dm_interface.create(path)
       protect_(tidy) do
-        dev = DMDev.new(create_path, dm_interface)
+        dev = DMDev.new(path, dm_interface)
         unless table.nil?
           dev.load table
           dev.resume
