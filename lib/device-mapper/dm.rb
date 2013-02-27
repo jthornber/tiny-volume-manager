@@ -1,5 +1,0 @@
-require 'lib/device-mapper/dm_dev'
-require 'lib/device-mapper/dm_event_tracker'
-require 'lib/device-mapper/dm_targets'
-require 'lib/device-mapper/dm_table'
-require 'lib/device-mapper/dm_interface'

@@ -1,4 +1,4 @@
-require 'lib/device-mapper/dm_event_tracker'
+require 'lib/device-mapper/event_tracker'
 require 'lib/log'
 require 'lib/prelude'
 require 'lib/utils'

@@ -1,5 +1,5 @@
 require 'spec_helper'
-require 'device-mapper/dm'
+require 'lib/device_mapper'
 
 #----------------------------------------------------------------
 

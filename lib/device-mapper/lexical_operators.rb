@@ -1,5 +1,5 @@
 require 'lib/prelude'
-require 'lib/device-mapper/dm'
+require 'lib/device_mapper'
 
 module DM
   # This mixin assumes there is a dm_interface method returns a DMInterface

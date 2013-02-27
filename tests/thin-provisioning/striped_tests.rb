@@ -1,5 +1,5 @@
 require 'config'
-require 'lib/device-mapper/dm'
+require 'lib/device_mapper'
 require 'lib/dataset'
 require 'lib/fs'
 require 'lib/log'

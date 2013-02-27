@@ -4,7 +4,6 @@ require 'lib/utils'
 require 'lib/fs'
 require 'lib/tags'
 require 'lib/thinp-test'
-require 'lib/device-mapper/dm_lexical_operators'
 
 #----------------------------------------------------------------
 

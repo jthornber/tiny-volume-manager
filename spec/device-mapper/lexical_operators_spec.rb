@@ -1,5 +1,5 @@
 require 'spec_helper'
-require 'lib/device-mapper/dm_lexical_operators'
+require 'lib/device-mapper/lexical_operators'
 
 describe DM::LexicalOperators do
   include DM::LexicalOperators
