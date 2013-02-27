@@ -1,6 +1,7 @@
 require 'lib/benchmarking'
 require 'lib/bufio'
 require 'lib/device-mapper/dm'
+require 'lib/device-mapper/dm_lexical_operators'
 require 'lib/log'
 require 'lib/metadata-utils'
 require 'lib/prerequisites-checker'
@@ -21,23 +22,10 @@ $prereqs = Prerequisites.requirements do
 end
 
 #------------------------------------------------
-# Use as a mixin to a class that has @dm defined
-module DMUtils
-  # low level dm handling
-  def with_dev(table, &block)
-    @dm.with_dev(table, &block)
-  end
-
-  def with_devs(*tables, &block)
-    @dm.with_devs(*tables, &block)
-  end
-end
-
-#------------------------------------------------
 
 class PoolStack
   include DM
-  include DMUtils
+  include DM::LexicalOperators
   include Utils
 
   attr_reader :dm, :data_dev, :metadata_dev, :opts
@@ -77,7 +65,12 @@ class PoolStack
     end
 
     thin_table = Table.new(ThinTarget.new(opts[:thin], @pool, id, opts[:origin]))
-    @dm.with_dev(thin_table, &block)
+    with_dev(thin_table, &block)
+  end
+
+  private
+  def dm_interface
+    @dm
   end
 end
 
@@ -85,14 +78,14 @@ end
 
 module DMThinUtils
   include DM
-  include DMUtils
+  include DM::LexicalOperators
 
   def thin_table(pool, size, id, opts = Hash.new)
     Table.new(ThinTarget.new(size, pool, id, opts[:origin]))
   end
 
   def with_thin(pool, size, id, opts = Hash.new, &block)
-    @dm.with_dev(thin_table(pool, size, id, opts), &block)
+    with_dev(thin_table(pool, size, id, opts), &block)
   end
 
   def with_new_thin(pool, size, id, opts = Hash.new, &block)
@@ -102,7 +95,7 @@ module DMThinUtils
 
   def with_thins(pool, size, *ids, &block)
     tables = ids.map {|id| thin_table(pool, size, id)}
-    @dm.with_devs(*tables, &block)
+    with_devs(*tables, &block)
   end
 
   def with_new_thins(pool, size, *ids, &block)
@@ -111,6 +104,11 @@ module DMThinUtils
     end
 
     with_thins(pool, size, *ids, &block)
+  end
+
+  private
+  def dm_interface
+    @dm
   end
 end
 
@@ -246,7 +244,7 @@ module ThinpTestMixin
 
   def assert_bad_table(table)
     assert_raise(ExitError) do
-      @dm.with_dev(table) do |pool|
+      with_dev(table) do |pool|
       end
     end
   end

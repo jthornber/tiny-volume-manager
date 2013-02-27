@@ -48,7 +48,7 @@ class CreationTests < ThinpTestCase
     lwm = 5
     table = Table.new(ThinPoolTarget.new(size, @metadata_dev, @data_dev,
                                          data_block_size, lwm))
-    @dm.with_dev(table) do |pool|
+    with_dev(table) do |pool|
       with_new_thin(pool, volume_size, 0) {|thin| dt_device(thin)}
     end
   end
@@ -76,7 +76,7 @@ class CreationTests < ThinpTestCase
   def test_largest_data_block_size_succeeds
     table = Table.new(ThinPoolTarget.new(@size, @metadata_dev, @data_dev,
                                          2**21, @low_water_mark))
-    @dm.with_dev(table) {|pool| {}}
+    with_dev(table) {|pool| {}}
   end
 
   def test_too_large_a_dev_t_fails
