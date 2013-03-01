@@ -1065,7 +1065,7 @@ class CacheTests < ThinpTestCase
     opts = Hash.new
     stack = CacheStack.new(@dm, @metadata_dev, @data_dev, opts)
     stack.activate do |stack|
-      assert(stack.cache.table =~ /0 41943040 cache \d+:\d+ \d+:\d+ \d+:\d+ 512 0 default 0/)
+      assert(stack.cache.table =~ /0 \d+ cache \d+:\d+ \d+:\d+ \d+:\d+ 512 0 default 0/)
     end
   end
 
