@@ -19,7 +19,7 @@ class BasicTests < ThinpTestCase
 
   def test_overwrite_a_linear_device
     linear_table = Table.new(LinearTarget.new(@volume_size, @data_dev, 0))
-    @dm.with_dev(linear_table) {|linear_dev| dt_device(linear_dev)}
+    with_dev(linear_table) {|linear_dev| dt_device(linear_dev)}
   end
 
   def test_ext4_weirdness

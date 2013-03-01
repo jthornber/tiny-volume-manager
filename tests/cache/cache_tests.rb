@@ -6,24 +6,10 @@ require 'lib/fs'
 require 'lib/tags'
 require 'lib/thinp-test'
 require 'lib/cache-status'
+require 'lib/disk-units'
+require 'lib/test-utils'
 
 require 'pp'
-
-#----------------------------------------------------------------
-
-module DiskUnits
-  def sectors(n)
-    n
-  end
-
-  def meg(n)
-    n * sectors(2048)
-  end
-
-  def gig(n)
-    n * meg(1) * 1024
-  end
-end
 
 #----------------------------------------------------------------
 
@@ -237,7 +223,7 @@ class CacheStack
   end
 
   def policy_name
-    @opts[:policy] = @opts.fetch(:policy, Policy.new('basic'))
+    @opts[:policy] = @opts.fetch(:policy, Policy.new('default'))
     @opts[:policy].name
   end
 
@@ -391,6 +377,10 @@ class CacheTests < ThinpTestCase
   include Tags
   include Utils
   include DiskUnits
+  extend TestUtils
+
+  POLICY_NAMES = %w(default mq basic multiqueue multiqueue_ws q2 twoqueue
+                    fifo lfu mfu lfu_ws mfu_ws lru mru noop random dumb)
 
   def setup
     super
@@ -424,6 +414,21 @@ class CacheTests < ThinpTestCase
 
   def maxiops(dev, nr_seeks = 10000)
     ProcessControl.run("maxiops -s #{nr_seeks} #{dev} -wb 4096")
+  end
+
+  ORION_DIR = './orion_test'
+
+  def orion(dev, fs_type)
+    fs = FS::file_system(fs_type, dev)
+    fs.format
+
+    Dir.chdir('/root/bin') do
+      File.open('orion.lun', 'w+') do |f|
+        f.puts dev
+      end
+
+      ProcessControl.run("./orion -run simple")
+    end
   end
 
   def discard_dev(dev)
@@ -522,6 +527,22 @@ class CacheTests < ThinpTestCase
                                :data_size => gig(2))
   end
 
+  def test_orion_cache_simple
+    stack = CacheStack.new(@dm, @metadata_dev, @data_dev,
+                           :policy => Policy.new('mq'),
+                           :cache_size => meg(256),
+                           :data_size => gig(2))
+    stack.activate do |stack|
+      orion(stack.cache, :ext4)
+    end
+  end
+
+  def test_orion_linear_simple
+    with_standard_linear(:data_size => gig(2)) do |linear|
+      orion(linear, :ext4)
+    end
+  end
+
   def do_git_extract_only_cache_quick(opts = Hash.new)
     opts = {
       :policy     => opts.fetch(:policy, Policy.new('basic')),
@@ -539,166 +560,17 @@ class CacheTests < ThinpTestCase
     end
   end
 
-  def test_git_extract_only_cache_quick_default
-    do_git_extract_only_cache_quick(:policy => Policy.new('default'))
+  def git_extract_only_cache_quick(policy_name)
+    do_git_extract_only_cache_quick(:policy => Policy.new(policy_name))
   end
 
-  def test_git_extract_only_cache_quick_mq
-    do_git_extract_only_cache_quick(:policy => Policy.new('mq'))
+  define_tests_across(:git_extract_only_cache_quick, POLICY_NAMES)
+
+  def git_extract_cache_quick(policy_name)
+    do_git_extract_cache_quick(:policy => Policy.new(policy_name))
   end
 
-  def test_git_extract_only_cache_quick_basic
-    do_git_extract_only_cache_quick(:policy => Policy.new('basic'))
-  end
-
-  def test_git_extract_only_cache_quick_multiqueue
-    do_git_extract_only_cache_quick(:policy => Policy.new('multiqueue'))
-  end
-
-  def test_git_extract_only_cache_quick_multiqueue_ws
-    do_git_extract_only_cache_quick(:policy => Policy.new('multiqueue_ws'))
-  end
-
-  def test_git_extract_only_cache_quick_q2
-    do_git_extract_only_cache_quick(:policy => Policy.new('q2'))
-  end
-
-  def test_git_extract_only_cache_quick_twoqueue
-    do_git_extract_only_cache_quick(:policy => Policy.new('twoqueue'))
-  end
-
-  def test_git_extract_only_cache_quick_fifo
-    do_git_extract_only_cache_quick(:policy => Policy.new('fifo'))
-  end
-
-  def test_git_extract_only_cache_quick_filo
-    do_git_extract_only_cache_quick(:policy => Policy.new('filo'))
-  end
-
-  def test_git_extract_only_cache_quick_lru
-    do_git_extract_only_cache_quick(:policy => Policy.new('lru'))
-  end
-
-  def test_git_extract_only_cache_quick_mru
-    do_git_extract_only_cache_quick(:policy => Policy.new('mru'))
-  end
-
-  def test_git_extract_only_cache_quick_lfu
-    do_git_extract_only_cache_quick(:policy => Policy.new('lfu'))
-  end
-
-  def test_git_extract_only_cache_quick_mfu
-    do_git_extract_only_cache_quick(:policy => Policy.new('mfu'))
-  end
-
-  def test_git_extract_only_cache_quick_lfu_ws
-    do_git_extract_only_cache_quick(:policy => Policy.new('lfu_ws'))
-  end
-
-  def test_git_extract_only_cache_quick_mfu_ws
-    do_git_extract_only_cache_quick(:policy => Policy.new('mfu_ws'))
-  end
-
-  def test_git_extract_only_cache_quick_random
-    do_git_extract_only_cache_quick(:policy => Policy.new('random'))
-  end
-
-  def test_git_extract_only_cache_quick_noop
-    do_git_extract_only_cache_quick(:policy => Policy.new('noop'))
-  end
-
-  def test_git_extract_only_cache_quick_dumb
-    do_git_extract_only_cache_quick(:policy => Policy.new('dumb'))
-  end
-
-  def test_git_extract_only_cache_quick_debug
-    do_git_extract_only_cache_quick(:policy => Policy.new('debug'))
-  end
-
-
-  def test_git_extract_cache_quick_default
-    do_git_extract_cache_quick(:policy => Policy.new('default'))
-  end
-
-  def test_git_extract_cache_quick_mq
-    do_git_extract_cache_quick(:policy => Policy.new('mq'))
-  end
-
-  def test_git_extract_cache_quick_mq_wt
-    do_git_extract_cache_quick(:policy => Policy.new('mq'), :io_mode => :writethrough)
-  end
-
-  def test_git_extract_cache_quick_basic
-    do_git_extract_cache_quick(:policy => Policy.new('basic'))
-  end
-
-  def test_git_extract_cache_quick_multiqueue
-    do_git_extract_cache_quick(:policy => Policy.new('multiqueue'))
-  end
-
-  def test_git_extract_cache_quick_multiqueue_ws
-    do_git_extract_cache_quick(:policy => Policy.new('multiqueue_ws'))
-  end
-
-  def test_git_extract_cache_quick_multiqueue_ws_wt
-    do_git_extract_cache_quick(:policy => Policy.new('multiqueue_ws'), :io_mode => :writethrough)
-  end
-
-  def test_git_extract_cache_quick_q2
-    do_git_extract_cache_quick(:policy => Policy.new('q2'))
-  end
-
-  def test_git_extract_cache_quick_twoqueue
-    do_git_extract_cache_quick(:policy => Policy.new('twoqueue'))
-  end
-
-  def test_git_extract_cache_quick_fifo
-    do_git_extract_cache_quick(:policy => Policy.new('fifo'))
-  end
-
-  def test_git_extract_cache_quick_filo
-    do_git_extract_cache_quick(:policy => Policy.new('filo'))
-  end
-
-  def test_git_extract_cache_quick_lru
-    do_git_extract_cache_quick(:policy => Policy.new('lru'))
-  end
-
-  def test_git_extract_cache_quick_mru
-    do_git_extract_cache_quick(:policy => Policy.new('mru'))
-  end
-
-  def test_git_extract_cache_quick_lfu
-    do_git_extract_cache_quick(:policy => Policy.new('lfu'))
-  end
-
-  def test_git_extract_cache_quick_mfu
-    do_git_extract_cache_quick(:policy => Policy.new('mfu'))
-  end
-
-  def test_git_extract_cache_quick_lfu_ws
-    do_git_extract_cache_quick(:policy => Policy.new('lfu_ws'))
-  end
-
-  def test_git_extract_cache_quick_mfu_ws
-    do_git_extract_cache_quick(:policy => Policy.new('mfu_ws'))
-  end
-
-  def test_git_extract_cache_quick_random
-    do_git_extract_cache_quick(:policy => Policy.new('random'))
-  end
-
-  def test_git_extract_cache_quick_dumb
-    do_git_extract_cache_quick(:policy => Policy.new('dumb'))
-  end
-
-  def test_git_extract_cache_quick_noop
-    do_git_extract_cache_quick(:policy => Policy.new('noop'))
-  end
-
-  def test_git_extract_cache_quick_debug_mq
-    do_git_extract_cache_quick(:policy => Policy.new('debug'))
-  end
+  define_tests_across(:git_extract_cache_quick, POLICY_NAMES)
 
   def test_git_extract_cache
     stack = CacheStack.new(@dm, @metadata_dev, @data_dev, :format => true)
@@ -708,93 +580,23 @@ class CacheTests < ThinpTestCase
     end
   end
 
-  def test_cache_sizing_effect
+  #--------------------------------
+
+  def cache_sizing_effect(policy_name)
     cache_sizes = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 1536]
     cache_sizes.each do |size|
       report_time("git_extract_cache_quick", STDERR) do
         do_git_extract_cache_quick(:nr_tags => 1,
                                    :cache_size => meg(size),
-                                   :data_size => gig(2))
+                                   :data_size => gig(2),
+                                   :policy => Policy.new(policy_name))
       end
     end
   end
 
-  def test_cache_sizing_effect_oops
-    do_git_extract_cache_quick(:policy => Policy.new(name), :nr_tags => 1, :data_size => gig(2), :cache_size => 64)
-  end
+  define_tests_across(:cache_sizing_effect, POLICY_NAMES)
 
-  def test_cache_sizing_effect_default
-    do_cache_sizing_effect('default')
-  end
-
-  def test_cache_sizing_effect_mq
-    do_cache_sizing_effect('mq')
-  end
-
-  def test_cache_sizing_effect_basic
-    do_cache_sizing_effect('basic')
-  end
-
-  def test_cache_sizing_effect_multiqueue
-    do_cache_sizing_effect('multiqueue')
-  end
-
-  def test_cache_sizing_effect_multiqueue_ws
-    do_cache_sizing_effect('multiqueue_ws')
-  end
-
-  def test_cache_sizing_effect_q2
-    do_cache_sizing_effect('q2')
-  end
-
-  def test_cache_sizing_effect_twoqueue
-    do_cache_sizing_effect('twoqueue')
-  end
-
-  def test_cache_sizing_effect_fifo
-    do_cache_sizing_effect('fifo')
-  end
-
-  def test_cache_sizing_effect_filo
-    do_cache_sizing_effect('filo')
-  end
-
-  def test_cache_sizing_effect_lfu
-    do_cache_sizing_effect('lfu')
-  end
-
-  def test_cache_sizing_effect_mfu
-    do_cache_sizing_effect('mfu')
-  end
-
-  def test_cache_sizing_effect_lfu_ws
-    do_cache_sizing_effect('lfu_ws')
-  end
-
-  def test_cache_sizing_effect_mfu_ws
-    do_cache_sizing_effect('mfu_ws')
-  end
-
-  def test_cache_sizing_effect_lru
-    do_cache_sizing_effect('lru')
-  end
-
-  def test_cache_sizing_effect_mru
-    do_cache_sizing_effect('mru')
-  end
-
-  def test_cache_sizing_effect_noop
-    do_cache_sizing_effect('noop')
-  end
-
-  def test_cache_sizing_effect_random
-    do_cache_sizing_effect('random')
-  end
-
-  def test_cache_sizing_effect_dumb
-    do_cache_sizing_effect('dumb')
-  end
-
+  #--------------------------------
 
   def test_git_extract_linear
     with_standard_linear do |linear|
@@ -924,7 +726,7 @@ class CacheTests < ThinpTestCase
       while tid.alive?
         sleep 5
         cache.pause do
-          table.targets[0].args[6] = use_mq ? 'mq' : 'cleaner'
+          table.targets[0].args[5] = use_mq ? 'mq' : 'cleaner'
           cache.load(table)
           use_mq = !use_mq
         end
@@ -986,7 +788,7 @@ class CacheTests < ThinpTestCase
 
       cache.pause do
         table = cache.active_table
-        table.targets[0].args[6] = 'cleaner'
+        table.targets[0].args[5] = 'cleaner'
         cache.load(table)
       end
 
@@ -1146,168 +948,34 @@ class CacheTests < ThinpTestCase
     end
   end
 
-  def test_status_defaults_default
-    do_ctr_message_status_interface(false, :policy => Policy.new('default'))
+  def status_defaults(policy_name)
+    do_ctr_message_status_interface(false, :policy => Policy.new(policy_name))
   end
 
-  def test_status_defaults_mq
-    do_ctr_message_status_interface(false, :policy => Policy.new('mq'))
-  end
+  define_tests_across(:status_defaults, POLICY_NAMES)
 
-  def test_status_defaults_basic
-    do_ctr_message_status_interface(false, :policy => Policy.new('basic'))
-  end
-
-  def test_status_defaults_multiqueue
-    do_ctr_message_status_interface(false, :policy => Policy.new('multiqueue'))
-  end
-
-  def test_status_defaults_multiqueue_ws
-    do_ctr_message_status_interface(false, :policy => Policy.new('multiqueue_ws'))
-  end
-
-  def test_status_defaults_q2
-    do_ctr_message_status_interface(false, :policy => Policy.new('q2'))
-  end
-
-  def test_status_defaults_twoqueue
-    do_ctr_message_status_interface(false, :policy => Policy.new('twoqueue'))
-  end
-
-  def test_status_defaults_fifo
-    do_ctr_message_status_interface(false, :policy => Policy.new('fifo'))
-  end
-
-  def test_status_defaults_filo
-    do_ctr_message_status_interface(false, :policy => Policy.new('filo'))
-  end
-
-  def test_status_defaults_lfu
-    do_ctr_message_status_interface(false, :policy => Policy.new('lfu'))
-  end
-
-  def test_status_defaults_mfu
-    do_ctr_message_status_interface(false, :policy => Policy.new('mfu'))
-  end
-
-  def test_status_defaults_lfu_ws
-    do_ctr_message_status_interface(false, :policy => Policy.new('lfu_ws'))
-  end
-
-  def test_status_defaults_mfu_ws
-    do_ctr_message_status_interface(false, :policy => Policy.new('mfu_ws'))
-  end
-
-  def test_status_defaults_lru
-    do_ctr_message_status_interface(false, :policy => Policy.new('lru'))
-  end
-
-  def test_status_defaults_mru
-    do_ctr_message_status_interface(false, :policy => Policy.new('mru'))
-  end
-
-  def test_status_defaults_noop
-    do_ctr_message_status_interface(false, :policy => Policy.new('noop'))
-  end
-
-  def test_status_defaults_random
-    do_ctr_message_status_interface(false, :policy => Policy.new('random'))
-  end
-
-  def test_status_defaults_dumb
-    do_ctr_message_status_interface(false, :policy => Policy.new('dumb'))
-  end
-
-
+  #--------------------------------
   # Tests policy modules setting of sequential/random thresholds
-  def do_message_thresholds(name = 'basic')
+  def message_thresholds(name = 'basic')
     with_policy(name) { |policy| do_ctr_message_status_interface(true, :policy => policy, :sequential_threshold => 768) }
     with_policy(name) { |policy| do_ctr_message_status_interface(true, :policy => policy, :random_threshold => 44) }
   end
 
-  def test_message_thresholds_default
-    do_message_thresholds('default')
-  end
+  define_tests_across(:message_thresholds, POLICY_NAMES)
 
-  def test_message_thresholds_mq
-    do_message_thresholds('mq')
-  end
-
-  def test_message_thresholds_basic
-    do_message_thresholds('basic')
-  end
-
-  def test_message_thresholds_multiqueue
-    do_message_thresholds('multiqueue')
-  end
-
-  def test_message_thresholds_multiqueue_ws
-    do_message_thresholds('multiqueue_ws')
-  end
-
-  def test_message_thresholds_q2
-    do_message_thresholds('q2')
-  end
-
-  def test_message_thresholds_twoqueue
-    do_message_thresholds('twoqueue')
-  end
-
-  def test_message_thresholds_fifo
-    do_message_thresholds('fifo')
-  end
-
-  def test_message_thresholds_filo
-    do_message_thresholds('filo')
-  end
-
-  def test_message_thresholds_lfu
-    do_message_thresholds('lfu')
-  end
-
-  def test_message_thresholds_mfu
-    do_message_thresholds('mfu')
-  end
-
-  def test_message_thresholds_lfu_ws
-    do_message_thresholds('lfu_ws')
-  end
-
-  def test_message_thresholds_mfu_ws
-    do_message_thresholds('mfu_ws')
-  end
-
-  def test_message_thresholds_lru
-    do_message_thresholds('lru')
-  end
-
-  def test_message_thresholds_mru
-    do_message_thresholds('mru')
-  end
-
-  def test_message_thresholds_noop
-    do_message_thresholds('noop')
-  end
-
-  def test_message_thresholds_random
-    do_message_thresholds('random')
-  end
-
-  def test_message_thresholds_dumb
-    do_message_thresholds('dumb')
-  end
-
+  #--------------------------------
   # Test change of target migration threshold
   def test_message_target_migration_threshold
     do_ctr_message_status_interface(true, :policy => Policy.new('basic'), :migration_threshold => 2000 * 100)
   end
 
+  #--------------------------------
   # Test policy replacement module ctr arguments
   def with_policy(name, opts = Hash.new, &block)
     block.call(Policy.new(name, opts))
   end
 
-  def do_ctr_tests(name = 'basic')
+  def ctr_tests(name = 'basic')
     TestCases.new.params.each do |should_fail, feature_opts, policy_opts|
       with_policy(name, policy_opts) do |policy|
         if policy.run_test
@@ -1330,80 +998,9 @@ class CacheTests < ThinpTestCase
     end
   end
 
-  # Test mq policy module ctr arguments
-  def test_ctr_default
-    do_ctr_tests('default')
-  end
+  define_tests_across(:ctr_tests, POLICY_NAMES)
 
-  def test_ctr_mq
-    do_ctr_tests('mq')
-  end
-
-  # Test basic policy module ctr arguments
-  def test_ctr_basic
-    do_ctr_tests('basic')
-  end
-
-  def test_ctr_multiqueue
-    do_ctr_tests('multiqueue')
-  end
-
-  def test_ctr_multiqueue_ws
-    do_ctr_tests('multiqueue_ws')
-  end
-
-  def test_ctr_q2
-    do_ctr_tests('q2')
-  end
-
-  def test_ctr_twoqueue
-    do_ctr_tests('twoqueue')
-  end
-
-  def test_ctr_fifo
-    do_ctr_tests('fifo')
-  end
-
-  def test_ctr_filo
-    do_ctr_tests('filo')
-  end
-
-  def test_ctr_lfu
-    do_ctr_tests('lfu')
-  end
-
-  def test_ctr_mfu
-    do_ctr_tests('mfu')
-  end
-
-  def test_ctr_lfu_ws
-    do_ctr_tests('lfu_ws')
-  end
-
-  def test_ctr_mfu_ws
-    do_ctr_tests('mfu_ws')
-  end
-
-  def test_ctr_lru
-    do_ctr_tests('lru')
-  end
-
-  def test_ctr_mru
-    do_ctr_tests('mru')
-  end
-
-  def test_ctr_noop
-    do_ctr_tests('noop')
-  end
-
-  def test_ctr_random
-    do_ctr_tests('random')
-  end
-
-  def test_ctr_dumb
-    do_ctr_tests('dumb')
-  end
-
+  #--------------------------------
   # No target ctr migration_threshold key pair as yet....
   def test_ctr_migration_threshold_fails
     assert_raise(ExitError) do
@@ -1412,6 +1009,7 @@ class CacheTests < ThinpTestCase
   end
 
 
+  #------------------------------------------------
   #
   # Cache table correctness tests
   #
@@ -1433,7 +1031,7 @@ class CacheTests < ThinpTestCase
     table.policy_args.each { |arg| assert(opts[:policy].is_valid_policy_arg(arg)) if arg[0] == /w/ }
   end
 
-  def do_table_check_tests(name = 'basic')
+  def table_check(name = 'basic')
     TestCases.new.params.each do |should_fail, feature_opts, policy_opts|
       with_policy(name, policy_opts) do |policy|
         if policy.run_test
@@ -1450,77 +1048,39 @@ class CacheTests < ThinpTestCase
     end
   end
 
-  # Test mq policy module table correctness
-  def test_table_check_default
-    do_table_check_tests('default')
+  define_tests_across(:table_check, POLICY_NAMES)
+
+  def test_status
+    opts = Hash.new
+    stack = CacheStack.new(@dm, @metadata_dev, @data_dev, opts)
+    stack.activate do |stack|
+      status = CacheStatus.new(stack.cache)
+
+      assert(status.core_args.assoc('migration_threshold'), '12345')
+      assert(status.policy_args.assoc('random_threshold'), '4321')
+    end
   end
 
-  def test_table_check_mq
-    do_table_check_tests('mq')
+  def test_table
+    opts = Hash.new
+    stack = CacheStack.new(@dm, @metadata_dev, @data_dev, opts)
+    stack.activate do |stack|
+      assert(stack.cache.table =~ /0 41943040 cache \d+:\d+ \d+:\d+ \d+:\d+ 512 0 default 0/)
+    end
   end
 
-  # Test basic policy module table correctness
-  def test_table_check_basic
-    do_table_check_tests('basic')
-  end
+  def test_message
+    opts = Hash.new
+    stack = CacheStack.new(@dm, @metadata_dev, @data_dev, opts)
+    stack.activate do |stack|
+      stack.cache.message(0, "migration_threshold 12345")
+      stack.cache.message(0, "random_threshold 4321")
+      status = CacheStatus.new(stack.cache)
 
-  def test_table_check_multiqueue
-    do_table_check_tests('multiqueue')
-  end
-
-  def test_table_check_multiqueue_ws
-    do_table_check_tests('multiqueue_ws')
-  end
-
-  def test_table_check_q2
-    do_table_check_tests('q2')
-  end
-
-  def test_table_check_twoqueue
-    do_table_check_tests('twoqueue')
-  end
-
-  def test_table_check_fifo
-    do_table_check_tests('fifo')
-  end
-
-  def test_table_check_filo
-    do_table_check_tests('filo')
-  end
-
-  def test_table_check_lfu
-    do_table_check_tests('lfu')
-  end
-
-  def test_table_check_mfu
-    do_table_check_tests('mfu')
-  end
-
-  def test_table_check_lfu_ws
-    do_table_check_tests('lfu_ws')
-  end
-
-  def test_table_check_mfu_ws
-    do_table_check_tests('mfu_ws')
-  end
-
-  def test_table_check_lru
-    do_table_check_tests('lru')
-  end
-
-  def test_table_check_mru
-    do_table_check_tests('mru')
-  end
-
-  def test_table_check_noop
-    do_table_check_tests('noop')
-  end
-
-  def test_table_check_random
-    do_table_check_tests('random')
-  end
-
-  def test_table_check_dumb
-    do_table_check_tests('dumb')
+      assert(status.core_args.assoc('migration_threshold'), '12345')
+      assert(status.policy_args.assoc('random_threshold'), '4321')
+    end
   end
 end
+
+#----------------------------------------------------------------

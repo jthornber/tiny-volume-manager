@@ -5,3 +5,6 @@
 *.yaml
 *blktrace*
 metadata.db
+*.orig
+*.rej
+*.patch

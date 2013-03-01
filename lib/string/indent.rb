@@ -19,6 +19,8 @@ module StringUtils
     end
 
     def undent
+      raise 'undent called too often' if @indent < @step
+
       @indent -= @step
 
       begin

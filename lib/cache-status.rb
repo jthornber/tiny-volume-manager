@@ -3,40 +3,96 @@ require 'lib/log'
 #----------------------------------------------------------------
 
 class CacheStatus
-  attr_reader :md_used, :md_total, :read_hits, :read_misses, :write_hits, :write_misses
-  attr_reader :demotions, :promotions, :residency, :nr_dirty, :migration_threshold
-  attr_reader :policy_args
+  attr_accessor :md_used, :md_total, :read_hits, :read_misses, :write_hits, :write_misses
+  attr_accessor :demotions, :promotions, :residency, :nr_dirty, :features, :core_args, :policy_args
 
-  # 12/1024 4538 3025 26714 62860 0 0 1024 216 policy_arg{0,}
-
-  PATTERN ='\d+\s\d+\scache\s(\d+)/(\d+)(.*)'
+  PATTERN ='\d+\s+\d+\s+cache\s+(.*)'
 
   def initialize(cache_dev)
     m = cache_dev.status.match(PATTERN)
-    if m.nil?
-      raise "couldn't parse cache status"
-    else
-      a = (m[1..2].to_a + m[3].to_s.strip.split(/\s+/)).map! {|s| s.to_i }
-      @md_used,
-      @md_total,
-      @read_hits,
-      @read_misses,
-      @write_hits,
-      @write_misses,
-      @demotions,
-      @promotions,
-      @residency,
-      @nr_dirty,
-      @migration_threshold = a.shift(11)
-      @policy_args = a
+    raise "couldn't parse cache status" if m.nil?
+
+    @a = m[1].split
+
+    shift_int :md_used
+    shift_int :md_total
+    shift_int :read_hits
+    shift_int :read_misses
+    shift_int :write_hits
+    shift_int :write_misses
+    shift_int :demotions
+    shift_int :promotions
+    shift_int :residency
+    shift_int :nr_dirty
+    shift_features :features
+    shift_pairs :core_args
+    shift_pairs :policy_args
+  end
+
+  private
+  def check_args(symbol)
+    raise "Insufficient status fields, while trying to read #{symbol}" if @a.size == 0
+  end
+
+  def shift_(symbol)
+    check_args(symbol)
+    @a.shift
+  end
+
+  def shift(symbol)
+    check_args(symbol)
+    set_val(symbol, @a.shift)
+  end
+
+  def shift_int_(symbol)
+    check_args(symbol)
+    Integer(@a.shift)
+  end
+
+  def shift_int(symbol)
+    check_args(symbol)
+    set_val(symbol, Integer(@a.shift))
+  end
+
+  def shift_features(symbol)
+    r = Array.new
+    n = shift_int_(symbol)
+
+    if (n > 0)
+      1.upto(n) do
+        r << shift_(symbol)
+      end
     end
+
+    set_val(symbol, r)
+  end
+
+  def shift_pairs(symbol)
+    r = Array.new
+
+    n = shift_int_(symbol)
+    raise "odd number of policy arguments" if n.odd?
+
+    if (n > 0)
+        1.upto(n / 2) do
+        key = shift_(symbol)
+        value = shift_(symbol)
+        r << [key, value]
+      end
+    end
+
+    set_val(symbol, r)
+  end
+
+  def set_val(symbol, v)
+    self.send("#{symbol}=".intern, v)
   end
 end
 
 class CacheTable
   attr_reader :metadata_dev, :cache_dev, :origin_dev, :block_size, :nr_feature_args,
               :feature_args, :policy_name, :nr_policy_args, :policy_args
-  
+
   # start len "cache" md cd od bs #features feature_arg{1,} #policy_args policy_arg{0,}
   # 0 283115520 cache 254:12 254:13 254:14 512 1 writeback basic 0
 

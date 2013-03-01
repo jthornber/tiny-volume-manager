@@ -1,5 +1,5 @@
 require 'lib/log'
-require 'lib/device-mapper/dm'
+require 'lib/device_mapper'
 require 'lib/prelude'
 
 #----------------------------------------------------------------

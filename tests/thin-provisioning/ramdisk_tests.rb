@@ -55,12 +55,12 @@ class RamDiskTests < ThinpTestCase
 
   def test_overwrite_a_linear_device
     linear_table = Table.new(LinearTarget.new(@volume_size, @data_dev, 0))
-    @dm.with_dev(linear_table) {|linear_dev| wipe_device(linear_dev)}
+    with_dev(linear_table) {|linear_dev| wipe_device(linear_dev)}
   end
 
   def test_read_a_linear_device
     linear_table = Table.new(LinearTarget.new(@volume_size, @data_dev, 0))
-    @dm.with_dev(linear_table) {|linear_dev| read_device_to_null(linear_dev)}
+    with_dev(linear_table) {|linear_dev| read_device_to_null(linear_dev)}
   end
 
   def test_read_ramdisk
@@ -89,16 +89,16 @@ class RamDiskTests < ThinpTestCase
 
   def test_linear_aio_stress
     linear_table = Table.new(LinearTarget.new(@volume_size, @data_dev, 0))
-    @dm.with_dev(linear_table) do |linear_dev|
+    with_dev(linear_table) do |linear_dev|
       aio_stress(linear_dev)
     end
   end
 
   def test_stacked_linear_aio_stress
     linear_table = Table.new(LinearTarget.new(@volume_size, @data_dev, 0))
-    @dm.with_dev(linear_table) do |linear_dev|
+    with_dev(linear_table) do |linear_dev|
       linear_table2 = Table.new(LinearTarget.new(@volume_size, linear_dev, 0))
-      @dm.with_dev(linear_table2) do |linear_dev2|
+      with_dev(linear_table2) do |linear_dev2|
         aio_stress(linear_dev2)
       end
     end
@@ -128,7 +128,7 @@ class RamDiskTests < ThinpTestCase
   def test_linear_stacked_on_pool_aio_stress
     with_standard_pool(@size, :zero => true) do |pool|
       table = Table.new(LinearTarget.new(@size, pool, 0))
-      @dm.with_dev(table) do |linear|
+      with_dev(table) do |linear|
         aio_stress(linear)
       end
     end

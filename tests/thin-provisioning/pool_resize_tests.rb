@@ -24,7 +24,7 @@ class PoolResizeTests < ThinpTestCase
     table = Table.new(ThinPoolTarget.new(@size, @metadata_dev, @data_dev,
                                          @data_block_size, @low_water_mark))
 
-    @dm.with_dev(table) do |pool|
+    with_dev(table) do |pool|
       pool.load(table)
       pool.resume
     end
@@ -34,7 +34,7 @@ class PoolResizeTests < ThinpTestCase
     table = Table.new(ThinPoolTarget.new(20971520, @metadata_dev, @data_dev,
                                          @data_block_size, @low_water_mark))
 
-    @dm.with_dev(table) do |pool|
+    with_dev(table) do |pool|
       with_new_thin(pool, @volume_size, 0) do |thin|
         fork {wipe_device(thin)}
         ProcessControl.sleep 5
