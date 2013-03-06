@@ -327,6 +327,27 @@ class DiscardQuickTests < ThinpTestCase
       end
     end
   end
+
+  def test_discard_origin_does_not_effect_snap
+    with_standard_pool(@size) do |pool|
+      with_new_thin(pool, @volume_size, 0) do |thin|
+        wipe_device(thin)
+        assert_used_blocks(pool, @blocks_per_dev)
+
+        with_new_snap(pool, @volume_size, 1, 0, thin) do |snap|
+          assert_used_blocks(pool, @blocks_per_dev)
+        end
+
+        thin.discard(0, @volume_size)
+
+        STDERR.puts 3
+        assert_used_blocks(pool, @blocks_per_dev)
+      end
+
+      STDERR.puts 4
+      assert_used_blocks(pool, @blocks_per_dev)
+    end
+  end
 end
 
 #----------------------------------------------------------------
@@ -628,6 +649,6 @@ class FakeDiscardTests < ThinpTestCase
       end
     end
   end
-
 end
+
 #----------------------------------------------------------------
