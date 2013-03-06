@@ -339,12 +339,8 @@ class DiscardQuickTests < ThinpTestCase
         end
 
         thin.discard(0, @volume_size)
-
-        STDERR.puts 3
         assert_used_blocks(pool, @blocks_per_dev)
       end
-
-      STDERR.puts 4
       assert_used_blocks(pool, @blocks_per_dev)
     end
   end
