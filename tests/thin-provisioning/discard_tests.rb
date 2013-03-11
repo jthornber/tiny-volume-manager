@@ -135,14 +135,6 @@ module DiscardMixin
       assert(traces[1].empty?)
     end
   end
-
-  def check_discard_thin_working(thin)
-      wipe_device(thin, @data_block_size)
-      traces, _ = blktrace(thin) do
-        discard(thin, 0, 1)
-      end
-      assert_discards(traces[0], 0,  @data_block_size)
-  end
 end
 
 #----------------------------------------------------------------
@@ -548,7 +540,17 @@ end
 class FakeDiscardTests < ThinpTestCase
   include DiscardMixin
 
-  def test_fake_discard_hello_world
+  def check_discard_thin_working(thin)
+    wipe_device(thin, @data_block_size)
+    traces, _ = blktrace(thin) do
+      discard(thin, 0, 1)
+    end
+    pp traces[0]
+    STDERR.puts "@data_block_size = #{@data_block_size}"
+    assert_discards(traces[0], 0,  @data_block_size)
+  end
+
+  def test_fake_discard_simple
     with_fake_discard(:granularity => 128, :max_discard_sectors => 512) do |fd_dev|
       with_custom_data_pool(fd_dev, @size) do |pool|
         with_new_thin(pool, @volume_size, 0) do |thin|
@@ -568,9 +570,11 @@ class FakeDiscardTests < ThinpTestCase
 
         assert_equal(fd_dev.queue_limits.discard_granularity,
                      pool.queue_limits.discard_granularity)
+        STDERR.puts 2
         assert_equal(pool.queue_limits.discard_max_bytes, pool_bs * 512)
 
         # verify discard passdown is still enabled
+        STDERR.puts 3
         check_discard_passdown_enabled(pool, fd_dev)
       end
     end

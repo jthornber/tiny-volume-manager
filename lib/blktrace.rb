@@ -52,15 +52,19 @@ module BlkTrace
     events = filter_events(:discard, traces)
     assert(!events.empty?)
 
-    start = events[0].start_sector
-    len = 0
-    events.each do |event|
-      start = event.start_sector if event.start_sector < start
-      len += event.len_sector
-    end
 
-    assert(start_sector == start)
-    assert(length == len)
+    start = events[0].start_sector
+    len = events[0].len_sector
+
+# FIXME: I can see what this is trying to do, but it's not checking
+# the space is contiguous, or duplicate.
+#    events.each do |event|
+#      start = event.start_sector if event.start_sector < start
+#      len += event.len_sector
+#    end
+
+    assert_equal(start_sector, start)
+    assert_equal(length, len)
   end
 
   def blkparse(dev)
