@@ -205,9 +205,8 @@ module ThinpTestMixin
   end
 
   def with_custom_data_pool(data_dev, size, opts = Hash.new, &block)
-    opts[:data_dev] = data_dev
     opts[:data_size] = size
-    stack = PoolStack.new(@dm, @data_dev, @metadata_dev, opts)
+    stack = PoolStack.new(@dm, data_dev, @metadata_dev, opts)
     stack.activate(&block)
   end
 
