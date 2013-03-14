@@ -565,11 +565,10 @@ class FakeDiscardTests < ThinpTestCase
     end
   end
 
-  # FIXME: I don't see what this is checking?  :discard_passdown is disabled in the pool
-  def _test_pool_granularity_is_factor_of_np2_blocksize_no_passdown
-    # e.g. blocksize = 384k, discard_granularity = 128k
-    # tests data dev's granularity of 64k is ignored and that largest_power_factor
-    # adjusts granularity, to 128k
+  def test_pool_max_and_granularity_match_np2_block_size_no_passdown
+    # e.g. blocksize = 384k, discard_granularity = 64k
+    # tests data dev's discard_granularity of 64k is ignored and that
+    # the pool's discard_granularity matches the pool's np2 blocksize
     pool_bs = 768
     @data_block_size = pool_bs
     with_fake_discard(:granularity => 128, :max_discard_sectors => pool_bs) do |fd_dev|
@@ -582,8 +581,8 @@ class FakeDiscardTests < ThinpTestCase
     end
   end
 
-  # FIXME: I don't see what this is checking?  :discard_passdown is disabled in the pool
   def test_pool_max_and_granularity_match_pow2_block_size_no_passdown
+    # verifies data device's limits are ignored with power of 2 blocksize case
     pool_bs = 512
     @data_block_size = pool_bs
     with_fake_discard(:granularity => 128, :max_discard_sectors => 768) do |fd_dev|
