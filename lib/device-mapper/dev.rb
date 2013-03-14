@@ -1,4 +1,5 @@
 require 'lib/device-mapper/event_tracker'
+require 'lib/device-mapper/queue_limits'
 require 'lib/log'
 require 'lib/prelude'
 require 'lib/utils'

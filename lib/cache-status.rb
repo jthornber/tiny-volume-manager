@@ -6,17 +6,16 @@ class CacheStatus
   attr_accessor :md_used, :md_total, :read_hits, :read_misses, :write_hits, :write_misses
   attr_accessor :demotions, :promotions, :residency, :nr_dirty, :features, :core_args, :policy_args
 
-  PATTERN ='\d+\s+\d+\s+cache\s+(\d+)\/(\d+)\s+(.*)'
+  PATTERN ='\d+\s+\d+\s+cache\s+(.*)'
 
   def initialize(cache_dev)
     m = cache_dev.status.match(PATTERN)
     raise "couldn't parse cache status" if m.nil?
 
-    @md_used =  m[1].to_i
-    @md_total =  m[2].to_i
+    @a = m[1].split
 
-    @a = m[3].split
-
+    shift_int :md_used
+    shift_int :md_total
     shift_int :read_hits
     shift_int :read_misses
     shift_int :write_hits
