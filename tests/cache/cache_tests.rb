@@ -8,6 +8,7 @@ require 'lib/thinp-test'
 require 'lib/cache-status'
 require 'lib/disk-units'
 require 'lib/test-utils'
+require 'lib/tvm.rb'
 require 'tests/cache/cache_stack'
 require 'tests/cache/policy'
 
@@ -389,24 +390,43 @@ class CacheTests < ThinpTestCase
     end
   end
 
+  # We know the kernel uses the same bio for both branches of the
+  # writethrough.  To double check the mapping we offset the origin
+  # device.
   def test_writethrough
+    data_size = dev_size(@data_dev)
     size = gig(2)
+    offset = 512 + 128
+
+    raise RuntimeError, "data device too small" unless data_size >= size + offset
+
+    tvm = TinyVolumeManager::VM.new
+    tvm.add_allocation_volume(@data_dev, 0, dev_size(@data_dev))
+    tvm.add_volume(linear_vol('offset_volume', offset))
+    tvm.add_volume(linear_vol('origin_dev', size))
+
+    # paranoia
+    with_dev(tvm.table('offset_volume')) do |offset|
+      wipe_device(offset)
+    end
 
     # wipe the origin to ensure we don't accidentally have the same
     # data on it.
-    with_standard_linear(:data_size => size) do |origin|
+    with_dev(tvm.table('origin_dev')) do |origin|
       wipe_device(origin)
-    end
 
-    # format and set up a git repo on the cache
-    with_standard_cache(:format => true,
-                        :io_mode => :writethrough,
-                        :data_size => size) do |cache|
-      git_prepare(cache, :ext4)
+      # format and set up a git repo on the cache
+      stack = CacheStack.new(@dm, @metadata_dev, origin,
+                             :format => true,
+                             :io_mode => :writethrough,
+                             :data_size => size)
+      stack.activate do |stack|
+        git_prepare(stack.cache, :ext4)
+      end
     end
 
     # origin should have all data
-    with_standard_linear(:data_size => size) do |origin|
+    with_dev(tvm.table('origin_dev')) do |origin|
       git_extract(origin, :ext4, TAGS[0..1])
     end
   end
