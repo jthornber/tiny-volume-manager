@@ -423,11 +423,16 @@ class CacheTests < ThinpTestCase
       stack.activate do |stack|
         git_prepare(stack.cache, :ext4)
       end
+
+      # we do an extract to check the cache is ok
+      stack.activate do |stack|
+        git_extract(stack.cache, :ext4, TAGS[0..1])
+      end
     end
 
     # origin should have all data
     with_dev(tvm.table('origin_dev')) do |origin|
-      git_extract(origin, :ext4, TAGS[0..1])
+      git_extract(origin, :ext4, TAGS[1..2])
     end
   end
 
