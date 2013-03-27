@@ -180,6 +180,17 @@ class CacheTests < ThinpTestCase
                                :data_size => gig(2))
   end
 
+  def test_git_extract_cache_quick_across_migration_threshold
+    [0, 128, 512, 1024, 2048].each do |migration_threshold|
+      report_time("migration_threshold = #{migration_threshold}") do
+        do_git_extract_cache_quick(:policy => Policy.new('mq',
+                                                         :migration_threshold => migration_threshold),
+                                   :cache_size => meg(256),
+                                   :data_size => gig(2))
+      end
+    end
+  end
+
   def do_git_extract_only_cache_quick(opts = Hash.new)
     opts = {
       :policy     => opts.fetch(:policy, Policy.new('basic')),
