@@ -37,9 +37,14 @@ describe TinyVolumeManager::VM do
       @vm.add_allocation_volume("space1", 0, 500)
       @vm.add_allocation_volume("space2", 0, 500)
     end
-      
+
+    it "should know how much free space it has" do
+      @vm.free_space.should == 1000
+    end
+
     it "should be able to allocate any space given to it" do
       alloc_linear_vols(5, 200)
+      @vm.free_space.should == 0
     end
 
     it "should fail if asked to alloc too much" do
@@ -47,23 +52,32 @@ describe TinyVolumeManager::VM do
         @vm.add_volume(linear_vol('vol1', 1001))
       end.to raise_error(AllocationError)
     end
-  
+
     it "should allocate volumes with correct size" do
       @vm.add_volume(linear_vol('linear1', 123))
       segment_total(@vm.segments('linear1')).should == 123
     end
+  end
 
-    it "should reallocate freed space" do
+  describe "after removing a volume" do
+    before :each do
+      @vm.add_allocation_volume('space', 0, 1000)
       @vm.add_volume(linear_vol('linear1', 123))
       @vm.remove_volume('linear1')
+    end
+
+    it "should not recognise a removed volume" do
+      expect do
+        @vm.segments('linear1')
+      end.to raise_error(UnknownVolume)
+    end
+
+    it "should reallocate freed space" do
       @vm.add_volume(linear_vol('linear2', 1000))
     end
 
     it "should allow reuse of the name from a removed volume" do
-      @vm.add_volume(linear_vol('linear1', 123))
-      @vm.remove_volume('linear1')
       @vm.add_volume(linear_vol('linear1', 234))
-
       segment_total(@vm.segments('linear1')).should == 234
     end
   end

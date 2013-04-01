@@ -11,6 +11,9 @@ module TinyVolumeManager
   class AllocationError < RuntimeError
   end
 
+  class UnknownVolume < RuntimeError
+  end
+
   # FIXME: should this be for public consumption, or always hidden
   # behind TVM?
   class Allocator
@@ -209,7 +212,7 @@ module TinyVolumeManager
 
     def check_exists(name)
       unless @volumes.member?(name)
-        raise "Volume '#{name}' doesn't exist"
+        raise UnknownVolume, "Volume '#{name}' doesn't exist"
       end
     end
   end
