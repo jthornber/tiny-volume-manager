@@ -8,6 +8,9 @@ module TinyVolumeManager
   # FIXME: define in terms of Segment
   DevSegment = Struct.new(:dev, :offset, :length)
 
+  class AllocationError < RuntimeError
+  end
+
   # FIXME: should this be for public consumption, or always hidden
   # behind TVM?
   class Allocator
@@ -59,7 +62,7 @@ module TinyVolumeManager
     private
     def allocate_segment(max_length, segments)
       if segments.size == 0
-        raise "out of free space"
+        raise AllocationError, "out of free space"
       end
 
       s = segments.shift
