@@ -3,6 +3,8 @@ require 'lib/tvm'
 
 include TinyVolumeManager
 
+#----------------------------------------------------------------
+
 describe TinyVolumeManager::VM do
   before :each do
     @vm = VM.new
@@ -66,7 +68,7 @@ describe TinyVolumeManager::VM do
       @vm.remove_volume('linear1')
     end
 
-    it "should not recognise a removed volume" do
+    it "should not recognise the removed volume" do
       expect do
         @vm.segments('linear1')
       end.to raise_error(UnknownVolume)
@@ -98,3 +100,5 @@ describe TinyVolumeManager::VM do
     end.to raise_error(AllocationError)
   end
 end
+
+#----------------------------------------------------------------
