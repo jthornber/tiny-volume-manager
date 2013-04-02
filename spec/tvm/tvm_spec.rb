@@ -99,6 +99,13 @@ describe TinyVolumeManager::VM do
       @vm.resize('linear1', len + 1)
     end.to raise_error(AllocationError)
   end
+
+  pending 'we should be able to tag volumes'
+  pending "we need to blur the distinction between PV's and LV's, eg a mirror is allocated from two+ legs"
+  pending "activation"
+  pending "persistence"
+  pending "transactionality"
+  pending "we mustn't realloc space within the same transaction"
 end
 
 #----------------------------------------------------------------
