@@ -1,0 +1,75 @@
+#!/usr/bin/env ruby
+
+require 'trollop'
+require 'yaml'
+
+require 'lib/tvm/tvm_api'
+
+include TVM
+
+#----------------------------------------------------------------
+
+SUB_COMMANDS = %w(create snap list)
+
+global_opts = Trollop::options do
+  banner "tiny volume manager"
+  stop_on SUB_COMMANDS
+end
+
+cmd = ARGV.shift
+cmd_opts = case cmd
+  when "create"
+    Trollop::options do
+    end
+
+  when "snap"
+    Trollop::options do
+    end
+
+  when "list"
+    Trollop::options do
+    end
+
+  else
+    Trollop::die "unknown subcommand #{cmd.inspect}"
+end
+
+#puts "Global options: #{global_opts.inspect}"
+#puts "Subcommand: #{cmd.inspect}"
+#puts "Subcommand options: #{cmd_opts.inspect}"
+#puts "Remaining arguments: #{ARGV.inspect}"
+
+#----------------------------------------------------------------
+
+METADATA_FILE='./volumes.yaml'
+
+vm = VolumeManager.new
+
+vm.load_metadata(METADATA_FILE)
+
+case cmd
+when 'create'
+  raise RuntimeError, "incorrect number of arguments" if ARGV.size != 1
+  new_volume = vm.create_volume(name: ARGV[0])
+  puts new_volume.volume_id
+
+when 'list'
+  vm.root_volumes.each do |volume|
+    puts "#{volume.volume_id} #{volume.create_time} #{volume.name}"
+
+    vm.child_volumes(volume.name).each do |child|
+      # FIXME: duplication
+      puts "  #{child.volume_id} #{child.create_time} #{child.name}"
+    end
+  end
+
+when 'snap'
+  vm.snap_volume ARGV[0]
+end
+
+vm.save_metadata(METADATA_FILE)
+
+#----------------------------------------------------------------
+
+exit 0
+

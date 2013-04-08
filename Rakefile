@@ -1,4 +1,11 @@
 require 'rspec/core/rake_task'
+require 'rubygems'
+require 'cucumber'
+require 'cucumber/rake/task'
+
+Cucumber::Rake::Task.new(:features) do |t|
+  t.cucumber_opts = "features --format pretty"
+end
 
 RSpec::Core::RakeTask.new do |t|
   t.rspec_opts = ["--color"]
