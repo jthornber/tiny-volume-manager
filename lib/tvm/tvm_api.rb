@@ -6,31 +6,89 @@ require 'set'
 #----------------------------------------------------------------
 
 module TVM
-  class VolumeManager
-    attr_reader :volumes
+  class TransactionError < RuntimeError
+  end
 
-    def initialize
+  class YAMLMetadata
+    attr_reader :path
+    attr_accessor :volumes, :in_transaction
+
+    def initialize(path)
+      @path = path
       @volumes = Set.new
+      @in_transaction = false
+    end
+
+    def begin
+      if @in_transaction
+        raise TransactionError, "begin requested when already in transaction"
+      end
+
+      @in_transaction = true
+    end
+
+    def abort
+      if !@in_transaction
+        raise TransactionError, "abort requested but not in transaction"
+      end
+
+      @in_transaction = false
+    end
+
+    def commit
+      if !@in_transaction
+        raise TransactionError, "commit requested but not in transaction"
+      end
+
+      @in_transaction = false
+    end
+
+    def wipe_metadata
+      remove_file_if_present(@path)
+    end
+
+    def save_metadata
+      File.open(@path, 'w+') do |f|
+        f.write(YAML.dump([@volumes, @in_transaction]))
+      end
+    end
+
+    def load_metadata
+      if File.exist?(@path)
+        @volumes, @in_transaction = YAML.load_file(@path)
+      end
+    end
+
+    private
+    def remove_file_if_present(path)
+      if File.exist?(path)
+        File::unlink(path)
+      end
+    end
+  end
+
+  class VolumeManager
+    attr_reader :metadata
+
+    # FIXME: remove default arg
+    def initialize(metadata = YAMLMetadata.new('./volumes.yaml'))
+      @metadata = metadata
     end
 
     #--------------------------------
 
-    def wipe_metadata(path)
-      remove_file_if_present(path)
+    def begin
+      @metadata.begin
     end
 
-    def save_metadata(path)
-      File.open(path, 'w+') do |f|
-        f.write(YAML.dump(@volumes))
-      end
+    def abort
+      @metadata.abort
     end
 
-    def load_metadata(path)
-      if File.exist?(path)
-        @volumes = YAML.load_file(path)
-      end
+    def commit
+      @metadata.commit
     end
-    
+
     #--------------------------------
 
     def create_volume(opts = Hash.new)
@@ -41,15 +99,15 @@ module TVM
 
       new_volume = Volume.new(VolumeId.new, opts)
 
-      @volumes << new_volume
+      @metadata.volumes << new_volume
       new_volume
     end
 
     def snap_volume(name, opts = Hash.new)
       parent = volume_by_name(name)
       new_volume = Volume.new(VolumeId.new, parent_id: parent.volume_id)
-      
-      @volumes << new_volume
+
+      @metadata.volumes << new_volume
       new_volume
     end
 
@@ -71,21 +129,14 @@ module TVM
     end
 
     def volumes
-      @volumes.to_a
+      @metadata.volumes.to_a
     end
 
     def each_volume(&block)
-      @volumes.each(&block)
+      @metadata.volumes.each(&block)
     end
 
     private
-    def remove_file_if_present(path)
-      if File.exist?(path)
-        STDERR.puts "removing #{path}"
-        File::unlink(path)
-      end
-    end
-
     def volume_by_name_(name)
       volumes.each do |v|
         return v if v.name == name

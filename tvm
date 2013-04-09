@@ -9,7 +9,7 @@ include TVM
 
 #----------------------------------------------------------------
 
-SUB_COMMANDS = %w(create snap list)
+SUB_COMMANDS = %w(create snap list commit abort) << 'begin'
 
 global_opts = Trollop::options do
   banner "tiny volume manager"
@@ -30,6 +30,18 @@ cmd_opts = case cmd
     Trollop::options do
     end
 
+  when "begin"
+    Trollop::options do
+    end
+
+  when "abort"
+    Trollop::options do
+    end
+
+  when "commit"
+    Trollop::options do
+    end
+
   else
     Trollop::die "unknown subcommand #{cmd.inspect}"
 end
@@ -43,11 +55,20 @@ end
 
 METADATA_FILE='./volumes.yaml'
 
-vm = VolumeManager.new
-
-vm.load_metadata(METADATA_FILE)
+metadata = YAMLMetadata.new(METADATA_FILE)
+metadata.load_metadata
+vm = VolumeManager.new(metadata)
 
 case cmd
+when 'begin'
+  vm.begin
+
+when 'commit'
+  vm.commit
+
+when 'abort'
+  raise TransactionError, "abort requested but not in transaction"
+
 when 'create'
   raise RuntimeError, "incorrect number of arguments" if ARGV.size != 1
   new_volume = vm.create_volume(name: ARGV[0])
@@ -80,7 +101,7 @@ when 'snap'
   vm.snap_volume ARGV[0]
 end
 
-vm.save_metadata(METADATA_FILE)
+metadata.save_metadata
 
 #----------------------------------------------------------------
 

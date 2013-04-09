@@ -16,6 +16,77 @@ describe TVM do
     end
   end
 
+  # FIXME: re-write these using a mock to stand in for the metadata abstraction
+  describe "transactions" do
+    describe "passdown to metadata object" do
+      def check_passdown(sym)
+        md = mock()
+        vm = VolumeManager.new(md)
+        md.should_receive(sym)
+        vm.send(sym)
+      end
+
+      it "should passdown begin" do
+        check_passdown(:begin)
+      end
+      
+      it "should passdown abort" do
+        check_passdown(:abort)
+      end
+
+      it "should passdown commit" do
+        check_passdown(:commit)
+      end
+    end
+
+    # FIXME: move these to metadata tests
+    describe '#begin' do
+      it "should succeed if there is no pending transaction" do
+        @vm.begin
+      end
+
+      it "should fail if there is a pending transaction" do
+        @vm.begin
+        expect {@vm.begin}.to raise_error(TransactionError, "begin requested when already in transaction")
+      end
+    end
+
+    describe '#commit' do
+      it "should fail if there is no pending transaction" do
+        expect {@vm.commit}.to raise_error(TransactionError)
+      end
+
+      it "should pass if there is a pending transaction" do
+        @vm.begin
+        @vm.commit
+      end
+
+      it "should close the transaction" do
+        @vm.begin
+        @vm.commit
+        @vm.begin
+      end
+    end
+
+    describe '#abort' do
+      it "should fail if there is no pending transaction" do
+        expect {@vm.abort}.to raise_error(TransactionError)
+      end
+
+      it "should pass if there is a pending transaction" do
+        @vm.begin
+        @vm.abort
+      end
+
+      it "should close the transaction" do
+        @vm.begin
+        @vm.abort
+        @vm.begin
+      end
+    end
+  end
+
+
   describe '#create_volume' do
     # FIXME: these tests should be applied to newly created snaps too
 
