@@ -25,3 +25,14 @@ Feature: list
     And I have tweaked the io wait var
     When I run `tvm list`
     Then the output should contain a time
+
+  Scenario: List a volume by name
+    Given a volume named "fred"
+    And 7 snapshots of "fred"
+    And a volume named "barney"
+    And 6 snapshots of "barney"
+
+    When I run `tvm list fred`
+
+    Then the output should contain "fred"
+    And the output should not contain "barney"

@@ -54,12 +54,25 @@ when 'create'
   puts new_volume.volume_id
 
 when 'list'
-  vm.root_volumes.each do |volume|
-    puts "#{volume.volume_id} #{volume.create_time} #{volume.name}"
+  show_children = true
 
-    vm.child_volumes(volume.name).each do |child|
-      # FIXME: duplication
-      puts "  #{child.volume_id} #{child.create_time} #{child.name}"
+  if ARGV.size == 1
+    vols = [vm.volume_by_name(ARGV[0])]
+    show_children = false
+  else
+    vols = vm.root_volumes
+  end
+
+  vols.each do |volume|
+    time = volume.create_time.to_s.chomp
+    puts "#{volume.volume_id} #{time} #{volume.name}"
+
+    if show_children
+      vm.child_volumes(volume.name).each do |child|
+        # FIXME: duplication
+        time = child.create_time.to_s.chomp
+        puts "  #{child.volume_id} #{time} #{child.name}"
+      end
     end
   end
 
