@@ -8,6 +8,7 @@ include TVM
 describe TVM do
   before :each do
     @vm = VolumeManager.new
+    @vm.wipe
   end
 
   def create_snaps(name, n)

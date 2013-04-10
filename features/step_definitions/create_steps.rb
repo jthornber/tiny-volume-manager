@@ -2,6 +2,7 @@ require 'set'
 
 DEFAULT_NAME='debian-image'
 
+# I think this is redundant since every scenario starts with a new dir
 Given(/^no volumes$/) do
   in_current_dir do
     `rm -f volumes.yaml`
@@ -17,8 +18,10 @@ Then(/^it should pass$/) do
 end
 
 When(/^I create (#{COUNT}) volumes$/) do |nr_volumes|
-  1.upto(nr_volumes) do |n|
-    run "tvm create #{DEFAULT_NAME}_#{n}"
+  in_current_dir do
+    1.upto(nr_volumes) do |n|
+      run "tvm create #{DEFAULT_NAME}_#{n}"
+    end
   end
 end
 
@@ -38,4 +41,18 @@ end
 
 Then(/^the output should contain a uuid$/) do
   assert_matching_output('[0-9a-f]{16}', all_output)
+end
+
+Then(/^there should be a volume called "(.*?)"$/) do |name|
+  assert_success(true)
+  in_current_dir do
+    vm.volume_by_name(name).should_not be_nil
+  end
+end
+
+Then(/^there should not be a volume called "(.*?)"$/) do |name|
+  assert_success(true)
+  in_current_dir do
+    expect {vm.volume_by_name(name)}.to raise_error(RuntimeError, Regexp.new(name))
+  end
 end

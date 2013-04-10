@@ -1,24 +1,28 @@
 Given(/^(#{COUNT}) volumes$/) do |nr_volumes|
   in_current_dir do
-    vm.wipe_metadata(metadata_path)
+    vm.wipe
+
+    vm.begin
     1.upto(nr_volumes) do |n|
       vm.create_volume
     end
-    vm.save_metadata(metadata_path)
+    vm.commit
   end
 end
 
 Given(/^a volume named "(.*?)"$/) do |vol|
   in_current_dir do
+    vm.begin
     vm.create_volume(name: vol)
-    vm.save_metadata(metadata_path)
+    vm.commit
   end
 end
 
 Given(/^(#{COUNT}) snapshots of "(.*?)"$/) do |nr_snaps, vol|
   in_current_dir do
+    vm.begin
     1.upto(nr_snaps) {vm.snap_volume(vol)}
-    vm.save_metadata(metadata_path)
+    vm.commit
   end
 end
 

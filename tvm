@@ -1,7 +1,6 @@
 #!/usr/bin/env ruby
 
 require 'trollop'
-require 'yaml'
 
 require 'lib/tvm/tvm_api'
 
@@ -56,8 +55,9 @@ end
 METADATA_FILE='./volumes.yaml'
 
 metadata = YAMLMetadata.new(METADATA_FILE)
-metadata.load_metadata
 vm = VolumeManager.new(metadata)
+
+vm.begin
 
 case cmd
 when 'begin'
@@ -67,7 +67,7 @@ when 'commit'
   vm.commit
 
 when 'abort'
-  raise TransactionError, "abort requested but not in transaction"
+  vm.abort
 
 when 'create'
   raise RuntimeError, "incorrect number of arguments" if ARGV.size != 1
@@ -101,7 +101,7 @@ when 'snap'
   vm.snap_volume ARGV[0]
 end
 
-metadata.save_metadata
+vm.commit
 
 #----------------------------------------------------------------
 

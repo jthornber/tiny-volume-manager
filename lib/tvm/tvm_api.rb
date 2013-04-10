@@ -2,6 +2,7 @@ require 'lib/tvm/volume'
 require 'lib/tvm/volume_id'
 
 require 'set'
+require 'yaml'
 
 #----------------------------------------------------------------
 
@@ -17,6 +18,8 @@ module TVM
       @path = path
       @volumes = Set.new
       @in_transaction = false
+
+      load_metadata
     end
 
     def begin
@@ -24,6 +27,7 @@ module TVM
         raise TransactionError, "begin requested when already in transaction"
       end
 
+      load_metadata
       @in_transaction = true
     end
 
@@ -33,6 +37,7 @@ module TVM
       end
 
       @in_transaction = false
+      load_metadata
     end
 
     def commit
@@ -41,6 +46,7 @@ module TVM
       end
 
       @in_transaction = false
+      save_metadata
     end
 
     def wipe_metadata
@@ -76,6 +82,10 @@ module TVM
     end
 
     #--------------------------------
+
+    def wipe
+      @metadata.wipe_metadata
+    end
 
     def begin
       @metadata.begin

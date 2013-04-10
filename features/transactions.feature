@@ -38,3 +38,23 @@ Feature: Transactionality
     And I run `tvm commit`
     And I run `tvm begin`
     Then it should pass
+
+  Scenario: begin, abort succeeds
+    Given no volumes
+    When I run `tvm begin`
+    And I run `tvm abort`
+    Then it should pass
+
+  Scenario: begin, create, commit creates a volume
+    Given no volumes
+    When I run `tvm begin`
+    And I run `tvm create fred`
+    And I run `tvm commit`
+    Then there should be a volume called "fred"
+
+  Scenario: begin, create, abort does not create avolume
+    Given no volumes
+    When I run `tvm begin`
+    And I run `tvm create fred`
+    And I run `tvm abort`
+    Then there should not be a volume called "fred"
