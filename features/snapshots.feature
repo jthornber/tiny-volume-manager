@@ -12,7 +12,6 @@ Feature: Snapshots
     Then it should pass
 
   Scenario: snapshot of unkown volume fails
-    Given no volumes
     When I take a snapshot
     Then it should fail
 

@@ -1,3 +1,4 @@
+require 'lib/log'
 require 'lib/tvm/volume'
 require 'lib/tvm/volume_id'
 
@@ -12,63 +13,101 @@ module TVM
 
   class YAMLMetadata
     attr_reader :path
-    attr_accessor :volumes, :in_transaction
+    attr_accessor :volumes, :pending_changes
 
-    def initialize(path)
+    def initialize(path = './volumes.yaml')
       @path = path
-      @volumes = Set.new
-      @in_transaction = false
+      @pending_path = path + ".pending"
 
-      load_metadata
+      load_or_init
+    end
+
+    def in_transaction?
+      File.exist? @pending_path
     end
 
     def begin
-      if @in_transaction
+      if in_transaction?
         raise TransactionError, "begin requested when already in transaction"
       end
 
-      load_metadata
-      @in_transaction = true
+      load @path
+      save @pending_path
     end
 
     def abort
-      if !@in_transaction
+      if !in_transaction?
         raise TransactionError, "abort requested but not in transaction"
       end
 
-      @in_transaction = false
-      load_metadata
+      load(@path)
+      remove_file_if_present(@pending_path)
     end
 
     def commit
-      if !@in_transaction
+      info "in commit"
+      if !in_transaction?
         raise TransactionError, "commit requested but not in transaction"
       end
 
-      @in_transaction = false
-      save_metadata
-    end
-
-    def wipe_metadata
-      remove_file_if_present(@path)
-    end
-
-    def save_metadata
-      File.open(@path, 'w+') do |f|
-        f.write(YAML.dump([@volumes, @in_transaction]))
+      if !@pending_changes
+        raise TransactionError, "commit requested but no pending changes"
       end
+
+      @pending_changes = false
+
+      save(@path)
+      remove_file_if_present(@pending_path)
     end
 
-    def load_metadata
-      if File.exist?(@path)
-        @volumes, @in_transaction = YAML.load_file(@path)
-      end
+    def wipe
+      remove_file_if_present(@pending_path)
+      init
+      save(@path)
+    end
+
+    def persist
+      save(@pending_path)
     end
 
     private
+    # FIXME: move to a utility module
     def remove_file_if_present(path)
       if File.exist?(path)
+        info "unlinking #{path}"
         File::unlink(path)
+      end
+    end
+
+    def save(path)
+      info "saving '#{path}'"
+      File.open(path, 'w+') do |f|
+        f.write(YAML.dump([@volumes, @in_transaction, @pending_changes]))
+      end
+    end
+
+    def load(path)
+      info "loading '#{path}'"
+      if File.exist?(path)
+        @volumes, @in_transaction, @pending_changes = YAML.load_file(path)
+      end
+    end
+
+    def init
+      @volumes = Set.new
+      @pending_changes = false
+      save(@path)
+    end
+
+    def load_or_init
+      if in_transaction?
+        load @pending_path
+
+      elsif File.exist? @path
+        load @path
+
+      else
+        init
       end
     end
   end
@@ -77,14 +116,14 @@ module TVM
     attr_reader :metadata
 
     # FIXME: remove default arg
-    def initialize(metadata = YAMLMetadata.new('./volumes.yaml'))
+    def initialize(metadata = YAMLMetadata.new)
       @metadata = metadata
     end
 
     #--------------------------------
 
     def wipe
-      @metadata.wipe_metadata
+      @metadata.wipe
     end
 
     def begin
@@ -110,6 +149,8 @@ module TVM
       new_volume = Volume.new(VolumeId.new, opts)
 
       @metadata.volumes << new_volume
+      mark_pending
+
       new_volume
     end
 
@@ -118,6 +159,8 @@ module TVM
       new_volume = Volume.new(VolumeId.new, parent_id: parent.volume_id)
 
       @metadata.volumes << new_volume
+      mark_pending
+
       new_volume
     end
 
@@ -134,7 +177,7 @@ module TVM
 
     def volume_by_name(name)
       vol = volume_by_name_(name)
-      raise RuntimeError, "unknown volume #{name}" unless vol
+      raise RuntimeError, "unknown volume '#{name}'" unless vol
       vol
     end
 
@@ -157,6 +200,10 @@ module TVM
 
     def unique_name(name)
       volume_by_name_(name) == nil
+    end
+
+    def mark_pending
+      @metadata.pending_changes = true
     end
   end
 end

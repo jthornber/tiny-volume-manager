@@ -7,7 +7,8 @@ include TVM
 
 describe TVM do
   before :each do
-    @vm = VolumeManager.new
+    @metadata = YAMLMetadata.new
+    @vm = VolumeManager.new(@metadata)
     @vm.wipe
   end
 
@@ -53,36 +54,71 @@ describe TVM do
     end
 
     describe '#commit' do
-      it "should fail if there is no pending transaction" do
+      it "should fail if no preceeding begin" do
+        expect {@vm.commit}.to raise_error(TransactionError)
+      end
+
+      it "should fail if there are no pending changes" do
+        @vm.begin
         expect {@vm.commit}.to raise_error(TransactionError)
       end
 
       it "should pass if there is a pending transaction" do
         @vm.begin
+        @vm.create_volume(name: 'vol1')
         @vm.commit
       end
 
       it "should close the transaction" do
         @vm.begin
+        @vm.create_volume(name: 'vol1')
         @vm.commit
+
+        @metadata.in_transaction?.should be_false
+      end
+
+      it "should record pending changes" do
         @vm.begin
+        @vm.create_volume(name: 'foo')
+        @vm.create_volume(name: 'bar')
+        @vm.commit
+        
+        @vm.volume_by_name('foo').name.should == 'foo'
+        @vm.volume_by_name('bar').name.should == 'bar'
       end
     end
 
     describe '#abort' do
-      it "should fail if there is no pending transaction" do
+      it "should fail if no preceeding begin" do
         expect {@vm.abort}.to raise_error(TransactionError)
       end
 
-      it "should pass if there is a pending transaction" do
+      it "should pass if there are no pending changes" do
         @vm.begin
+        @vm.abort
+      end
+
+      it "should pass if there are pending changes" do
+        @vm.begin
+        @vm.create_volume(name: 'foo')
         @vm.abort
       end
 
       it "should close the transaction" do
         @vm.begin
         @vm.abort
+
+        @metadata.in_transaction?.should be_false
+      end
+
+      it "should discard pending changes" do
         @vm.begin
+        @vm.create_volume(name: 'foo')
+        @vm.create_volume(name: 'bar')
+        @vm.abort
+
+        expect {@vm.volume_by_name('foo')}.to raise_error(RuntimeError, "unknown volume 'foo'")
+        expect {@vm.volume_by_name('bar')}.to raise_error(RuntimeError, "unknown volume 'bar'")
       end
     end
   end

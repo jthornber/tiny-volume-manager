@@ -2,13 +2,6 @@ require 'set'
 
 DEFAULT_NAME='debian-image'
 
-# I think this is redundant since every scenario starts with a new dir
-Given(/^no volumes$/) do
-  in_current_dir do
-    `rm -f volumes.yaml`
-  end
-end
-
 Given(/^a named volume$/) do
   run "tvm create #{DEFAULT_NAME}"
 end

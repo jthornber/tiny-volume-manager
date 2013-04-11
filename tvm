@@ -2,13 +2,17 @@
 
 require 'trollop'
 
+require 'lib/log'
 require 'lib/tvm/tvm_api'
 
+include Log
 include TVM
 
 #----------------------------------------------------------------
 
-SUB_COMMANDS = %w(create snap list commit abort) << 'begin'
+open_log("./tvm.log")
+
+SUB_COMMANDS = %w(create snap list commit abort status)
 
 global_opts = Trollop::options do
   banner "tiny volume manager"
@@ -57,17 +61,19 @@ METADATA_FILE='./volumes.yaml'
 metadata = YAMLMetadata.new(METADATA_FILE)
 vm = VolumeManager.new(metadata)
 
-vm.begin
+# We're alway in an implicit transaction
+vm.begin unless metadata.in_transaction?
 
 case cmd
-when 'begin'
-  vm.begin
-
 when 'commit'
+  info "calling commit"
   vm.commit
 
 when 'abort'
   vm.abort
+
+when 'status'
+  raise RuntimeError, "not implemented"
 
 when 'create'
   raise RuntimeError, "incorrect number of arguments" if ARGV.size != 1
@@ -101,7 +107,7 @@ when 'snap'
   vm.snap_volume ARGV[0]
 end
 
-vm.commit
+metadata.persist
 
 #----------------------------------------------------------------
 
