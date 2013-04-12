@@ -14,5 +14,3 @@ Feature: Snapshots
   Scenario: snapshot of unkown volume fails
     When I take a snapshot
     Then it should fail
-
-  Scenario: list

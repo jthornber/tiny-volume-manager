@@ -3,7 +3,7 @@ require 'set'
 DEFAULT_NAME='debian-image'
 
 Given(/^a named volume$/) do
-  run "tvm create #{DEFAULT_NAME}"
+  run_simple "tvm create #{DEFAULT_NAME}"
 end
 
 Then(/^it should pass$/) do
@@ -13,7 +13,7 @@ end
 When(/^I create (#{COUNT}) volumes$/) do |nr_volumes|
   in_current_dir do
     1.upto(nr_volumes) do |n|
-      run "tvm create #{DEFAULT_NAME}_#{n}"
+      run_simple "tvm create #{DEFAULT_NAME}_#{n}"
     end
   end
 end
