@@ -39,6 +39,10 @@ describe TVM do
       it "should passdown commit" do
         check_passdown(:commit)
       end
+
+      it "should passdown status" do
+        check_passdown(:status)
+      end
     end
 
     # FIXME: move these to metadata tests
@@ -121,8 +125,28 @@ describe TVM do
         expect {@vm.volume_by_name('bar')}.to raise_error(RuntimeError, "unknown volume 'bar'")
       end
     end
-  end
 
+    describe "#status" do
+      it "should fail if not in a transaction" do
+        expect {@vm.status}.to raise_error(TransactionError)
+      end
+
+      it "should return an empty status object if there are no changes" do
+        @vm.begin
+        status = @vm.status
+        status.created.should == []
+        status.modified.should == []
+        status.deleted.should == []
+      end
+
+      it "should include any created volumes" do
+        @vm.begin
+        v = @vm.create_volume(name: 'fred')
+        status = @vm.status
+        status.created.should include(v)
+      end
+    end
+  end
 
   describe '#create_volume' do
     # FIXME: these tests should be applied to newly created snaps too

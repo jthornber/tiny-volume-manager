@@ -11,9 +11,23 @@ module TVM
   class TransactionError < RuntimeError
   end
 
+  #----------------
+
+  class TransactionStatus
+    attr_reader :created, :modified, :deleted
+
+    def initialize(created = Array.new, modified = Array.new, deleted = Array.new)
+      @created = created
+      @modified = modified
+      @deleted = deleted
+    end
+  end
+
+  #--------------------------------
+
   class YAMLMetadata
     attr_reader :path
-    attr_accessor :volumes, :pending_changes
+    attr_accessor :pending_changes
 
     def initialize(path = './volumes.yaml')
       @path = path
@@ -55,9 +69,17 @@ module TVM
       end
 
       @pending_changes = false
+      @created = Array.new
+      @modified = Array.new
+      @deleted = Array.new
 
       save(@path)
       remove_file_if_present(@pending_path)
+    end
+
+    def status
+      raise TransactionError, "not in transaction" unless in_transaction?
+      TransactionStatus.new(@created, @modified, @deleted)
     end
 
     def wipe
@@ -69,7 +91,33 @@ module TVM
     def persist
       save(@pending_path)
     end
+    
+    #----------------
 
+    # FIXME: add more query functions.  If we're going to scale up to
+    # many volumes people need to be searching for exactly what they
+    # want.
+    def volumes
+      @volumes.to_a.freeze
+    end
+
+    #----------------
+
+    def add_volume(volume)
+      @volumes << volume
+      @created << volume
+    end
+
+    def modify_volume(volume)
+      raise "not implemented"
+    end
+
+    def delete_volume(volume)
+      raise "not implemented"
+    end
+
+    #----------------
+    
     private
     # FIXME: move to a utility module
     def remove_file_if_present(path)
@@ -82,20 +130,23 @@ module TVM
     def save(path)
       info "saving '#{path}'"
       File.open(path, 'w+') do |f|
-        f.write(YAML.dump([@volumes, @in_transaction, @pending_changes]))
+        f.write(YAML.dump([@volumes, @in_transaction, @pending_changes, @created, @modified, @deleted]))
       end
     end
 
     def load(path)
       info "loading '#{path}'"
       if File.exist?(path)
-        @volumes, @in_transaction, @pending_changes = YAML.load_file(path)
+        @volumes, @in_transaction, @pending_changes, @created, @modified, @deleted = YAML.load_file(path)
       end
     end
 
     def init
       @volumes = Set.new
       @pending_changes = false
+      @created = Array.new
+      @modified = Array.new
+      @deleted = Array.new
       save(@path)
     end
 
@@ -111,6 +162,8 @@ module TVM
       end
     end
   end
+
+  #--------------------------------
 
   class VolumeManager
     attr_reader :metadata
@@ -138,6 +191,10 @@ module TVM
       @metadata.commit
     end
 
+    def status
+      @metadata.status
+    end
+
     #--------------------------------
 
     def create_volume(opts = Hash.new)
@@ -148,7 +205,7 @@ module TVM
 
       new_volume = Volume.new(VolumeId.new, opts)
 
-      @metadata.volumes << new_volume
+      @metadata.add_volume(new_volume)
       mark_pending
 
       new_volume
@@ -158,7 +215,7 @@ module TVM
       parent = volume_by_name(name)
       new_volume = Volume.new(VolumeId.new, parent_id: parent.volume_id)
 
-      @metadata.volumes << new_volume
+      @metadata.add_volume(new_volume)
       mark_pending
 
       new_volume
@@ -182,7 +239,7 @@ module TVM
     end
 
     def volumes
-      @metadata.volumes.to_a
+      @metadata.volumes
     end
 
     def each_volume(&block)

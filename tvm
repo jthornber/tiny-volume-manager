@@ -10,6 +10,13 @@ include TVM
 
 #----------------------------------------------------------------
 
+def puts_volume(volume, indent = 0)
+  time = volume.create_time.to_s.chomp
+  puts "#{" " * indent}#{volume.volume_id} #{time} #{volume.name}"
+end
+
+#----------------------------------------------------------------
+
 open_log("./tvm.log")
 
 SUB_COMMANDS = %w(create snap list commit abort status)
@@ -45,6 +52,10 @@ cmd_opts = case cmd
     Trollop::options do
     end
 
+  when "status"
+    Trollop::options do
+    end
+
   else
     Trollop::die "unknown subcommand #{cmd.inspect}"
 end
@@ -73,7 +84,27 @@ when 'abort'
   vm.abort
 
 when 'status'
-  raise RuntimeError, "not implemented"
+  status = vm.status
+
+  puts "# created volumes:"
+  puts "#"
+  status.created.each do |vol|
+    puts "#    #{vol.name_or_short_id}"
+  end
+  puts "#" if status.created.size > 0
+  
+  puts "# modified volumes:"
+  puts "#"
+  status.modified.each do |vol|
+    puts "#    #{vol.name_or_short_id}"
+  end
+  puts "#" if status.modified.size > 0
+
+  puts "# deleted volumes:"
+  puts "#"
+  status.deleted.each do |vol|
+    puts "#    #{vol.name_or_short_id}"
+  end
 
 when 'create'
   raise RuntimeError, "incorrect number of arguments" if ARGV.size != 1
@@ -91,14 +122,11 @@ when 'list'
   end
 
   vols.each do |volume|
-    time = volume.create_time.to_s.chomp
-    puts "#{volume.volume_id} #{time} #{volume.name}"
+    puts_volume(volume)
 
     if show_children
       vm.child_volumes(volume.name).each do |child|
-        # FIXME: duplication
-        time = child.create_time.to_s.chomp
-        puts "  #{child.volume_id} #{time} #{child.name}"
+        puts_volume(child, 2)
       end
     end
   end

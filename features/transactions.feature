@@ -30,3 +30,34 @@ Feature: Transactionality
     And I run `tvm create fred`
     And I run `tvm abort`
     Then there should not be a volume called "fred"
+
+  Scenario: status with no changes
+    When I run `tvm status`
+    Then the stdout should contain:
+      """
+      # created volumes:
+      #
+      # modified volumes:
+      #
+      # deleted volumes:
+      #
+      """
+
+  Scenario: status with 2 creates
+    Given I run `tvm create fred`
+    And I run `tvm create barney`
+
+    When I run `tvm status`
+
+    Then the stdout should contain:
+      """
+      # created volumes:
+      #
+      #    fred
+      #    barney
+      #
+      # modified volumes:
+      #
+      # deleted volumes:
+      #
+      """

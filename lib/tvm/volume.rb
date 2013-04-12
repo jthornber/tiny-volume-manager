@@ -9,5 +9,9 @@ module TVM
       @parent_id = opts.fetch(:parent_id, nil)
       @create_time = opts.fetch(:create_time, Time.now)
     end
+
+    def name_or_short_id
+      @name || @volume_id
+    end
   end
 end
