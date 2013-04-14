@@ -19,7 +19,7 @@ end
 
 open_log("./tvm.log")
 
-SUB_COMMANDS = %w(create snap list commit abort status)
+SUB_COMMANDS = %w(create snap list commit abort status resize)
 
 global_opts = Trollop::options do
   banner "tiny volume manager"
@@ -50,6 +50,11 @@ cmd_opts = case cmd
 
   when "commit"
     Trollop::options do
+    end
+
+  when "resize"
+    Trollop::options do
+    opt :to_size, "Resize volume to the given size", :type => String
     end
 
   when "status"
@@ -130,6 +135,9 @@ when 'list'
       end
     end
   end
+
+when 'resize'
+  raise ArgumentError, "please specify the volume to be resized" unless ARGV.size > 0
 
 when 'snap'
   vm.snap_volume ARGV[0]

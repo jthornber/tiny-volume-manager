@@ -6,6 +6,14 @@ Given(/^a named volume$/) do
   run_simple "tvm create #{DEFAULT_NAME}"
 end
 
+Given(/^a volume called "(.*?)"$/) do |name|
+  in_current_dir do
+    vm.begin unless !vm.metadata.in_transaction?
+    vm.create_volume(name: name)
+  end
+end
+
+
 Then(/^it should pass$/) do
   assert_success(true)
 end
