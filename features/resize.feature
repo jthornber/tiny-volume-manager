@@ -31,8 +31,12 @@ Feature: Resize
     When I run `tvm resize --shrink-to 1G fred`
     Then it should pass
 
-  @announce
   Scenario: Sizing options are mutually exclusive
     Given a volume called "fred"
     When I run `tvm resize --to 1G --grow-by 1G --grow-to 1G fred`
+    Then it should fail
+
+  Scenario: Size arguments must parse
+    Given a volume called "fred"
+    When I run `tvm resize --to size_inches fred`
     Then it should fail
