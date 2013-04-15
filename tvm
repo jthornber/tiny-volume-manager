@@ -15,6 +15,41 @@ def puts_volume(volume, indent = 0)
   puts "#{" " * indent}#{volume.volume_id} #{time} #{volume.name}"
 end
 
+# Pick out the option that's been given, from a set of mutually
+# exclusive options.
+def msg_list_options(opts)
+  # FIXME: use a fold, and write an rspec test
+  msg = ""
+
+  opts.each do |o|
+    msg += "\n    #{o}"
+  end
+
+  msg
+end
+
+def get_exclusive_opt(opts, *flags)
+  fset = flags.to_set
+  oset = opts.select {|key, value| value}.keys.to_set
+
+  intersection = fset & oset
+
+  if intersection.size > 1
+    msg = "These options are mutually exclusive:" + msg_list_options(intersection)
+    raise ArgumentError, msg
+  end
+
+  if intersection.size == 0
+    msg = "One of these options expected:" + msg_list_options(flags)
+    raise ArgumentError, msg
+  end
+
+  intersection.to_a[0]
+end
+
+class VolumeSize
+end
+
 #----------------------------------------------------------------
 
 open_log("./tvm.log")
@@ -54,7 +89,11 @@ cmd_opts = case cmd
 
   when "resize"
     Trollop::options do
-    opt :to_size, "Resize volume to the given size", :type => String
+      opt :to, "Resize volume to the given size"
+      opt :grow_to, "Grow volume to the given size"
+      opt :shrink_to, "Shrink volume to the given size"
+      opt :grow_by, "Grow volume by given amount"
+      opt :shrink_by, "Shrink volume by given amount"
     end
 
   when "status"
@@ -138,6 +177,9 @@ when 'list'
 
 when 'resize'
   raise ArgumentError, "please specify the volume to be resized" unless ARGV.size > 0
+  STDERR.puts cmd_opts
+  get_exclusive_opt(cmd_opts,
+                    :to,  :grow_to, :shrink_to, :grow_by, :shrink_by)
 
 when 'snap'
   vm.snap_volume ARGV[0]
