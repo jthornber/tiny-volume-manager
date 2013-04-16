@@ -2,9 +2,11 @@
 
 require 'trollop'
 
+require 'lib/disk-units'
 require 'lib/log'
 require 'lib/tvm/tvm_api'
 
+include DiskUnits
 include Log
 include TVM
 
@@ -104,10 +106,10 @@ cmd_opts = case cmd
     Trollop::die "unknown subcommand #{cmd.inspect}"
 end
 
-#puts "Global options: #{global_opts.inspect}"
-#puts "Subcommand: #{cmd.inspect}"
-#puts "Subcommand options: #{cmd_opts.inspect}"
-#puts "Remaining arguments: #{ARGV.inspect}"
+puts "Global options: #{global_opts.inspect}"
+puts "Subcommand: #{cmd.inspect}"
+puts "Subcommand options: #{cmd_opts.inspect}"
+puts "Remaining arguments: #{ARGV.inspect}"
 
 #----------------------------------------------------------------
 
@@ -178,8 +180,9 @@ when 'list'
 when 'resize'
   raise ArgumentError, "please specify the volume to be resized" unless ARGV.size > 0
   STDERR.puts cmd_opts
-  get_exclusive_opt(cmd_opts,
-                    :to,  :grow_to, :shrink_to, :grow_by, :shrink_by)
+  opt = get_exclusive_opt(cmd_opts,
+                          :to,  :grow_to, :shrink_to, :grow_by, :shrink_by)
+  size = DiskSize.parse(cmd_opts[opt])
 
 when 'snap'
   vm.snap_volume ARGV[0]
