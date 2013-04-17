@@ -38,6 +38,7 @@ module CommandLine
 
     def parse(handler, *args)
       global_opts = {}
+      plain_args = []
 
       while args.size > 0 do
         arg = args.shift
@@ -45,10 +46,12 @@ module CommandLine
         if arg =~ /^-/
           sym, s = find_global_switch(arg)
           global_opts[sym] = true
+        else
+          plain_args << arg
         end
       end
 
-      handler.global_command(global_opts)
+      handler.global_command(global_opts, plain_args)
     end
 
     private

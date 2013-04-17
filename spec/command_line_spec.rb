@@ -60,7 +60,7 @@ describe "CommandLineHandler" do
     describe "global command" do
       it "should handle no switches" do
         handler = mock()
-        handler.should_receive(:global_command).with({})
+        handler.should_receive(:global_command).with({}, [])
         @clh.parse(handler)
       end
 
@@ -71,11 +71,36 @@ describe "CommandLineHandler" do
 
       it "should handle binary switches" do
         handler = mock()
-        handler.should_receive(:global_command).with(:help => true)
+        handler.should_receive(:global_command).with({:help => true}, [])
 
         @clh.add_switch(:help, ['--help', '-h'])
         @clh.add_global_switch(:help)
         @clh.parse(handler, '-h')
+      end
+
+      it "should handle multiple binary switches" do
+        handler = mock()
+        handler.should_receive(:global_command).with({:help => true, :ro => true}, [])
+
+        @clh.add_switch(:help, ['--help', '-h'])
+        @clh.add_switch(:ro, ['--read-only', '-r'])
+        @clh.add_global_switch(:help)
+        @clh.add_global_switch(:ro)
+
+        @clh.parse(handler, '-h', '--read-only')
+      end
+
+      it "should filter non-switches out" do
+        handler = mock()
+        handler.should_receive(:global_command).
+          with({:help => true, :ro => true}, ['my_file', 'my_other_file'])
+
+        @clh.add_switch(:help, ['--help', '-h'])
+        @clh.add_switch(:ro, ['--read-only', '-r'])
+        @clh.add_global_switch(:help)
+        @clh.add_global_switch(:ro)
+
+        @clh.parse(handler, '-h', 'my_file', '--read-only', 'my_other_file')
       end
     end
 
