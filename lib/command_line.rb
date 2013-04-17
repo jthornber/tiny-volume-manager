@@ -43,23 +43,31 @@ module CommandLine
         arg = args.shift
 
         if arg =~ /^-/
-          @global_switches.each do |gsym|
-            s = @switches[gsym]
-            if s.has_flag?(arg)
-              global_opts[s] = true
-              break
-            end
-          end
+          sym, s = find_global_switch(arg)
+          global_opts[sym] = true
         end
       end
 
-      handler.global_command({})
+      handler.global_command(global_opts)
     end
 
     private
     def switch(s)
       raise ArgumentError, "unknown switch '#{s}'" unless @switches.member?(s)
       @switches[s]
+    end
+
+    def find_global_switch(switch)
+      catch :found do
+        @global_switches.each do |gsym|
+          s = @switches[gsym]
+          if s.has_flag?(switch)
+            throw :found, [gsym, s]
+          end
+        end
+
+        raise ArgumentError, "unknown global switch '#{switch}'"
+      end
     end
   end
 end

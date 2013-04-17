@@ -65,6 +65,7 @@ describe "CommandLineHandler" do
       end
 
       it "should raise an ArgumentError if an unrecognised switch is used" do
+        handler = mock()
         expect {@clh.parse(handler, '--go-back-in-time')}.to raise_error(ArgumentError, /--go-back-in-time/)
       end
 
