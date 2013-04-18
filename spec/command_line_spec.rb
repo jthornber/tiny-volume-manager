@@ -14,6 +14,21 @@ describe "CommandLineHandler" do
       @clh.simple_switch :help, '--help', '-h'
   end
 
+  describe "creation" do
+    it "should take a config block" do
+      block_watcher = mock()
+      block_watcher.should_receive(:executed)
+
+      clh = CommandLineHandler.new do
+        value_type :string do |str|
+          str
+        end
+
+        block_watcher.executed
+      end
+    end
+  end
+
   describe "value types" do
     it "should allow you to register new value types" do
       @clh.configure do

@@ -20,12 +20,14 @@ module CommandLine
   end
 
   class CommandLineHandler
-    def initialize
+    def initialize(&block)
       @switches = {}
       @global_switches = []
       @value_types = {}
       @context = :global__
       @commands = Hash.new {|hash, key| []}
+
+      configure(&block) if block
     end
 
     def configure(&block)
