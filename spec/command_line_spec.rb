@@ -5,9 +5,9 @@ include CommandLine
 
 #----------------------------------------------------------------
 
-describe "CommandLineHandler" do
+describe "Parser" do
   before :each do
-    @clh = CommandLineHandler.new
+    @clh = Parser.new
   end
 
   def help_switch
@@ -19,7 +19,7 @@ describe "CommandLineHandler" do
       block_watcher = mock()
       block_watcher.should_receive(:executed)
 
-      clh = CommandLineHandler.new do
+      clh = Parser.new do
         value_type :string do |str|
           str
         end
@@ -217,6 +217,19 @@ describe "CommandLineHandler" do
         end
 
         @clh.parse(handler, '-h', 'my_file', '--read-only', 'my_other_file')
+      end
+    end
+
+    describe "simple commands" do
+      it "should handle commands that take no switches" do
+        @clh.configure do
+          command :create do
+          end
+        end
+
+        handler = mock()
+        handler.should_receive(:create).with({}, ['fred'])
+        @clh.parse(handler, 'create', 'fred')
       end
     end
 

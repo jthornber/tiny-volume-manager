@@ -1,4 +1,4 @@
-require 'prelude'
+require 'lib/prelude'
 
 #----------------------------------------------------------------
 
@@ -19,7 +19,7 @@ module CommandLine
     end
   end
 
-  class CommandLineHandler
+  class Parser
     def initialize(&block)
       @switches = {}
       @global_switches = []
@@ -66,6 +66,7 @@ module CommandLine
 
     def command(sym, *switches, &block)
       with_context(sym) do
+        @commands[@context] = []
         self.instance_eval(&block)
       end
     end
@@ -85,8 +86,8 @@ module CommandLine
         value = args.shift
         begin
           s.parser.call(value)
-        rescue
-          raise ArgumentError, "couldn't parse value '#{arg}=#{value}'"
+        rescue => e
+          raise ArgumentError, "couldn't parse value '#{arg}=#{value}'\n#{e}"
         end
       else
         true
