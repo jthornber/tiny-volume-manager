@@ -167,6 +167,26 @@ describe "CommandLineHandler" do
         @clh.parse(handler, 'one', '-c', '17', 'two')
       end
 
+      it "should raise an ArgumentError if no value is given for a valued switch" do
+        handler = mock()
+
+        @clh.configure do
+          value_type :int do |str|
+            str.to_i
+          end
+
+          value_switch :count, :int, '--count', '-c'
+
+          global do
+            switches :count
+          end
+        end
+
+        expect do
+          @clh.parse(handler, '--count')
+        end.to raise_error(ArgumentError, /count/)
+      end
+
       it "should filter non-switches out" do
         handler = mock()
         handler.should_receive(:global_command).
@@ -186,8 +206,42 @@ describe "CommandLineHandler" do
     end
 
     describe "commands" do
+      before :each do
+        @clh.configure do
+          value_type :int do |str|
+            str.to_i
+          end
+
+          value_switch :grow_to, :int, '--grow-to'
+          value_switch :grow_by, :int, '--grow-by'
+          value_switch :shrink_to, :int, '--shrink-to'
+          value_switch :shrink_by, :int, '--shrink-by'
+
+          command :resize do
+            switches :grow_to, :grow_by, :shrink_to, :shrink_by
+          end
+
+          command :shrink do
+            switches :grow_to, :grow_by, :shrink_to, :shrink_by
+          end
+
+          command :grow do
+            switches :grow_to, :grow_by, :shrink_to, :shrink_by
+          end
+        end
+      end
+
       it "should allow you to define a sub command" do
-        pending
+        handler = mock()
+        handler.should_receive(:resize).with({:grow_to => 12345}, ['fred'])
+        @clh.parse(handler, 'resize', '--grow-to', '12345', 'fred')
+      end
+
+      it "should prevent you calling two sub commands on the same line" do
+        handler = mock()
+        handler.should_receive(:resize).
+          with({:grow_to => 1234, :shrink_to => 2345}, ['shrink', 'fred'])
+        @clh.parse(handler, 'resize', '--grow-to', '1234', 'shrink', '--shrink-to', '2345', 'fred')
       end
     end
 

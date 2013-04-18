@@ -69,34 +69,68 @@ module CommandLine
     end
 
     def parse(handler, *args)
-      global_opts = {}
+      command, opts, plain_args = parse_(args)
+      handler.send(command, opts, plain_args)
+    end
+
+    private
+    def parse_value(arg, s, args)
+      if s.parser
+        if args.size == 0
+          raise ArgumentError, "no value specified for switch '#{arg}'"
+        end
+
+        value = args.shift
+        begin
+          s.parser.call(value)
+        rescue
+          raise ArgumentError, "couldn't parse value '#{arg}=#{value}'"
+        end
+      else
+        true
+      end
+    end
+
+    def parse_(args)
+      in_command = false
+      opts = {}
       plain_args = []
+      valid_switches = @commands[:global__]
+      command = :global_command
 
       while args.size > 0 do
         arg = args.shift
 
         if arg =~ /^-/
-          sym, s = find_global_switch(arg)
-          global_opts[sym] = s.parser ? s.parser.call(args.shift) : true
+          sym, s = find_switch(valid_switches, arg)
+          opts[sym] = parse_value(arg, s, args)
+
         else
-          plain_args << arg
+          cmd = arg.intern
+
+          if !in_command && @commands.member?(cmd)
+            command = cmd
+            valid_switches = @commands[cmd]
+            in_command = true
+          else
+            plain_args << arg
+          end
         end
       end
 
-      handler.global_command(global_opts, plain_args)
+      [command, opts, plain_args]
     end
 
-    private
-    def find_global_switch(switch)
+    def find_switch(valid_switches, switch)
       catch :found do
-        @commands[:global__].each do |gsym|
-          s = @switches[gsym]
+        valid_switches.each do |sym|
+          s = @switches[sym]
           if s.has_flag?(switch)
-            throw :found, [gsym, s]
+            throw :found, [sym, s]
           end
         end
 
-        raise ArgumentError, "unknown global switch '#{switch}'"
+        raise ArgumentError, "unexpected switch '#{switch}'"
       end
     end
 
