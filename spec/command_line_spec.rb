@@ -11,48 +11,92 @@ describe "CommandLineHandler" do
   end
 
   def help_switch
-      @clh.add_switch(:help, ['--help', '-h'])
+      @clh.simple_switch :help, '--help', '-h'
   end
 
-  describe "argument types" do
-    it "should allow you to register new argument types" do
-      @clh.add_argument_type(:string, lambda {|str| str})
-      @clh.add_argument_type(:int, lambda {|str| str.to_i})
+  describe "value types" do
+    it "should allow you to register new value types" do
+      @clh.configure do
+        value_type :string do |str|
+          str
+        end
+
+        value_type :int do |str|
+          str.to_i
+        end
+      end
+    end
+
+    it "should fail it you try and define a duplicate value type" do
+      @clh.value_type :string do |str|
+        str
+      end
+
+      expect do
+        @clh.value_type :string do |str|
+          str
+        end
+      end.to raise_error(CommandLineError, /string/)
     end
   end
 
-  describe "options are defined separately from commands" do
+  describe "switches are defined separately from commands" do
     it "should let you define binary switch" do
       help_switch
     end
 
-    it "should let you define an option that takes a single value" do
-      @clh.add_switch(:resize_to, ['--resize-to'], :volume_size)
+    it "should fail if you try and define a switch that takes an unknown value type" do
+      expect {@clh.value_switch :resize_to, :volume_size, '--resize-to'}.to raise_error(CommandLineError, /volume_size/)
     end
 
     it "should let you define an option that takes a single value" do
-      @clh.add_switch(:resize_to, ['--resize-to'], :volume_size)
+      @clh.configure do
+        value_type :volume_size do |str|
+          str.to_i
+        end
+
+        value_switch :resize_to, :volume_size, '--resize-to'
+      end
     end
   end
 
   describe "global switches" do
     it "should let you bind global switch" do
       help_switch
-      @clh.add_global_switch(:help)
+      @clh.configure do
+        global do
+          switches :help
+        end
+      end
     end
 
     it "should raise an error if the switch hasn't been previously defined" do
-      expect {@clh.add_global_switch(:become_sentient)}.to raise_error(CommandLineError)
+      expect do
+        @clh.global do
+          switches :become_sentient
+        end
+      end.to raise_error(CommandLineError)
     end
   end
 
   describe "sub commands" do
-    it "should let you register a sub command" do
-      @clh.add_sub_command(:create)
+    it "should let you register a command" do
+      @clh.configure do
+        command(:create) {}
+      end
     end
 
     it "should let you bind switches" do
-      @clh.add_sub_command(:resize, :grow_to, :grow_by, :shrink_to, :shrink_by)
+      @clh.configure do
+        simple_switch :grow_to, '--grow-to'
+        simple_switch :grow_by, '--grow-by'
+        simple_switch :shrink_to, '--shrink-to'
+        simple_switch :shrink_by, '--shrink-by'
+
+        command :resize do
+          switches :grow_to, :grow_by, :shrink_to, :shrink_by
+        end
+      end
     end
   end
 
@@ -73,8 +117,13 @@ describe "CommandLineHandler" do
         handler = mock()
         handler.should_receive(:global_command).with({:help => true}, [])
 
-        @clh.add_switch(:help, ['--help', '-h'])
-        @clh.add_global_switch(:help)
+        @clh.configure do
+          simple_switch :help, '--help', '-h'
+          global do
+            switches :help
+          end
+        end
+
         @clh.parse(handler, '-h')
       end
 
@@ -82,12 +131,40 @@ describe "CommandLineHandler" do
         handler = mock()
         handler.should_receive(:global_command).with({:help => true, :ro => true}, [])
 
-        @clh.add_switch(:help, ['--help', '-h'])
-        @clh.add_switch(:ro, ['--read-only', '-r'])
-        @clh.add_global_switch(:help)
-        @clh.add_global_switch(:ro)
+        @clh.configure do
+          simple_switch :help, '--help', '-h'
+          simple_switch :ro, '--read-only', '-r'
+
+          global do
+            switches :help, :ro
+          end
+        end
 
         @clh.parse(handler, '-h', '--read-only')
+      end
+
+      it "should handle valued switches" do
+        handler = mock()
+
+        @clh.configure do
+          value_type :int do |str|
+            str.to_i
+          end
+
+          value_switch :count, :int, '--count', '-c'
+
+          global do
+            switches :count
+          end
+        end
+
+        handler.should_receive(:global_command).
+          with({:count => 17}, [])
+        @clh.parse(handler, '--count', '17')
+
+        handler.should_receive(:global_command).
+          with({:count => 17}, ['one', 'two'])
+        @clh.parse(handler, 'one', '-c', '17', 'two')
       end
 
       it "should filter non-switches out" do
@@ -95,13 +172,27 @@ describe "CommandLineHandler" do
         handler.should_receive(:global_command).
           with({:help => true, :ro => true}, ['my_file', 'my_other_file'])
 
-        @clh.add_switch(:help, ['--help', '-h'])
-        @clh.add_switch(:ro, ['--read-only', '-r'])
-        @clh.add_global_switch(:help)
-        @clh.add_global_switch(:ro)
+        @clh.configure do
+          simple_switch :help, '--help', '-h'
+          simple_switch :ro, '--read-only', '-r'
+
+          global do
+            switches :help, :ro
+          end
+        end
 
         @clh.parse(handler, '-h', 'my_file', '--read-only', 'my_other_file')
       end
+    end
+
+    describe "commands" do
+      it "should allow you to define a sub command" do
+        pending
+      end
+    end
+
+    it "should handle switches with values" do
+      pending
     end
 
     it "should handle --foo=<value>" do

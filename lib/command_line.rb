@@ -1,13 +1,17 @@
+require 'prelude'
+
+#----------------------------------------------------------------
+
 module CommandLine
   class CommandLineError < RuntimeError
   end
 
   class Switch
-    attr_reader :flags, :cardinality
+    attr_reader :flags, :parser
 
-    def initialize(flags, cardinality)
+    def initialize(flags, parser = nil)
       @flags = flags
-      @cardinality = cardinality
+      @parser = parser
     end
 
     def has_flag?(flag)
@@ -19,21 +23,49 @@ module CommandLine
     def initialize
       @switches = {}
       @global_switches = []
+      @value_types = {}
+      @context = :global__
+      @commands = Hash.new {|hash, key| []}
     end
 
-    def add_switch(sym, flags, cardinality = :single)
-      @switches[sym] = Switch.new(flags, cardinality)
+    def configure(&block)
+      self.instance_eval(&block)
     end
 
-    def add_argument_type(sym, parser)
+    def value_type(sym, &parser)
+      if @value_types.member?(sym)
+        raise CommandLineError, "duplicate value type '#{sym}'"
+      end
+
+      @value_types[sym] = parser
     end
 
-    def add_global_switch(sym)
-      raise CommandLineError, "unknown switch '#{sym}'" unless @switches.member?(sym)
-      @global_switches << sym
+    def simple_switch(sym, *flags)
+      @switches[sym] = Switch.new(flags)
     end
 
-    def add_sub_command(sym, *switches)
+    def value_switch(sym, value_sym, *flags)
+      @switches[sym] = Switch.new(flags, get_value_parser(value_sym))
+    end
+
+    def global(&block)
+      with_context(:global__) do
+        self.instance_eval(&block)
+      end
+    end
+
+    def switches(*syms)
+      syms.each do |sym|
+        raise CommandLineError, "unknown switch '#{sym}'" unless @switches.member?(sym)
+      end
+
+      @commands[@context] += syms
+    end
+
+    def command(sym, *switches, &block)
+      with_context(sym) do
+        self.instance_eval(&block)
+      end
     end
 
     def parse(handler, *args)
@@ -45,7 +77,7 @@ module CommandLine
 
         if arg =~ /^-/
           sym, s = find_global_switch(arg)
-          global_opts[sym] = true
+          global_opts[sym] = s.parser ? s.parser.call(args.shift) : true
         else
           plain_args << arg
         end
@@ -55,14 +87,9 @@ module CommandLine
     end
 
     private
-    def switch(s)
-      raise ArgumentError, "unknown switch '#{s}'" unless @switches.member?(s)
-      @switches[s]
-    end
-
     def find_global_switch(switch)
       catch :found do
-        @global_switches.each do |gsym|
+        @commands[:global__].each do |gsym|
           s = @switches[gsym]
           if s.has_flag?(switch)
             throw :found, [gsym, s]
@@ -72,5 +99,22 @@ module CommandLine
         raise ArgumentError, "unknown global switch '#{switch}'"
       end
     end
+
+    def get_value_parser(sym)
+      if @value_types.member?(sym)
+        @value_types[sym]
+      else
+        raise CommandLineError, "unknown value type '#{sym}'"
+      end
+    end
+
+    def with_context(ctxt, &block)
+      old_context = @context
+      @context = ctxt
+      release = lambda {@context = old_context}
+      bracket_(release, &block)
+    end
   end
 end
+
+#----------------------------------------------------------------
