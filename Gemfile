@@ -1,7 +1,6 @@
 source 'https://rubygems.org'
 
 group :tvm do
-      gem 'trollop'
 end
 
 group :test do

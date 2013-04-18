@@ -1,5 +1,6 @@
 Feature: General command line support
 
+  @announce
   Scenario: --help prints usage to stdout
     When I run `tvm --help`
     Then the stdout should contain:
@@ -13,5 +14,5 @@ Feature: General command line support
     Then it should fail
     And the stderr should contain:
     """
-    unknown subcommand "unleashtheearwigs"
+    unknown command 'unleashtheearwigs'
     """

@@ -1,10 +1,9 @@
 #!/usr/bin/env ruby
 
-require 'trollop'
-
 require 'lib/disk-units'
 require 'lib/log'
 require 'lib/tvm/tvm_api'
+require 'lib/command_line'
 
 include DiskUnits
 include Log
@@ -12,24 +11,7 @@ include TVM
 
 #----------------------------------------------------------------
 
-def puts_volume(volume, indent = 0)
-  time = volume.create_time.to_s.chomp
-  puts "#{" " * indent}#{volume.volume_id} #{time} #{volume.name}"
-end
-
-# Pick out the option that's been given, from a set of mutually
-# exclusive options.
-def msg_list_options(opts)
-  # FIXME: use a fold, and write an rspec test
-  msg = ""
-
-  opts.each do |o|
-    msg += "\n    #{o}"
-  end
-
-  msg
-end
-
+# FIXME: dead code
 def get_exclusive_opt(opts, *flags)
   fset = flags.to_set
   oset = opts.select {|key, value| value}.keys.to_set
@@ -49,69 +31,179 @@ def get_exclusive_opt(opts, *flags)
   intersection.to_a[0]
 end
 
-class VolumeSize
+#----------------------------------------------------------------
+
+command_line = CommandLine::Parser.new do
+  value_type :string do |str|
+    str
+  end
+
+  value_type :int do |str|
+    str.to_i
+  end
+
+  value_type :disk_size do |str|
+    DiskUnits::DiskSize.parse(str)
+  end
+
+  simple_switch :help, '--help', '-h'
+
+  value_switch :size, :disk_size, '--size'
+  value_switch :grow_to, :disk_size, '--grow-to'
+  value_switch :grow_by, :disk_size, '--grow-by'
+  value_switch :shrink_to, :disk_size, '--shrink-to'
+  value_switch :shrink_by, :disk_size, '--shrink-by'
+
+  global do
+    switches :help
+  end
+
+  command :create do
+  end
+
+  command :snap do
+  end
+
+  command :list do
+  end
+
+  command :commit do
+  end
+
+  command :abort do
+  end
+
+  command :status do
+  end
+
+  command :resize do
+    # FIXME: these are exclusive, 'one_of' method?
+    switches :grow_to, :grow_by, :shrink_to, :shrink_by, :size
+  end
+end
+
+#----------------------------------------------------------------
+
+class TVMDispatcher
+  def initialize(vm)
+    @vm = vm
+  end
+
+  def create(opts, args)
+    raise RuntimeError, "incorrect number of arguments" if args.size != 1
+    new_volume = @vm.create_volume(name: args[0])
+    puts new_volume.volume_id
+  end
+
+  def snap(opts, args)
+    @vm.snap_volume args[0]
+  end
+
+  def list(opts, args)
+    show_children = true
+
+    if args.size == 1
+      vols = [@vm.volume_by_name(args[0])]
+      show_children = false
+    else
+      vols = @vm.root_volumes
+    end
+
+    vols.each do |volume|
+      puts_volume(volume)
+
+      if show_children
+        @vm.child_volumes(volume.name).each do |child|
+          puts_volume(child, 2)
+        end
+      end
+    end
+  end
+
+  def abort(opts, args)
+    @vm.abort
+  end
+
+  def commit(opts, args)
+    @vm.commit
+  end
+
+  def resize(opts, args)
+    raise ArgumentError, "please specify the volume to be resized" unless args.size > 0
+    # FIXME: exclusive args?
+  end
+
+  def status(opts, args)
+    status = @vm.status
+
+    puts "# created volumes:"
+    puts "#"
+    status.created.each do |vol|
+      puts "#    #{vol.name_or_short_id}"
+    end
+    puts "#" if status.created.size > 0
+    
+    puts "# modified volumes:"
+    puts "#"
+    status.modified.each do |vol|
+      puts "#    #{vol.name_or_short_id}"
+    end
+    puts "#" if status.modified.size > 0
+
+    puts "# deleted volumes:"
+    puts "#"
+    status.deleted.each do |vol|
+      puts "#    #{vol.name_or_short_id}"
+    end
+  end
+
+  def global_command(opts, args)
+    if args.size > 0
+      die "unknown command '#{args[0]}'"
+    else
+      if opts[:help]
+        help(STDOUT)
+      else
+        die "no command given"
+      end
+    end
+  end
+
+  private
+  def die(msg)
+    STDERR.puts msg
+    exit(1)
+  end
+
+  def puts_volume(volume, indent = 0)
+    time = volume.create_time.to_s.chomp
+    puts "#{" " * indent}#{volume.volume_id} #{time} #{volume.name}"
+  end
+
+  # Pick out the option that's been given, from a set of mutually
+  # exclusive options.
+  def msg_list_options(opts)
+    # FIXME: use a fold, and write an rspec test
+    msg = ""
+
+    opts.each do |o|
+      msg += "\n    #{o}"
+    end
+
+    msg
+  end
+
+  def help(out)
+    out.write <<EOF
+tiny volume manager
+  --help, -h:   Show this message
+EOF
+  end
 end
 
 #----------------------------------------------------------------
 
 open_log("./tvm.log")
-
-SUB_COMMANDS = %w(create snap list commit abort status resize)
-
-global_opts = Trollop::options do
-  banner "tiny volume manager"
-  stop_on SUB_COMMANDS
-end
-
-cmd = ARGV.shift
-cmd_opts = case cmd
-  when "create"
-    Trollop::options do
-    end
-
-  when "snap"
-    Trollop::options do
-    end
-
-  when "list"
-    Trollop::options do
-    end
-
-  when "begin"
-    Trollop::options do
-    end
-
-  when "abort"
-    Trollop::options do
-    end
-
-  when "commit"
-    Trollop::options do
-    end
-
-  when "resize"
-    Trollop::options do
-      opt :to, "Resize volume to the given size"
-      opt :grow_to, "Grow volume to the given size"
-      opt :shrink_to, "Shrink volume to the given size"
-      opt :grow_by, "Grow volume by given amount"
-      opt :shrink_by, "Shrink volume by given amount"
-    end
-
-  when "status"
-    Trollop::options do
-    end
-
-  else
-    Trollop::die "unknown subcommand #{cmd.inspect}"
-end
-
-puts "Global options: #{global_opts.inspect}"
-puts "Subcommand: #{cmd.inspect}"
-puts "Subcommand options: #{cmd_opts.inspect}"
-puts "Remaining arguments: #{ARGV.inspect}"
-
-#----------------------------------------------------------------
 
 METADATA_FILE='./volumes.yaml'
 
@@ -121,72 +213,8 @@ vm = VolumeManager.new(metadata)
 # We're alway in an implicit transaction
 vm.begin unless metadata.in_transaction?
 
-case cmd
-when 'commit'
-  info "calling commit"
-  vm.commit
-
-when 'abort'
-  vm.abort
-
-when 'status'
-  status = vm.status
-
-  puts "# created volumes:"
-  puts "#"
-  status.created.each do |vol|
-    puts "#    #{vol.name_or_short_id}"
-  end
-  puts "#" if status.created.size > 0
-  
-  puts "# modified volumes:"
-  puts "#"
-  status.modified.each do |vol|
-    puts "#    #{vol.name_or_short_id}"
-  end
-  puts "#" if status.modified.size > 0
-
-  puts "# deleted volumes:"
-  puts "#"
-  status.deleted.each do |vol|
-    puts "#    #{vol.name_or_short_id}"
-  end
-
-when 'create'
-  raise RuntimeError, "incorrect number of arguments" if ARGV.size != 1
-  new_volume = vm.create_volume(name: ARGV[0])
-  puts new_volume.volume_id
-
-when 'list'
-  show_children = true
-
-  if ARGV.size == 1
-    vols = [vm.volume_by_name(ARGV[0])]
-    show_children = false
-  else
-    vols = vm.root_volumes
-  end
-
-  vols.each do |volume|
-    puts_volume(volume)
-
-    if show_children
-      vm.child_volumes(volume.name).each do |child|
-        puts_volume(child, 2)
-      end
-    end
-  end
-
-when 'resize'
-  raise ArgumentError, "please specify the volume to be resized" unless ARGV.size > 0
-  STDERR.puts cmd_opts
-  opt = get_exclusive_opt(cmd_opts,
-                          :to,  :grow_to, :shrink_to, :grow_by, :shrink_by)
-  size = DiskSize.parse(cmd_opts[opt])
-
-when 'snap'
-  vm.snap_volume ARGV[0]
-end
+dispatcher = TVMDispatcher.new(vm)
+command_line.parse(dispatcher, *ARGV)
 
 metadata.persist
 
