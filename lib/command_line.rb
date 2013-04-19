@@ -3,6 +3,7 @@ require 'lib/prelude'
 #----------------------------------------------------------------
 
 module CommandLine
+  # FIXME: parse error, and configure error
   class CommandLineError < RuntimeError
   end
 
@@ -19,13 +20,27 @@ module CommandLine
     end
   end
 
+  class Command
+    attr_reader :switches
+
+    def initialize
+      @switches = []
+    end
+
+    def add_switches(syms)
+      @switches += syms
+    end
+  end
+
   class Parser
+    GLOBAL_SYM = :global__
+
     def initialize(&block)
       @switches = {}
       @global_switches = []
       @value_types = {}
-      @context = :global__
-      @commands = Hash.new {|hash, key| []}
+      @commands = Hash.new {|hash, key| Command.new}
+      @current_command = @commands[GLOBAL_SYM] = Command.new # FIXME get rid of this
 
       configure(&block) if block
     end
@@ -51,24 +66,26 @@ module CommandLine
     end
 
     def global(&block)
-      with_context(:global__) do
+      command(GLOBAL_SYM, &block)
+    end
+
+    def command(sym, &block)
+      old = @current_command
+      @current_command = @commands[sym] = Command.new
+      release = lambda {@current_command = old}
+      bracket_(release) do
         self.instance_eval(&block)
       end
     end
 
     def switches(*syms)
-      syms.each do |sym|
-        raise CommandLineError, "unknown switch '#{sym}'" unless @switches.member?(sym)
-      end
-
-      @commands[@context] += syms
+      check_switches_are_defined(syms)
+      @current_command.add_switches(syms)
     end
 
-    def command(sym, *switches, &block)
-      with_context(sym) do
-        @commands[@context] = []
-        self.instance_eval(&block)
-      end
+    def one_of(*syms)
+      check_switches_are_defined(syms)
+      @current_command.add_switches(syms)
     end
 
     def parse(handler, *args)
@@ -98,7 +115,7 @@ module CommandLine
       in_command = false
       opts = {}
       plain_args = []
-      valid_switches = @commands[:global__]
+      valid_switches = @commands[GLOBAL_SYM].switches
       command = :global_command
 
       while args.size > 0 do
@@ -113,7 +130,7 @@ module CommandLine
 
           if !in_command && @commands.member?(cmd)
             command = cmd
-            valid_switches = @commands[cmd]
+            valid_switches = @commands[cmd].switches
             in_command = true
           else
             plain_args << arg
@@ -122,6 +139,12 @@ module CommandLine
       end
 
       [command, opts, plain_args]
+    end
+
+    def check_switches_are_defined(syms)
+      syms.each do |sym|
+        raise CommandLineError, "unknown switch '#{sym}'" unless @switches.member?(sym)
+      end
     end
 
     def find_switch(valid_switches, switch)
@@ -143,13 +166,6 @@ module CommandLine
       else
         raise CommandLineError, "unknown value type '#{sym}'"
       end
-    end
-
-    def with_context(ctxt, &block)
-      old_context = @context
-      @context = ctxt
-      release = lambda {@context = old_context}
-      bracket_(release, &block)
     end
   end
 end

@@ -273,8 +273,41 @@ describe "Parser" do
       end
     end
 
-    it "should handle switches with values" do
-      pending
+    describe "exclusive switches" do
+      before :each do
+        @clh.configure do
+          value_type :int do |str|
+            str.to_i
+          end
+
+          value_switch :grow_to, :int, '--grow-to'
+          value_switch :grow_by, :int, '--grow-by'
+          value_switch :shrink_to, :int, '--shrink-to'
+          value_switch :shrink_by, :int, '--shrink-by'
+
+          command :resize do
+            one_of :grow_to, :grow_by, :shrink_to, :shrink_by
+          end
+        end
+      end
+
+      it "should parse one exclusive switch" do
+        handler = mock()
+        handler.should_receive(:resize).
+          with({:grow_to => 1234}, ['fred'])
+        @clh.parse(handler, 'resize', '--grow-to', '1234', 'fred')
+      end
+
+      it "should raise ArgumentError if more than one switch from an exclusive set is defined" do
+        handler = mock()
+        expect do
+          @clh.parse(handler, 'resize', '--grow-to', '1234', '--shrink-by', '2345', 'fred')
+        end.to raise_error(ArgumentError, /(--grow-to).*(--shrink-by)/)
+      end
+
+      it "should let you define more than one exclusive set" do
+        pending
+      end
     end
 
     it "should handle --foo=<value>" do
