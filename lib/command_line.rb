@@ -1,5 +1,7 @@
 require 'lib/prelude'
 
+require 'set'
+
 #----------------------------------------------------------------
 
 module CommandLine
@@ -25,10 +27,37 @@ module CommandLine
 
     def initialize
       @switches = []
+      @mutually_exclusive_sets = [] # list of lists of syms
     end
 
     def add_switches(syms)
       @switches += syms
+    end
+
+    def add_mutually_exclusive_set(syms)
+      @mutually_exclusive_sets << syms.to_set
+    end
+
+    def check_mutual_exclusion(syms)
+      nr_sets = @mutually_exclusive_sets.size
+      set_counts = Array.new(nr_sets, [])
+
+      syms.each do |s|
+        # is it in an exclusive set?
+        0.upto(nr_sets - 1) do |n|
+          if @mutually_exclusive_sets[n].member?(s)
+            set_counts[n] << s
+          end
+        end
+      end
+
+      0.upto(nr_sets - 1) do |n|
+        if set_counts[n].size > 1
+          msg = "mutually exclusive options used:\n"
+          set_counts[n].each {|sym| msg += "    #{sym}\n"}
+          raise ArgumentError, msg
+        end
+      end
     end
   end
 
@@ -40,7 +69,7 @@ module CommandLine
       @global_switches = []
       @value_types = {}
       @commands = Hash.new {|hash, key| Command.new}
-      @current_command = @commands[GLOBAL_SYM] = Command.new # FIXME get rid of this
+      @current_command = @commands[GLOBAL_SYM]
 
       configure(&block) if block
     end
@@ -86,6 +115,7 @@ module CommandLine
     def one_of(*syms)
       check_switches_are_defined(syms)
       @current_command.add_switches(syms)
+      @current_command.add_mutually_exclusive_set(syms)
     end
 
     def parse(handler, *args)
@@ -138,6 +168,7 @@ module CommandLine
         end
       end
 
+      @commands[command].check_mutual_exclusion(opts.keys)
       [command, opts, plain_args]
     end
 

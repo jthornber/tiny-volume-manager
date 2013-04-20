@@ -302,7 +302,8 @@ describe "Parser" do
         handler = mock()
         expect do
           @clh.parse(handler, 'resize', '--grow-to', '1234', '--shrink-by', '2345', 'fred')
-        end.to raise_error(ArgumentError, /(--grow-to).*(--shrink-by)/)
+        end.to raise_error(ArgumentError, /mutually exclusive/)
+        # FIXME: would be nice to see the actual flags in the exception
       end
 
       it "should let you define more than one exclusive set" do
