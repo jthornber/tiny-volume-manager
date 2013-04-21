@@ -7,7 +7,7 @@ include DiskUnits
 
 describe DiskSize do
   it "should raise if an unknown unit is given" do
-    expect {DiskSize.new(42, :fish)}.to raise_error(RuntimeError, "unknown unit 'fish'")
+    expect {DiskSize.new(42, :fish)}.to raise_error(RuntimeError, /unknown disk unit ':fish'/)
   end
 
   it "should understand bytes" do
@@ -27,6 +27,12 @@ describe DiskSize do
     it "should choose a unit that's an exact factor" do
       DiskSize.new(17000, :byte).best_unit.should == :kilobyte
       DiskSize.new(17 * 1024, :byte).best_unit.should == :kibibyte
+    end
+  end
+
+  describe "equality" do
+    it "should compare bytes and ignore the defining unit" do
+      DiskSize.new(127000, :byte).should == DiskSize.new(127, :kilobyte)
     end
   end
 

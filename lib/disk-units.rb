@@ -23,7 +23,7 @@ module DiskUnits
     end
 
     def self.lookup_unit(sym)
-      raise RuntimeError, "unknown unit '#{sym}'" unless @units.member?(sym)
+      raise RuntimeError, "unknown disk unit ':#{sym}'" unless @units.member?(sym)
       @units[sym]
     end
 
@@ -50,9 +50,13 @@ module DiskUnits
 
     attr_accessor :bytes
 
-    def initialize(n, unit = :bytes)
+    def initialize(n, unit = :byte)
       _, size = DiskSize.lookup_unit(unit)
       @bytes = n * size
+    end
+
+    def ==(rhs)
+      @bytes == rhs.bytes
     end
 
     MATCHER = /^(\d+)([a-zA-Z]+)$/

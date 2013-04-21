@@ -1,5 +1,8 @@
+require 'lib/disk-units'
+
 module TVMWorld
   include TVM
+  include DiskUnits
 
   # FIXME: duplication
   def metadata_path

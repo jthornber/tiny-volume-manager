@@ -40,3 +40,8 @@ Feature: Resize
     Given a volume called "fred"
     When I run `tvm resize --size last_week fred`
     Then it should fail
+
+  Scenario: --size correctly sets the size
+    Given a volume called "fred"
+    When I run `tvm resize --size 1GB fred`
+    Then "fred" should have size 1GB

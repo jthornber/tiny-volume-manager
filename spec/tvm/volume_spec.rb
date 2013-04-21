@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'lib/tvm/volume_id'
 require 'lib/tvm/volume'
 
 include TVM
@@ -22,6 +23,21 @@ describe Volume do
     parent_id = VolumeId.new
     v = Volume.new(VolumeId.new, parent_id: parent_id)
     v.parent_id.should == parent_id
+  end
+
+  describe "sizing" do
+    before :each do
+      @v = Volume.new(VolumeId.new, name: 'fred')
+    end
+
+    it "should be created with zero size" do
+      @v.size.bytes.should == 0
+    end
+
+    it "should allow the size to be changed" do
+      @v.size = DiskUnits::DiskSize.new(1, :gibibyte)
+      @v.size.should == DiskUnits::DiskSize.new(1, :gibibyte)
+    end
   end
 end
 
