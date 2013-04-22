@@ -8,7 +8,7 @@ end
 
 Given(/^a volume called "(.*?)"$/) do |name|
   in_current_dir do
-    vm.begin unless !vm.metadata.in_transaction?
+    vm.begin unless vm.metadata.in_transaction?
     vm.create_volume(name: name)
     metadata.persist
   end

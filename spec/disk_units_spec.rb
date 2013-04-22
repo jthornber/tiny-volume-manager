@@ -36,6 +36,21 @@ describe DiskSize do
     end
   end
 
+  describe "arithmetic" do
+    it "should support (+)" do
+      s = DiskSize.new(17, :byte)
+      t = s + DiskSize.new(2, :gigabyte)
+      t.in_bytes.should == (2 * 10**9) + 17
+      s.in_bytes.should == 17
+    end
+
+    it "should support (+=)" do
+      s = DiskSize.new(17, :byte)
+      s += DiskSize.new(2, :gigabyte)
+      s.in_bytes.should == (2 * 10**9) + 17
+    end
+  end
+
   describe "formatting" do
     it "should format in any requested unit" do
       tests = [[372, :byte, :byte, "372B"],

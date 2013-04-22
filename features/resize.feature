@@ -42,9 +42,20 @@ Feature: Resize
     Then it should fail
 
   Scenario: Resize takes just one volume arg
-    pending
+    Given a volume called "fred"
+    And a volume called "barney"
+    When I run `tvm resize --size 1GB fred barney`
+    Then it should fail
 
   Scenario: --size correctly sets the size
     Given a volume called "fred"
     When I run `tvm resize --size 1GB fred`
     Then "fred" should have size 1GB
+
+  @announce
+  Scenario: --grow-by correctly extends
+    Given a volume called "fred"
+    And "fred" has size 1GB
+    When I run `tvm resize --grow-by 1GB fred`
+    Then "fred" should have size 2GB
+
