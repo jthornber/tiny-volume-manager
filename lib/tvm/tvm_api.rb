@@ -221,6 +221,10 @@ module TVM
       new_volume
     end
 
+    def resize(vol, new_size)
+      vol.size = new_size
+    end
+
     # Any volume that doesn't have a parent
     def root_volumes
       volumes.select {|vol| vol.parent_id == nil}

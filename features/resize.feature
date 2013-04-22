@@ -41,6 +41,9 @@ Feature: Resize
     When I run `tvm resize --size last_week fred`
     Then it should fail
 
+  Scenario: Resize takes just one volume arg
+    pending
+
   Scenario: --size correctly sets the size
     Given a volume called "fred"
     When I run `tvm resize --size 1GB fred`

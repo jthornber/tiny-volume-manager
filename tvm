@@ -5,6 +5,8 @@ require 'lib/log'
 require 'lib/tvm/tvm_api'
 require 'lib/command_line'
 
+require 'pp'
+
 include DiskUnits
 include Log
 include TVM
@@ -129,7 +131,14 @@ class TVMDispatcher
 
   def resize(opts, args)
     raise ArgumentError, "please specify the volume to be resized" unless args.size > 0
-    # FIXME: exclusive args?
+    # raise ArgumentError, "too many arguments" unless args.size == 1
+    # FIXME: check grow, grows etc.
+
+    size = nil
+    if opts.fetch(:size, false)
+      name = args[0]
+      @vm.resize(@vm.volume_by_name(name), opts[:size])
+    end
   end
 
   def status(opts, args)

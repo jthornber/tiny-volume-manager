@@ -247,6 +247,20 @@ describe TVM do
       @vm.volumes.size.should == 0
     end
   end
+
+  describe "#resize" do
+    before :each do
+      @name = 'fred'
+
+      @vm.create_volume(name: @name)
+    end
+
+    it "should set the volume size" do
+      v = @vm.volume_by_name(@name)
+      @vm.resize(v, DiskUnits::DiskSize.new(1, :gibibyte))
+      v.size.should == DiskUnits::DiskSize.new(1, :gibibyte)
+    end
+  end
 end
 
 #----------------------------------------------------------------

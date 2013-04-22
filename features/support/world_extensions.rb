@@ -16,6 +16,11 @@ module TVMWorld
   def vm
     @vm ||= VolumeManager.new(metadata)
   end
+
+  def reload_metadata
+    @metadata = YAMLMetadata.new(metadata_path)
+    @vm = VolumeManager.new(metadata)
+  end
 end
 
 World(TVMWorld)
