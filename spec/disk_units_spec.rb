@@ -49,6 +49,19 @@ describe DiskSize do
       s += DiskSize.new(2, :gigabyte)
       s.in_bytes.should == (2 * 10**9) + 17
     end
+
+    it "should support (-)" do
+      s = DiskSize.new(3, :gigabyte)
+      t = s - DiskSize.new(1, :gigabyte)
+      t.in_bytes.should == (2 * 10**9)
+      s.in_bytes.should == (3 * 10**9)
+    end
+
+    it "should support (-=)" do
+      s = DiskSize.new(3, :gigabyte)
+      s -= DiskSize.new(1, :gigabyte)
+      s.in_bytes.should == (2 * 10**9)
+    end
   end
 
   describe "formatting" do
