@@ -11,16 +11,6 @@ Feature: Resize
     When I run `tvm resize --size 1GB fred`
     Then it should pass
 
-  Scenario: --grow-by
-    Given a volume called "fred"
-    When I run `tvm resize --grow-by 1GB fred`
-    Then it should pass
-
-  Scenario: --shrink-by
-    Given a volume called "fred"
-    When I run `tvm resize --shrink-by 1GB fred`
-    Then it should pass
-
   Scenario: --grow-to
     Given a volume called "fred"
     When I run `tvm resize --grow-to 1GB fred`
@@ -52,10 +42,21 @@ Feature: Resize
     When I run `tvm resize --size 1GB fred`
     Then "fred" should have size 1GB
 
-  @announce
-  Scenario: --grow-by correctly extends
+  Scenario: --grow-by extends
     Given a volume called "fred"
     And "fred" has size 1GB
     When I run `tvm resize --grow-by 1GB fred`
     Then "fred" should have size 2GB
+
+  Scenario: --shrink-by shrinks
+    Given a volume called "fred"
+    And "fred" has size 2GB
+    When I run `tvm resize --shrink-by 1GB fred`
+    Then "fred" should have size 1GB
+
+  Scenario: --shrink-by raises an error if new size would be negative
+    Given a volume called "fred"
+    And "fred" has size 2GB
+    When I run `tvm resize --shrink-by 3GB fred`
+    Then it should fail
 

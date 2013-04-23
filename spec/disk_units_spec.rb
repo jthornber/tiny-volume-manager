@@ -62,6 +62,30 @@ describe DiskSize do
       s -= DiskSize.new(1, :gigabyte)
       s.in_bytes.should == (2 * 10**9)
     end
+
+    it "should support (>)" do
+      s1 = DiskSize.new(17, :byte)
+      s2 = DiskSize.new(33, :byte)
+      s3 = DiskSize.new(17, :byte)
+
+      (s1 > s2).should be_false
+      (s1 >= s2).should be_false
+
+      (s2 > s1).should be_true
+      (s2 >= s1).should be_true
+
+      (s1 < s2).should be_true
+      (s1 <= s2).should be_true
+
+      (s2 < s1).should be_false
+      (s2 < s1).should be_false
+
+      (s1 <= s3).should be_true
+      (s3 <= s1).should be_true
+
+      (s1 >= s3).should be_true
+      (s3 >= s1).should be_true
+    end
   end
 
   describe "formatting" do

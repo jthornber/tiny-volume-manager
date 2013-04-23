@@ -143,6 +143,16 @@ class TVMDispatcher
     elsif opts.fetch(:grow_by, false)
       new_size = vol.size + opts[:grow_by]
       @vm.resize(vol, new_size)
+
+    elsif opts.fetch(:shrink_by, false)
+      amount = opts[:shrink_by]
+
+      if amount > vol.size
+        raise ArgumentError, "cannot shrink '#{name}' by #{amount.format}"
+      end
+
+      new_size = vol.size - amount
+      @vm.resize(vol, new_size)
     end
   end
 

@@ -67,6 +67,22 @@ module DiskUnits
       self.class.new(@bytes - rhs.bytes, :byte)
     end
 
+    def >(rhs)
+      @bytes > rhs.bytes
+    end
+
+    def >=(rhs)
+      @bytes >= rhs.bytes
+    end
+
+    def <(rhs)
+      @bytes < rhs.bytes
+    end
+
+    def <=(rhs)
+      @bytes <= rhs.bytes
+    end
+
     MATCHER = /^(\d+)([a-zA-Z]+)$/
 
     def self.parse(str)
