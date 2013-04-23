@@ -138,10 +138,20 @@ class TVMDispatcher
     vol = @vm.volume_by_name(name)
 
     if opts.fetch(:size, false)
-      @vm.resize(vol, opts[:size])
+      new_size = opts[:size]
+      if new_size == vol.size
+        raise ArgumentError, "pointless resize op: new size is the same as old size"
+      end
+
+      @vm.resize(vol, new_size)
 
     elsif opts.fetch(:grow_by, false)
       new_size = vol.size + opts[:grow_by]
+
+      if new_size == vol.size
+        raise ArgumentError, "pointless resize op: new size is the same as old size"
+      end
+
       @vm.resize(vol, new_size)
 
     elsif opts.fetch(:shrink_by, false)
@@ -153,6 +163,18 @@ class TVMDispatcher
 
       new_size = vol.size - amount
       @vm.resize(vol, new_size)
+
+    elsif opts.fetch(:grow_to, false)
+      new_size = opts[:grow_to]
+
+      if new_size <= vol.size
+        raise ArgumentError, "--grow-to given a size that is smaller than current"
+      end
+
+      @vm.resize(vol, new_size)
+
+    else
+      raise ArgumentError, "please specify one of --size, --grow-to, --grow-by, --shrink-to, --shrink-by"
     end
   end
 

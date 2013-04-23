@@ -6,20 +6,10 @@ Feature: Resize
     When I tvm resize
     Then it should fail
 
-  Scenario: --size
+  Scenario: resize with no size fails
     Given a volume called "fred"
-    When I tvm resize --size 1GB fred
-    Then it should pass
-
-  Scenario: --grow-to
-    Given a volume called "fred"
-    When I tvm resize --grow-to 1GB fred
-    Then it should pass
-
-  Scenario: --shrink-to
-    Given a volume called "fred"
-    When I tvm resize --shrink-to 1GB fred
-    Then it should pass
+    When I tvm resize fred
+    Then it should fail
 
   Scenario: Sizing options are mutually exclusive
     Given a volume called "fred"
@@ -37,10 +27,21 @@ Feature: Resize
     When I tvm resize --size 1GB fred barney
     Then it should fail
 
+  Scenario: --size fails if given the current size
+    Given a volume called "fred"
+    And "fred" has size 2GB
+    When I tvm resize --size 2GB fred
+    Then it should fail
+
   Scenario: --size correctly sets the size
     Given a volume called "fred"
     When I tvm resize --size 1GB fred
     Then "fred" should have size 1GB
+
+  Scenario: --grow-by 0 fails
+    Given a volume called "fred"
+    When I tvm resize --grow-by 0GB fred
+    Then it should fail
 
   Scenario: --grow-by extends
     Given a volume called "fred"
@@ -59,4 +60,22 @@ Feature: Resize
     And "fred" has size 2GB
     When I tvm resize --shrink-by 3GB fred
     Then it should fail
+
+  Scenario: --grow-to fails if a smaller size is specified
+    Given a volume called "fred"
+    And "fred" has size 2GB
+    When I tvm resize --grow-to 1GB
+    Then it should fail
+
+  Scenario: --grow-to fails if an equal size is specified
+    Given a volume called "fred"
+    And "fred" has size 2GB
+    When I tvm resize --grow-to 2GB
+    Then it should fail
+
+  Scenario: --grow-to extends
+    Given a volume called "fred"
+    And "fred" has size 2GB
+    When I tvm resize --grow-to 3GB fred
+    Then "fred" should have size 3GB
 
