@@ -4,35 +4,35 @@ Feature: Transactionality
   and execute them atomically, or abort all of them.
 
   Scenario: Commit with no changes is an error
-    When I run `tvm commit`
+    When I tvm commit
     Then it should fail with:
       """
       commit requested but no pending changes
       """
 
   Scenario: (create => commit => create => commit) succeeds
-    When I run `tvm create foo`
-    And I run `tvm commit`
-    And I run `tvm create bar`
-    And I run `tvm commit`
+    When I tvm create foo
+    And I tvm commit
+    And I tvm create bar
+    And I tvm commit
     Then it should pass
 
   Scenario: abort succeeds
-    And I run `tvm abort`
+    And I tvm abort
     Then it should pass
 
   Scenario: (create => commit) creates a volume
-    And I run `tvm create fred`
-    And I run `tvm commit`
+    And I tvm create fred
+    And I tvm commit
     Then there should be a volume called "fred"
 
   Scenario: (create => abort) does not create a volume
-    And I run `tvm create fred`
-    And I run `tvm abort`
+    And I tvm create fred
+    And I tvm abort
     Then there should not be a volume called "fred"
 
   Scenario: status with no changes
-    When I run `tvm status`
+    When I tvm status
     Then the stdout should contain:
       """
       # created volumes:
@@ -44,10 +44,10 @@ Feature: Transactionality
       """
 
   Scenario: status with 2 creates
-    Given I run `tvm create fred`
-    And I run `tvm create barney`
+    Given I tvm create fred
+    And I tvm create barney
 
-    When I run `tvm status`
+    When I tvm status
 
     Then the stdout should contain:
       """
