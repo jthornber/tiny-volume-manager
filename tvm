@@ -136,25 +136,23 @@ class TVMDispatcher
 
     name = args[0]
     vol = @vm.volume_by_name(name)
+    new_size = nil
 
-    if opts.fetch(:size, false)
+    if opts.keys.member? :size
       new_size = opts[:size]
+
       if new_size == vol.size
         raise ArgumentError, "pointless resize op: new size is the same as old size"
       end
 
-      @vm.resize(vol, new_size)
-
-    elsif opts.fetch(:grow_by, false)
+    elsif opts.keys.member? :grow_by
       new_size = vol.size + opts[:grow_by]
 
       if new_size == vol.size
         raise ArgumentError, "pointless resize op: new size is the same as old size"
       end
 
-      @vm.resize(vol, new_size)
-
-    elsif opts.fetch(:shrink_by, false)
+    elsif opts.keys.member? :shrink_by
       amount = opts[:shrink_by]
 
       if amount > vol.size
@@ -162,20 +160,26 @@ class TVMDispatcher
       end
 
       new_size = vol.size - amount
-      @vm.resize(vol, new_size)
 
-    elsif opts.fetch(:grow_to, false)
+    elsif opts.keys.member? :grow_to
       new_size = opts[:grow_to]
 
       if new_size <= vol.size
-        raise ArgumentError, "--grow-to given a size that is smaller than current"
+        raise ArgumentError, "--grow-to given a size that is <= to current"
       end
 
-      @vm.resize(vol, new_size)
+    elsif opts.keys.member? :shrink_to
+      new_size = opts[:shrink_to]
+
+      if new_size >= vol.size
+        raise ArgumentError, "--shrink-to given a size that is >= to current"
+      end
 
     else
       raise ArgumentError, "please specify one of --size, --grow-to, --grow-by, --shrink-to, --shrink-by"
     end
+
+    @vm.resize(vol, new_size)
   end
 
   def status(opts, args)
@@ -187,7 +191,7 @@ class TVMDispatcher
       puts "#    #{vol.name_or_short_id}"
     end
     puts "#" if status.created.size > 0
-    
+
     puts "# modified volumes:"
     puts "#"
     status.modified.each do |vol|

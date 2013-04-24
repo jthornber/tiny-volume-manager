@@ -49,18 +49,6 @@ Feature: Resize
     When I tvm resize --grow-by 1GB fred
     Then "fred" should have size 2GB
 
-  Scenario: --shrink-by shrinks
-    Given a volume called "fred"
-    And "fred" has size 2GB
-    When I tvm resize --shrink-by 1GB fred
-    Then "fred" should have size 1GB
-
-  Scenario: --shrink-by raises an error if new size would be negative
-    Given a volume called "fred"
-    And "fred" has size 2GB
-    When I tvm resize --shrink-by 3GB fred
-    Then it should fail
-
   Scenario: --grow-to fails if a smaller size is specified
     Given a volume called "fred"
     And "fred" has size 2GB
@@ -79,3 +67,32 @@ Feature: Resize
     When I tvm resize --grow-to 3GB fred
     Then "fred" should have size 3GB
 
+  Scenario: --shrink-by shrinks
+    Given a volume called "fred"
+    And "fred" has size 2GB
+    When I tvm resize --shrink-by 1GB fred
+    Then "fred" should have size 1GB
+
+  Scenario: --shrink-by raises an error if new size would be negative
+    Given a volume called "fred"
+    And "fred" has size 2GB
+    When I tvm resize --shrink-by 3GB fred
+    Then it should fail
+
+  Scenario: --shrink-to raises an error if the new size would be bigger
+    Given a volume called "fred"
+    And "fred" has size 2GB
+    When I tvm resize --shrink-to 3GB fred
+    Then it should fail
+
+  Scenario: --shrink-to raises an error if given current size
+    Given a volume called "fred"
+    And "fred" has size 2GB
+    When I tvm resize --shrink-to 2GB fred
+    Then it should fail
+
+  Scenario: --shrink-to shrinks
+    Given a volume called "fred"
+    And "fred" has size 3GB
+    When I tvm resize --shrink-to 1GB fred
+    Then "fred" should have size 1GB
