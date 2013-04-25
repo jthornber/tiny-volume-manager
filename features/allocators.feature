@@ -67,7 +67,28 @@ Feature: Allocators
     snapshot.  What is the process for this?  Do we have to disable
     higher levels (unnecc. for read-only access like metadata snaps).
 
+  - Do we wawnt to make allocators first class objects (from the
+    admin's point of view)?  Or can we make volumes/allocators the
+    same thing?
+
+    Steps the admin goes through when setting up a simple system:
+
+    i) use fixed-linear to specify some PVs
+
+    ii) create a bunch of volumes
+
+    iii) create a couple of allocators that use various bits of the PVs
+
+    iii) link volumes to allocators
+ 
+    iv) resize volumes
+
+  - Can allocators share PVs?  I think we have to allow this, eg,
+    mirrors and linear require different allocators?
+
   Scenario: Every volume has an allocator field
 
 
   Scenario: Every volume has an allocatable field (not sure about this)
+
+  Scenario: 
