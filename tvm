@@ -12,22 +12,38 @@ include TVM
 
 #----------------------------------------------------------------
 
-open_log("./tvm.log")
+def top_level_handler(&block)
+  begin
+    block.call
+  rescue => e
+    STDERR.puts e.message
+    exit 1
+  end
 
-METADATA_FILE='./volumes.yaml'
-
-metadata = YAMLMetadata.new(METADATA_FILE)
-vm = VolumeManager.new(metadata)
-
-# We're alway in an implicit transaction
-vm.begin unless metadata.in_transaction?
-
-dispatcher = Dispatcher.new(vm)
-parse_command_line(dispatcher, *ARGV)
-
-metadata.persist
+  exit 0
+end
 
 #----------------------------------------------------------------
 
-exit 0
+top_level_handler do
+  open_log("./tvm.log")
+
+  METADATA_FILE='./volumes.yaml'
+
+  metadata = YAMLMetadata.new(METADATA_FILE)
+  vm = VolumeManager.new(metadata)
+
+  # We're always in an implicit transaction
+  unless metadata.in_transaction?
+    vm.begin
+  end
+
+  dispatcher = Dispatcher.new(vm)
+  parse_command_line(dispatcher, *ARGV)
+
+  metadata.persist
+end
+
+#----------------------------------------------------------------
+
 
