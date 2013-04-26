@@ -13,28 +13,6 @@ include TVM
 
 #----------------------------------------------------------------
 
-# FIXME: dead code
-def get_exclusive_opt(opts, *flags)
-  fset = flags.to_set
-  oset = opts.select {|key, value| value}.keys.to_set
-
-  intersection = fset & oset
-
-  if intersection.size > 1
-    msg = "These options are mutually exclusive:" + msg_list_options(intersection)
-    raise ArgumentError, msg
-  end
-
-  if intersection.size == 0
-    msg = "One of these options expected:" + msg_list_options(flags)
-    raise ArgumentError, msg
-  end
-
-  intersection.to_a[0]
-end
-
-#----------------------------------------------------------------
-
 command_line = CommandLine::Parser.new do
   value_type :string do |str|
     str
