@@ -1,4 +1,3 @@
-@announce
 Feature: list
   Scenario: displays a line for each volume
     Given 3 volumes
