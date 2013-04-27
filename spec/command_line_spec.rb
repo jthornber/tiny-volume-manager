@@ -101,6 +101,12 @@ describe "Parser" do
       end
     end
 
+    it "should let you omit the block for a command" do
+      @clh.configure do
+        command :create
+      end
+    end
+
     it "should let you bind switches" do
       @clh.configure do
         simple_switch :grow_to, '--grow-to'

@@ -106,9 +106,12 @@ module CommandLine
     def command(sym, &block)
       old = @current_command
       @current_command = @commands[sym] = Command.new
-      release = lambda {@current_command = old}
-      bracket_(release) do
-        self.instance_eval(&block)
+
+      if block
+        release = lambda {@current_command = old}
+        bracket_(release) do
+          self.instance_eval(&block)
+        end
       end
     end
 
