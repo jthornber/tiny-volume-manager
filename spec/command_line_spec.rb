@@ -51,7 +51,7 @@ describe "Parser" do
         @clh.value_type :string do |str|
           str
         end
-      end.to raise_error(CommandLineError, /string/)
+      end.to raise_error(ConfigureError, /string/)
     end
   end
 
@@ -61,7 +61,7 @@ describe "Parser" do
     end
 
     it "should fail if you try and define a switch that takes an unknown value type" do
-      expect {@clh.value_switch :resize_to, :volume_size, '--resize-to'}.to raise_error(CommandLineError, /volume_size/)
+      expect {@clh.value_switch :resize_to, :volume_size, '--resize-to'}.to raise_error(ConfigureError, /volume_size/)
     end
 
     it "should let you define an option that takes a single value" do
@@ -90,7 +90,7 @@ describe "Parser" do
         @clh.global do
           switches :become_sentient
         end
-      end.to raise_error(CommandLineError)
+      end.to raise_error(ConfigureError)
     end
   end
 
@@ -123,9 +123,9 @@ describe "Parser" do
         @clh.parse(handler)
       end
 
-      it "should raise an ArgumentError if an unrecognised switch is used" do
+      it "should raise a ParseError if an unrecognised switch is used" do
         handler = mock()
-        expect {@clh.parse(handler, '--go-back-in-time')}.to raise_error(ArgumentError, /--go-back-in-time/)
+        expect {@clh.parse(handler, '--go-back-in-time')}.to raise_error(ParseError, /--go-back-in-time/)
       end
 
       it "should handle binary switches" do
@@ -199,7 +199,7 @@ describe "Parser" do
 
         expect do
           @clh.parse(handler, '--count')
-        end.to raise_error(ArgumentError, /count/)
+        end.to raise_error(ParseError, /count/)
       end
 
       it "should filter non-switches out" do
@@ -298,11 +298,11 @@ describe "Parser" do
         @clh.parse(handler, 'resize', '--grow-to', '1234', 'fred')
       end
 
-      it "should raise ArgumentError if more than one switch from an exclusive set is defined" do
+      it "should raise a ParseError if more than one switch from an exclusive set is defined" do
         handler = mock()
         expect do
           @clh.parse(handler, 'resize', '--grow-to', '1234', '--shrink-by', '2345', 'fred')
-        end.to raise_error(ArgumentError, /mutually exclusive/)
+        end.to raise_error(ParseError, /mutually exclusive/)
         # FIXME: would be nice to see the actual flags in the exception
       end
 

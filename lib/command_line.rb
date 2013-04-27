@@ -5,8 +5,13 @@ require 'set'
 #----------------------------------------------------------------
 
 module CommandLine
-  # FIXME: parse error, and configure error
-  class CommandLineError < RuntimeError
+  class CommandLineError < StandardError
+  end
+
+  class ParseError < CommandLineError
+  end
+
+  class ConfigureError < CommandLineError
   end
 
   class Switch
@@ -55,7 +60,7 @@ module CommandLine
         if set_counts[n].size > 1
           msg = "mutually exclusive options used:\n"
           set_counts[n].each {|sym| msg += "    #{sym}\n"}
-          raise ArgumentError, msg
+          raise ParseError, msg
         end
       end
     end
@@ -80,7 +85,7 @@ module CommandLine
 
     def value_type(sym, &parser)
       if @value_types.member?(sym)
-        raise CommandLineError, "duplicate value type '#{sym}'"
+        raise ConfigureError, "duplicate value type '#{sym}'"
       end
 
       @value_types[sym] = parser
@@ -127,14 +132,14 @@ module CommandLine
     def parse_value(arg, s, args)
       if s.parser
         if args.size == 0
-          raise ArgumentError, "no value specified for switch '#{arg}'"
+          raise ParseError, "no value specified for switch '#{arg}'"
         end
 
         value = args.shift
         begin
           s.parser.call(value)
         rescue => e
-          raise ArgumentError, "couldn't parse value '#{arg}=#{value}'\n#{e}"
+          raise ParseError, "couldn't parse value '#{arg}=#{value}'\n#{e}"
         end
       else
         true
@@ -174,7 +179,7 @@ module CommandLine
 
     def check_switches_are_defined(syms)
       syms.each do |sym|
-        raise CommandLineError, "unknown switch '#{sym}'" unless @switches.member?(sym)
+        raise ConfigureError, "unknown switch '#{sym}'" unless @switches.member?(sym)
       end
     end
 
@@ -187,7 +192,7 @@ module CommandLine
           end
         end
 
-        raise ArgumentError, "unexpected switch '#{switch}'"
+        raise ParseError, "unexpected switch '#{switch}'"
       end
     end
 
@@ -195,7 +200,7 @@ module CommandLine
       if @value_types.member?(sym)
         @value_types[sym]
       else
-        raise CommandLineError, "unknown value type '#{sym}'"
+        raise ConfigureError, "unknown value type '#{sym}'"
       end
     end
   end
