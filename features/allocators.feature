@@ -86,9 +86,7 @@ Feature: Allocators
   - Can allocators share PVs?  I think we have to allow this, eg,
     mirrors and linear require different allocators?
 
-  Scenario: Every volume has an allocator field
-
-
-  Scenario: Every volume has an allocatable field (not sure about this)
-
-  Scenario: 
+  Scenario: create a linear allocator
+    Given a volume called "fred"
+    When I tvm create_allocator --type linear --alloc-volume fred
+    Then it should pass

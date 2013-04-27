@@ -21,6 +21,10 @@ module TVM
       puts new_volume.volume_id
     end
 
+    def create_allocator(opts, args)
+      # FIXME: not implemented
+    end
+
     def snap(opts, args)
       @vm.snap_volume args[0]
     end

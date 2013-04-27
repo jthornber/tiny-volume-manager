@@ -19,6 +19,9 @@ module TVM
 
       simple_switch :help, '--help', '-h'
 
+      value_switch :type, :string, '--type'
+      value_switch :alloc_volume, :string, '--alloc-volume'
+
       value_switch :size, :disk_size, '--size'
       value_switch :grow_to, :disk_size, '--grow-to'
       value_switch :grow_by, :disk_size, '--grow-by'
@@ -29,24 +32,17 @@ module TVM
         switches :help
       end
 
-      command :create do
+      command :create
+
+      command :create_allocator do
+        switches :type, :alloc_volume
       end
 
-      command :snap do
-      end
-
-      command :list do
-      end
-
-      command :commit do
-      end
-
-      command :abort do
-      end
-
-      command :status do
-      end
-
+      command :snap
+      command :list
+      command :commit
+      command :abort
+      command :status
       command :resize do
         one_of :grow_to, :grow_by, :shrink_to, :shrink_by, :size
       end
