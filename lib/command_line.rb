@@ -33,6 +33,7 @@ module CommandLine
     def initialize
       @switches = []
       @mutually_exclusive_sets = [] # list of lists of syms
+      @mandatory = []
     end
 
     def add_switches(syms)
@@ -41,6 +42,10 @@ module CommandLine
 
     def add_mutually_exclusive_set(syms)
       @mutually_exclusive_sets << syms.to_set
+    end
+
+    def add_mandatory_switch(sym)
+      @mandatory << sym
     end
 
     def check_mutual_exclusion(syms)
@@ -62,6 +67,25 @@ module CommandLine
           set_counts[n].each {|sym| msg += "    #{sym}\n"}
           raise ParseError, msg
         end
+      end
+    end
+
+    def check_mandatory(syms)
+      missing = []
+
+      @mandatory.each do |m|
+        unless syms.member?(m)
+          missing << m
+        end
+      end
+
+      if missing.size > 0
+        msg = "missing mandatory switches:\n"
+        missing.each do |m|
+          msg += "  #{m}\n"
+        end
+
+        raise ParseError, msg
       end
     end
   end
@@ -126,6 +150,13 @@ module CommandLine
       @current_command.add_mutually_exclusive_set(syms)
     end
 
+    def mandatory(sym)
+      syms = [sym]
+      check_switches_are_defined(syms)
+      @current_command.add_switches(syms)
+      @current_command.add_mandatory_switch(sym)
+    end
+
     def parse(handler, *args)
       command, opts, plain_args = parse_(args)
       handler.send(command, opts, plain_args)
@@ -177,6 +208,7 @@ module CommandLine
       end
 
       @commands[command].check_mutual_exclusion(opts.keys)
+      @commands[command].check_mandatory(opts.keys)
       [command, opts, plain_args]
     end
 

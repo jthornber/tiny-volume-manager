@@ -321,6 +321,39 @@ describe "Parser" do
       pending "todo"
     end
   end
+
+  describe "mandatory switches" do
+    before :each do
+      @clh.configure do
+        value_type :int do |str|
+          str.to_i
+        end
+
+        value_switch :grow_to, :int, '--grow-to'
+        value_switch :grow_by, :int, '--grow-by'
+        value_switch :shrink_to, :int, '--shrink-to'
+        value_switch :shrink_by, :int, '--shrink-by'
+
+        command :resize do
+          mandatory :grow_to
+        end
+      end
+    end
+
+    it "should parse ok if mandatory switch is given" do
+      handler = mock()
+      handler.should_receive(:resize).
+        with({:grow_to => 3}, ['fred'])
+      @clh.parse(handler, 'resize', '--grow-to', '3', 'fred')
+    end
+
+    it "should raise a ParseError if a mandatory switch is omitted" do
+      handler = mock()
+      expect do
+        @clh.parse(handler, 'resize', 'fred')
+      end.to raise_error(ParseError, /grow_to/)
+    end
+  end
 end
 
 #----------------------------------------------------------------
