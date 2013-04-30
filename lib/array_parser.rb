@@ -91,38 +91,37 @@ module ArrayParser
             return r
           end
 
-          msg += "    #{r.msg}"
+          msg += "    #{r.msg}\n"
         end
 
-        failure(msg)
+        failure(msg.chomp)
+      end
+    end
+
+    #--------------------------------
+
+    class Sequence < ArrayParser
+      def initialize(*parsers)
+        @parsers = parsers
+      end
+
+      def parse_(input)
+        value = []
+
+        @parsers.each do |p|
+          r = p.parse(input)
+          unless r.success?
+            return r
+          end
+
+          value << r.value
+          input = r.remaining_input
+        end
+
+        success(value, input)
       end
     end
   end
-
-  #   #--------------------------------
-
-  #   class Sequence
-  #     def initialize(*parsers)
-  #       @parsers = parsers
-  #     end
-
-  #     def parse(args)
-  #       remaining_input = args
-  #       value = []
-
-  #       @parsers.each do |p|
-  #         r = p.parse(remaining_input)
-  #         unless r.parsed
-  #           return fail_parse
-  #         end
-
-  #         value << r.value
-  #         remaining_input = r.remaining_input
-  #       end
-
-  #       [true, value, remaining_input]
-  #     end
-  #   end
 
   #   #--------------------------------
 
@@ -169,10 +168,10 @@ module ArrayParser
     Detail::Choice.new(parser, *rest)
   end
 
+  def sequence(parser, *rest)
+    Detail::Sequence.new(parser, *rest)
+  end
 
-  # def set_value(parser, value)  # FIXME: better name?
-  #   # FIXME: finish
-  # end
 
   # def zero_or_more(parser)
   #   # FIXME: finish
@@ -181,12 +180,5 @@ module ArrayParser
   # def one_or_more(parser)
   #   sequence(parser, zero_or_more(parser))
   # end
-
-  # def sequence(*parsers)
-  #   # FIXME: finish
-  # end
-
-
-  # #--------------------------------
 
 end
