@@ -43,12 +43,22 @@ module ArrayParser
       def initialize(msg)
         @msg = msg
       end
-      
+
       def parse_(_)
         failure(@msg)
       end
     end
-    
+
+    class Success < ArrayParser
+      def initialize(value)
+        @value = value
+      end
+
+      def parse_(args)
+        success(@value, args)
+      end
+    end
+
     #--------------------------------
 
     class Literal < ArrayParser
@@ -64,24 +74,30 @@ module ArrayParser
         end
       end
     end
+
+    #--------------------------------
+
+    class Choice < ArrayParser
+      def initialize(*parsers)
+        @parsers = parsers
+      end
+
+      def parse_(input)
+        msg = "couldn't match choice:\n"
+
+        @parsers.each do |p|
+          r = p.parse(input)
+          if r.success?
+            return r
+          end
+
+          msg += "    #{r.msg}"
+        end
+
+        failure(msg)
+      end
+    end
   end
-
-  #   #--------------------------------
-
-  #   class OneOf
-  #     def initialize(*parsers)
-  #       @parsers = parsers
-  #     end
-
-  #     def parse(args)
-  #       @parsers.each do |p|
-  #         r = p.parse(args)
-  #         return r if r.parsed
-  #       end
-        
-  #       fail_parse
-  #     end
-  #   end
 
   #   #--------------------------------
 
@@ -107,7 +123,7 @@ module ArrayParser
   #       [true, value, remaining_input]
   #     end
   #   end
-    
+
   #   #--------------------------------
 
   #   class ManyOf
@@ -145,6 +161,15 @@ module ArrayParser
     Detail::Literal.new(lit)
   end
 
+  def success(value)
+    Detail::Success.new(value)
+  end
+
+  def choice(parser, *rest)
+    Detail::Choice.new(parser, *rest)
+  end
+
+
   # def set_value(parser, value)  # FIXME: better name?
   #   # FIXME: finish
   # end
@@ -161,9 +186,6 @@ module ArrayParser
   #   # FIXME: finish
   # end
 
-  # def choice(*parsers)
-  #   # FIXME: finish
-  # end
 
   # #--------------------------------
 
