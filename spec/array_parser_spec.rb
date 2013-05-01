@@ -170,9 +170,31 @@ describe ArrayParser do
       end
 
       it "should give a sensible error message" do
-        msg = "couldn't match sequence:\n    couldn't match literal 'fred'\n    couldn't match literal 'bassett'"
+        msg = "couldn't match literal 'fred'"
         @p.parse(['foo', 'bar']).msg.should == msg
       end
+    end
+  end
+
+  describe "many" do
+    before :each do
+      @p = many(literal('fred'))
+    end
+
+    it "should succeed with zero matches" do
+      should_parse([])
+    end
+
+    it "should succeed with one match" do
+      should_parse(['fred'])
+    end
+
+    it "should succeed with two matches" do
+      should_parse(['fred', 'fred'])
+    end
+
+    it "should return an array of match values" do
+      @p.parse(['fred', 'fred', 'fred']).value.should == [nil, nil, nil]
     end
   end
 end

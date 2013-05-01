@@ -121,32 +121,30 @@ module ArrayParser
         success(value, input)
       end
     end
+
+    #--------------------------------
+
+    class Many < ArrayParser
+      def initialize(parser)
+        @parser = parser
+      end
+
+      def parse_(input)
+        value = []
+
+        loop do
+          r  = @parser.parse(input)
+
+          unless r.success?
+            return success(value, input)
+          end
+
+          value << r.value
+          input = r.remaining_input
+        end
+      end
+    end
   end
-
-  #   #--------------------------------
-
-  #   class ManyOf
-  #     def initialize(parser)
-  #       @parser = parser
-  #     end
-
-  #     def parse(args)
-  #       results = []
-  #       remaining = args
-
-  #       loop do
-  #         r  = @parser.parse(remaining)
-  #         if r.parsed
-  #           remaining = r.remaining_input
-  #         else
-  #           break
-  #         end
-  #       end
-
-  #       [true, map(results) {|r| r.value}, remaining]
-  #     end
-  #   end
-  # end
 
   # #--------------------------------
   # # A little set of combinators to build the parsers.
@@ -172,13 +170,9 @@ module ArrayParser
     Detail::Sequence.new(parser, *rest)
   end
 
+  def many(parser)
+    Detail::Many.new(parser)
+  end
 
-  # def zero_or_more(parser)
-  #   # FIXME: finish
-  # end
-
-  # def one_or_more(parser)
-  #   sequence(parser, zero_or_more(parser))
-  # end
-
+  # one_or_more
 end
