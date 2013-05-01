@@ -197,6 +197,24 @@ describe ArrayParser do
       @p.parse(['fred', 'fred', 'fred']).value.should == [nil, nil, nil]
     end
   end
+
+  describe "one_or_more" do
+    before :each do
+      @p = one_or_more(literal('fred'))
+    end
+
+    it "should fail with zero matches" do
+      should_not_parse([])
+    end
+
+    it "should succeed with one match" do
+      should_parse(['fred'])
+    end
+
+    it "should return a single array of values" do
+      @p.parse(['fred', 'fred', 'fred']).value.should == [nil, nil, nil]
+    end
+  end
 end
 
 #----------------------------------------------------------------

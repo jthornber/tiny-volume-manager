@@ -86,7 +86,7 @@ module ArrayParser
         msg = "couldn't match choice:\n"
 
         @parsers.each do |p|
-          r = p.parse(input)
+          r = p.parse_(input)
           if r.success?
             return r
           end
@@ -109,7 +109,7 @@ module ArrayParser
         value = []
 
         @parsers.each do |p|
-          r = p.parse(input)
+          r = p.parse_(input)
           unless r.success?
             return r
           end
@@ -133,7 +133,7 @@ module ArrayParser
         value = []
 
         loop do
-          r  = @parser.parse(input)
+          r  = @parser.parse_(input)
 
           unless r.success?
             return success(value, input)
@@ -142,6 +142,33 @@ module ArrayParser
           value << r.value
           input = r.remaining_input
         end
+      end
+    end
+
+    #--------------------------------
+
+    # FIXME: it's a shame we can't construct this with:
+    # sequence(parser, many(parser)) but the value comes out as [v1,
+    # [v2, ...]], which suggests there's something wrong with how
+    # values are being combined.
+    class OneOrMore < ArrayParser
+      def initialize(parser)
+        @parser = parser
+        @many = Many.new(parser)
+      end
+
+      def parse_(input)
+        r1 = @parser.parse_(input)
+        if r1.success?
+          r2 = @many.parse_(r1.remaining_input)
+          if r2.success?
+            return success([r1.value] + r2.value, r2.remaining_input)
+          else
+            return success([r1.value], r1.remaining_input)
+          end
+        end
+
+        return r1
       end
     end
   end
@@ -174,5 +201,7 @@ module ArrayParser
     Detail::Many.new(parser)
   end
 
-  # one_or_more
+  def one_or_more(parser)
+    Detail::OneOrMore.new(parser)
+  end
 end
