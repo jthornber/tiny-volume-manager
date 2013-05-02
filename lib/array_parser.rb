@@ -151,6 +151,12 @@ module ArrayParser
     # sequence(parser, many(parser)) but the value comes out as [v1,
     # [v2, ...]], which suggests there's something wrong with how
     # values are being combined.
+    #
+    # Actually I think the issue is we're not specifying how the
+    # values are combined at all.  Haskell libraries typically have
+    # you lifting combining functions.  eg, lift2M (:).  So perhaps
+    # the solution is to make ArrayParser a monad?  Would be fun to
+    # try ...
     class OneOrMore < ArrayParser
       def initialize(parser)
         @parser = parser
